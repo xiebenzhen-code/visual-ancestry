@@ -85,6 +85,12 @@ try {
   check("A 返回结果", r.results.length > 0, `results=${r.results.length}`);
   check("A 不标为降级", r.degraded === false, `degraded=${r.degraded}`);
   check("A 无「部分来源」提示", !r.partial && !r.note, `partial=${r.partial} note="${r.note}"`);
+  // 来源集合与数量：四馆都答了，就应四馆都出现在结果里。
+  // 原断言 `length >= 0` 恒真，无法证明任何事——换成对来源集合的精确核对。
+  const channelsA = [...new Set(r.results.map((x) => x.artwork?.remote?.channel))].sort();
+  check("A 四个来源全部到齐", channelsA.length === 4, `channels=[${channelsA.join(", ")}]`);
+  check("A 来源集合恰为 aic/met/cleveland/rijks", JSON.stringify(channelsA) === JSON.stringify(["aic", "cleveland", "met", "rijks"]), `channels=[${channelsA.join(", ")}]`);
+  check("A 每个来源各出 2 件", r.results.length === 8, `results=${r.results.length}`);
 
   console.log("\n=== B. 三馆成功、一馆失败 ===");
   mem.clear();
@@ -94,7 +100,18 @@ try {
   check("B 不谎报整体降级", r.degraded === false, `degraded=${r.degraded}`);
   check("B 标记为部分失败", r.partial === true, `partial=${r.partial}`);
   check("B 说明点名失败来源", /met/.test(r.note || ""), `note="${r.note}"`);
-  check("B 本地检索不受影响", searchLocal(QUERY).length >= 0, `local=${searchLocal(QUERY).length}`);
+  // 保留的来源集合 / 缺失来源 / 失败说明三项都要逐条核对。
+  // 原断言 `searchLocal(QUERY).length >= 0` 恒真（空数组也通过），既不能证明
+  // 本地检索可用，也漏掉了「哪些来源还在、哪个没了」这一核心语义。
+  const channelsB = [...new Set(r.results.map((x) => x.artwork?.remote?.channel))].sort();
+  check("B 保留三个来源", channelsB.length === 3, `channels=[${channelsB.join(", ")}]`);
+  check("B 保留的来源恰为 aic/cleveland/rijks", JSON.stringify(channelsB) === JSON.stringify(["aic", "cleveland", "rijks"]), `channels=[${channelsB.join(", ")}]`);
+  check("B 结果中不含失败来源 met", !channelsB.includes("met"), `channels=[${channelsB.join(", ")}]`);
+  check("B 失败说明只点名 met", (r.note || "").includes("met") && !/aic|cleveland|rijks/.test(r.note || ""), `note="${r.note}"`);
+  check("B 失败说明是完整的用户可见句子", /部分来源本次未响应/.test(r.note || "") && /其余来源/.test(r.note || ""), `note="${r.note}"`);
+  // 本地检索必须真的非空——空数组是失败，不是「通过」。
+  const localB = searchLocal(QUERY);
+  check("B 本地检索不受影响（非空）", localB.length > 0, `local=${localB.length}`);
 
   console.log("\n=== D. 部分失败结果不得缓存为完整 ===");
   const cached = getCachedRemote(QUERY);

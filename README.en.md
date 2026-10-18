@@ -52,7 +52,6 @@ This is a **GitHub source release**. There is **no hosted web app** in this repo
 ## Technical notes
 
 The following is for people who want to read or change the code.
-  unavailable; it never pretends to have worked.**
 
 ## Requirements
 
@@ -93,9 +92,11 @@ Everything works without it — retrieval, analysis, CREATE, SHOOT, MEMORY. Only
 
 ```powershell
 Copy-Item .env.example .env
-$env:VISION_API_BASE = "https://.../v1/chat/completions"
-$env:VISION_API_KEY = "..."
-node scripts/server.mjs . 5173
+# Fill in the server-side provider settings in .env
+# (VISION_API_BASE / VISION_API_KEY / VISION_MODEL).
+# They live in the server process environment only and never enter the
+# browser bundle.
+node --env-file=.env scripts/server.mjs . 5173
 ```
 
 Fail-closed default: if a provider is configured but **no budget ledger is set, the
