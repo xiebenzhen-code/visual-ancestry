@@ -16,7 +16,16 @@ export const MEMORY_SOURCES = [
 
 // Upload lifecycle (P5.1.8). pending/processing are transient (UI memory);
 // success/failed are persisted.
-export const MEMORY_STATUSES = ["pending", "processing", "success", "failed"];
+//
+// P4.1 — "not-configured" is a FIRST-CLASS state, not a flavour of "failed".
+// When the server has no vision model (or no budget ledger), the image was
+// never analysed: retrying cannot help and the remedy is an operator task,
+// not a user retry. Recording it as "failed" told the user to try again.
+export const MEMORY_STATUSES = ["pending", "processing", "success", "failed", "not-configured"];
+
+// States that must NOT be offered a retry button: nothing the user does can
+// make them succeed.
+export const NON_RETRYABLE_STATUSES = ["not-configured"];
 
 export const MEMORY_FILENAME = "memories.json";
 export const EXAMPLES_FILENAME = "examples.json";

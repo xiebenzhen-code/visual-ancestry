@@ -47,7 +47,17 @@ export async function callVisionProvider(file, _config, { timeoutMs = 45000, inp
     if (status === 401) return outcome(false, "auth", { status, bridgeCode });
     if (status === 403) return outcome(false, "auth", { status, bridgeCode });
     if (status === 429) return outcome(false, "rate-limited", { status, bridgeCode });
-    if (status === 503) return outcome(false, "not-configured", { status, bridgeCode });
+    // A 503 has TWO distinct causes and they need different remedies:
+    //   provider-not-configured  no model is configured at all
+    //   budget-unavailable       a model IS configured, but the fail-closed
+    //                            budget ledger is missing, so the call is refused
+    // Collapsing both into "not-configured" told an operator who has a working
+    // provider to go configure a provider. The bridge already returns the
+    // machine code, so read it instead of guessing from the status alone.
+    if (status === 503) {
+      if (bridgeCode === "budget-unavailable") return outcome(false, "budget-unavailable", { status, bridgeCode });
+      return outcome(false, "not-configured", { status, bridgeCode });
+    }
     if (status >= 500) return outcome(false, "server", { status, bridgeCode });
     if (status === 404) return outcome(false, "no-bridge", { status, bridgeCode });
     if (status !== 200) return outcome(false, "request", { status, bridgeCode });

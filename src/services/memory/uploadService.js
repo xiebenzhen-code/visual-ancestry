@@ -42,6 +42,11 @@ export const UPLOAD_ERRORS = {
   VISION_INVALID_RESPONSE: { code: "VISION_INVALID_RESPONSE", message: "AI 分析失败，请重新尝试。", retryable: true },
   VISION_UNAVAILABLE: { code: "VISION_UNAVAILABLE", message: "识图服务暂不可用，请稍后再试。", retryable: false },
   NETWORK_ERROR: { code: "NETWORK_ERROR", message: "网络连接失败，请检查网络后重试。", retryable: true },
+  // Two 503 causes that must never be merged: "no model configured" is one
+  // operator task, "no budget ledger" is a different one. Retrying neither
+  // helps, so both are non-retryable — the state must be shown, not retried.
+  NOT_CONFIGURED: { code: "NOT_CONFIGURED", message: "这台服务器没有配置识图模型，图片分析不可用。", retryable: false },
+  BUDGET_UNAVAILABLE: { code: "BUDGET_UNAVAILABLE", message: "识图预算账本未配置，已拒绝调用（fail-closed）。", retryable: false },
   NORMALIZE_FAILED: { code: "NORMALIZE_FAILED", message: "识别结果无法理解，请重新尝试。", retryable: true },
   UNKNOWN: { code: "UNKNOWN", message: "发生未知错误，请重新尝试。", retryable: true },
 };
@@ -77,6 +82,16 @@ function classifyBridge(res) {
   const reason = res.reason;
   if (reason === "timeout") return userError(UPLOAD_ERRORS.VISION_TIMEOUT);
   if (reason === "network") return userError(UPLOAD_ERRORS.NETWORK_ERROR);
+  // The bridge returns 503 for two different causes. `reason` alone cannot tell
+  // them apart, so the bridge own machine code decides. Reading only `reason`
+  // used to report a missing budget ledger as a missing provider.
+  const bridgeCode = res.bridgeCode;
+  if (reason === "budget-unavailable" || bridgeCode === "budget-unavailable") {
+    return userError(UPLOAD_ERRORS.BUDGET_UNAVAILABLE);
+  }
+  if (reason === "not-configured" || bridgeCode === "provider-not-configured") {
+    return userError(UPLOAD_ERRORS.NOT_CONFIGURED);
+  }
   if (reason === "no-bridge" || reason === "auth" || reason === "quota" || reason === "server" || reason === "request") {
     return userError(UPLOAD_ERRORS.VISION_UNAVAILABLE);
   }
@@ -110,10 +125,14 @@ function buildMeta(title, origin, tags) {
 // Validation failures (user input) do NOT persist — nothing to recover.
 // Vision-layer failures DO persist as a `failed` entry (recoverable).
 async function persistFailed({ id, name, mime, sha256, meta, userData, err }) {
+  // A configuration fault is not a failure of this image. It is recorded as
+  // "not-configured" so the archive never invites a pointless retry and the
+  // operator sees the real task (configure a model, or a budget ledger).
+  const status = err && err.code === "NOT_CONFIGURED" ? "not-configured" : "failed";
   const memory = createVisualMemory({
     id: id || createReadableId(Date.now() % 100000),
     source: "user-upload",
-    status: "failed",
+    status,
     error: err,
     image: { path: name || "", mime, sha256 },
     metadata: meta,

@@ -14,4 +14,7 @@ qa/**/*-shots/
 qa/**/*-profile/
 qa/**/profile/
 qa/**/ui-shots/
+
+# P4.1 — 每次运行都会重写的测试产物（证据随报告，不进仓库）
+qa/p41-vision-e2e.json
 work/
