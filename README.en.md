@@ -4,7 +4,18 @@
 > A visual research desk that searches public-domain paintings and film stills,
 > reads verifiable analysis of them, and turns a selection into a creation brief.
 
-[中文](./README.md) · [Architecture & data flow](./docs/ARCHITECTURE.md) · [Agent Skill](./skill/visual-ancestry/SKILL.md)
+[中文](./README.md) · [Architecture & data flow](./docs/ARCHITECTURE.md) · [Acceptance report](./docs/ACCEPTANCE-REPORT.md) · [Demo script](./docs/DEMO-SCRIPT.md) · [Agent Skill](./skill/visual-ancestry/SKILL.md)
+
+![Home, "album" scheme: 15 works in the first screen at 1440×900, images occupy 73% of it](./docs/media/album-1-home.png)
+
+<p align="center">
+  <img src="./docs/media/album-2-search-results.png" width="49%" alt="Search results with scores and match reasons">
+  <img src="./docs/media/album-4-create-picks.png" width="49%" alt="CREATE reference picker: the carried-over reference sits first and selected">
+</p>
+
+<p align="center">
+  <img src="./docs/media/album-1-home-mobile.png" width="32%" alt="390px, two columns">
+</p>
 
 ---
 

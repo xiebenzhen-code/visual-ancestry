@@ -4,7 +4,18 @@
 > A visual research desk that searches public-domain paintings and film stills,
 > reads verifiable analysis of them, and turns a selection into a creation brief.
 
-[English](./README.en.md) · [架构与数据流](./docs/ARCHITECTURE.md) · [Agent Skill](./skill/visual-ancestry/SKILL.md)
+[English](./README.en.md) · [架构与数据流](./docs/ARCHITECTURE.md) · [验收报告](./docs/ACCEPTANCE-REPORT.md) · [演示脚本](./docs/DEMO-SCRIPT.md) · [Agent Skill](./skill/visual-ancestry/SKILL.md)
+
+![首页「画册」界面：1440×900 首屏 15 件作品，图像占首屏 73%](./docs/media/album-1-home.png)
+
+<p align="center">
+  <img src="./docs/media/album-2-search-results.png" width="49%" alt="搜索结果：命中带评分与理由">
+  <img src="./docs/media/album-4-create-picks.png" width="49%" alt="CREATE 参考选择：TaskContext 参考排在最前并处于选中态">
+</p>
+
+<p align="center">
+  <img src="./docs/media/album-1-home-mobile.png" width="32%" alt="390px 手机双列">
+</p>
 
 ---
 
