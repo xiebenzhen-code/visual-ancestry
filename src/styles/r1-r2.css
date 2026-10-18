@@ -1,0 +1,164 @@
+/* R1.0-R2 — Principle Selection & Prompt Translation styles.
+   KEEP / REMOVE editor + layered prompt output. Uses the project's existing
+   design tokens (light theme) so CREATE keeps its established look. */
+
+.principle-editor {
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.principle-editor h3 {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.principle-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+
+.principle-row:first-of-type {
+  border-top: none;
+}
+
+.principle-label {
+  flex: 0 0 84px;
+  font-size: 13px;
+  color: var(--soft-ink);
+}
+
+.principle-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.principle-choice {
+  padding: 3px 8px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.principle-choice:hover:not(:disabled) {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.principle-choice.is-on[data-principle-action="keep"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.principle-choice.is-on[data-principle-action="remove"] {
+  border-color: var(--red);
+  background: var(--red);
+  color: var(--paper);
+}
+
+.principle-choice:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.principle-editor .quiet-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ---- layered prompt output ---- */
+
+.intent-notes {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
+.intent-notes .intent-note {
+  color: var(--muted);
+}
+
+.prompt-section {
+  margin: 12px 0 0;
+}
+
+.prompt-section h4 {
+  margin: 0 0 6px;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.prompt-section .field-block p.prompt-negative {
+  color: var(--red);
+}
+
+.prompt-conflicts {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--red);
+  background: rgba(169, 50, 40, 0.06);
+}
+
+.prompt-conflicts h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.prompt-conflicts ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--soft-ink);
+}
+
+.prompt-skipped {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.prompt-skipped ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.final-prompt-body {
+  margin: 12px 0 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line-strong);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--soft-ink);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 420px) {
+  .principle-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .principle-label {
+    flex: none;
+  }
+}

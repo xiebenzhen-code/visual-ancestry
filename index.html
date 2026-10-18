@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN" data-skin="album">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Visual Ancestry / Frame Atlas</title>
+    <meta
+      name="description"
+      content="A responsive visual research desk connecting public-domain paintings with cinematic translation notes."
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2311110f'/%3E%3Cpath d='M6 8h20v16H6z' fill='none' stroke='%23e7dcc8' stroke-width='2'/%3E%3Cpath d='M10 12h12M10 16h7M10 20h10' stroke='%23d03d2f' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./src/styles/main.css" />
+    <link rel="stylesheet" href="./src/styles/phase2.css" />
+    <link rel="stylesheet" href="./src/styles/feed.css" />
+    <link rel="stylesheet" href="./src/styles/shell.css" />
+    <link rel="stylesheet" href="./src/styles/v5.css" />
+    <link rel="stylesheet" href="./src/styles/memory.css" />
+    <link rel="stylesheet" href="./src/styles/r1-r1.css" />
+    <link rel="stylesheet" href="./src/styles/r1-r2.css" />
+    <link rel="stylesheet" href="./src/styles/album.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#index" aria-label="Visual Ancestry 首页">
+          <span class="brand-mark">VA</span>
+          <span>
+            <strong>Visual Ancestry</strong>
+            <small>Frame Atlas</small>
+          </span>
+        </a>
+        <button class="mobile-menu-trigger" id="mobile-menu-trigger" type="button" aria-label="展开菜单" aria-expanded="false">≡</button>
+        <nav class="main-nav" aria-label="主导航">
+          <a href="#index" data-route="index">参考</a>
+          <a href="#memory" data-route="memory">作品记忆</a>
+          <a href="#eye" data-route="eye">审美记忆</a>
+        </nav>
+        <button class="top-search-trigger" id="top-search-trigger" type="button" aria-label="搜索">⌕</button>
+      </header>
+
+      <!-- Global search layer: expands below the topbar on desktop,
+           full-screen sheet on mobile. Rendered by src/components/searchLayer.js -->
+      <div class="search-layer" id="search-layer" hidden>
+        <div class="search-layer-backdrop" data-search-close></div>
+        <div class="search-layer-panel" role="dialog" aria-label="搜索">
+          <div class="search-layer-input-row">
+            <input id="global-search" class="search-layer-input" type="search"
+              placeholder="搜索作品、电影、色彩、氛围…" autocomplete="off" />
+            <button class="search-layer-close" type="button" data-search-close aria-label="关闭">ESC</button>
+          </div>
+          <div class="search-layer-status" id="search-layer-status"></div>
+          <div class="search-layer-chips" id="search-layer-chips"></div>
+          <div class="search-layer-results" id="search-layer-results"></div>
+        </div>
+      </div>
+
+      <main id="app" tabindex="-1"></main>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

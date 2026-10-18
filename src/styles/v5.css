@@ -1,0 +1,1736 @@
+/* V5 — Art Book × Exhibition Catalogue × Visual Archive */
+
+:root {
+  --paper: #f4efe3;
+  --paper-deep: #e9dfcd;
+  --ink: #11110f;
+  --soft-ink: #37332d;
+  --muted: #7a7368;
+  --line: rgba(37, 33, 27, 0.16);
+  --line-strong: rgba(37, 33, 27, 0.34);
+  --red: #7a4538;
+}
+
+body {
+  background:
+    linear-gradient(rgba(37, 33, 27, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 33, 27, 0.022) 1px, transparent 1px),
+    var(--paper);
+  background-size: 36px 36px;
+  font-size: 14px;
+  overflow-x: clip;
+}
+
+html {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body.search-open {
+  overflow: hidden;
+}
+
+/* ---------- Small Exhibition Shell ---------- */
+
+.topbar {
+  height: 52px;
+  padding: 0 clamp(18px, 3vw, 44px);
+  gap: 22px;
+  background: rgba(244, 239, 227, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  gap: 0;
+}
+
+.brand-mark,
+.brand small {
+  display: none;
+}
+
+.brand strong {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.main-nav {
+  gap: 18px;
+}
+
+.main-nav a {
+  border: 0;
+  padding: 2px 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.main-nav a.is-active,
+.main-nav a:hover {
+  border: 0;
+  color: var(--ink);
+}
+
+.top-search-trigger {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mobile-menu-trigger {
+  display: none;
+  margin-left: auto;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 25px;
+  line-height: 1;
+}
+
+/* ---------- Exhibition Home ---------- */
+
+.exhibition-home {
+  min-height: calc(100vh - 52px);
+  padding: clamp(28px, 5vw, 70px) clamp(18px, 5vw, 88px) 34px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.exhibition-masthead {
+  display: grid;
+  gap: 6px;
+  margin-bottom: clamp(34px, 6vw, 86px);
+}
+
+.exhibition-masthead h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.2vw, 40px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.exhibition-masthead p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+
+.exhibition-hang {
+  display: grid;
+  grid-template-columns: 1.2fr 0.24fr 0.68fr 0.2fr 0.75fr;
+  grid-template-rows: auto auto auto;
+  gap: clamp(22px, 4vw, 62px);
+  align-items: start;
+}
+
+.exhibit-work {
+  position: relative;
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+
+.exhibit-work-1 {
+  grid-column: 1 / 4;
+  grid-row: 1;
+}
+
+.exhibit-work-2 {
+  grid-column: 4 / 6;
+  grid-row: 1 / 3;
+  margin-top: 8vh;
+}
+
+.exhibit-work-3 {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  margin-top: 4vh;
+}
+
+.exhibit-work-4 {
+  grid-column: 3 / 5;
+  grid-row: 3;
+  margin-top: 2vh;
+}
+
+.exhibit-work-5 {
+  grid-column: 5;
+  grid-row: 3;
+  margin-top: 13vh;
+}
+
+.exhibit-work .img-slot,
+.exhibit-work img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.exhibit-work .img-slot {
+  background: transparent;
+}
+
+.exhibit-work .img-unavailable,
+.entry-preview .img-unavailable {
+  display: none;
+}
+
+.exhibit-work img {
+  mix-blend-mode: multiply;
+}
+
+.exhibit-meta {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  max-width: min(230px, 92%);
+  border: 1px solid var(--line-strong);
+  background: rgba(244, 239, 227, 0.92);
+  padding: 8px 10px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.exhibit-work:hover .exhibit-meta,
+.exhibit-work.is-open .exhibit-meta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.exhibit-meta b,
+.exhibit-meta span {
+  display: block;
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.exhibit-meta b {
+  font-weight: 600;
+}
+
+.exhibition-count {
+  margin-top: clamp(20px, 3vw, 42px);
+  text-align: right;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.catalogue-index {
+  display: grid;
+  min-height: 58vh;
+  padding: clamp(42px, 7vw, 90px) clamp(18px, 5vw, 88px);
+}
+
+.catalogue-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 54px minmax(140px, 0.28fr) 1fr;
+  gap: clamp(14px, 2vw, 34px);
+  align-items: baseline;
+  border-top: 1px solid var(--line-strong);
+  padding: 24px 0;
+}
+
+.catalogue-entry:last-child {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.catalogue-entry span:first-child {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.catalogue-entry strong {
+  font-family: var(--serif);
+  font-size: clamp(18px, 1.7vw, 24px);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.catalogue-entry em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 13px;
+}
+
+.entry-preview {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: min(220px, 24vw);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: opacity 140ms ease;
+}
+
+.entry-preview .img-slot,
+.entry-preview img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.catalogue-entry:hover .entry-preview {
+  opacity: 1;
+}
+
+/* ---------- Explore owns search/filter/tool density ---------- */
+
+.explore-page {
+  padding: clamp(18px, 3vw, 48px);
+}
+
+.explore-head {
+  position: sticky;
+  top: 52px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--line-strong);
+  background: rgba(244, 239, 227, 0.96);
+  padding: 10px 0 12px;
+}
+
+.explore-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.explore-tabs button,
+.explore-filter-panel button {
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  padding: 2px 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.explore-tabs button:hover,
+.explore-tabs button.is-on,
+.explore-filter-panel button:hover,
+.explore-filter-panel button.is-on {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+.explore-filter-panel button:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.explore-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.explore-filter-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px 42px;
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0 26px;
+}
+
+.explore-filter-panel[hidden] {
+  display: none;
+}
+
+.explore-filter-panel h2 {
+  margin: 0 0 10px;
+  font-family: var(--sans);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.explore-filter-panel div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.explore-grid {
+  margin-top: clamp(24px, 4vw, 54px);
+}
+
+.explore-page .img-wrap,
+.explore-page .feed-tile {
+  background: transparent;
+}
+
+.explore-page .img-wrap img,
+.explore-page .img-slot img {
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.explore-page .tile-actions {
+  display: none;
+}
+
+/* ---------- Search Overlay ---------- */
+
+.search-layer-backdrop {
+  background: rgba(244, 239, 227, 0.78);
+}
+
+.search-layer-panel {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  background: rgba(244, 239, 227, 0.98);
+  padding: clamp(70px, 10vw, 120px) clamp(18px, 8vw, 120px) 48px;
+}
+
+.search-layer-input-row {
+  min-width: 0;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--ink);
+  padding: 18px 0;
+}
+
+.search-layer-input {
+  min-width: 0;
+  width: 100%;
+  font-size: clamp(28px, 4vw, 54px);
+  font-weight: 400;
+}
+
+.search-layer-close {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.search-layer-status {
+  margin: 14px 0 22px;
+  color: var(--muted);
+}
+
+.search-layer-chips button {
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
+  padding: 0 0 2px;
+}
+
+.search-layer-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: clamp(18px, 3vw, 44px);
+  min-width: 0;
+}
+
+.sresult {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+}
+
+.sresult * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sresult-img {
+  background: transparent;
+  overflow: visible;
+}
+
+.sresult-img img {
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.sresult-meta {
+  padding: 8px 0 0;
+}
+
+/* ---------- Global type scale corrections ---------- */
+
+.workflow-title {
+  font-size: clamp(24px, 3vw, 36px);
+}
+
+.workflow-section h2,
+.section-title {
+  font-size: clamp(18px, 2vw, 24px);
+}
+
+.hero,
+.hero-search {
+  display: none;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 760px) {
+  .topbar {
+    height: 54px;
+    padding: 0 16px;
+  }
+
+  .brand strong {
+    font-size: 18px;
+  }
+
+  .mobile-menu-trigger {
+    display: block;
+  }
+
+  .main-nav,
+  .top-search-trigger {
+    display: none;
+  }
+
+  body.menu-open .main-nav {
+    position: fixed;
+    top: 54px;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line-strong);
+    background: var(--paper);
+    padding: 8px 16px 16px;
+  }
+
+  body.menu-open .main-nav a {
+    border-bottom: 1px solid var(--line);
+    padding: 13px 0;
+  }
+
+  body.menu-open .top-search-trigger {
+    position: fixed;
+    top: 220px;
+    left: 16px;
+    z-index: 51;
+    display: block;
+    font-size: 18px;
+  }
+
+  .exhibition-home {
+    min-height: calc(100vh - 54px);
+    padding: 26px 16px 28px;
+  }
+
+  .exhibition-masthead h1 {
+    font-size: 28px;
+  }
+
+  .exhibition-hang {
+    display: grid;
+    grid-template-columns: 0.9fr 0.42fr;
+    gap: 26px 18px;
+  }
+
+  .exhibit-work-1 {
+    grid-column: 1 / 3;
+    grid-row: auto;
+  }
+
+  .exhibit-work-2 {
+    grid-column: 2;
+    grid-row: auto;
+    margin-top: 0;
+  }
+
+  .exhibit-work-3 {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 4vh;
+  }
+
+  .exhibit-work-4 {
+    grid-column: 1 / 3;
+    grid-row: auto;
+    margin-top: 0;
+  }
+
+  .exhibit-work-5 {
+    display: none;
+  }
+
+  .exhibit-meta {
+    display: none;
+  }
+
+  .exhibit-work.is-open .exhibit-meta {
+    display: block;
+  }
+
+  .catalogue-index {
+    padding: 38px 16px;
+  }
+
+  .catalogue-entry {
+    grid-template-columns: 42px 1fr;
+    gap: 8px 18px;
+  }
+
+  .catalogue-entry em {
+    grid-column: 2;
+  }
+
+  .entry-preview {
+    display: none;
+  }
+
+  .explore-head {
+    top: 0;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .explore-filter-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .explore-page .feed-grid {
+    column-count: 1;
+  }
+
+  .search-layer-panel {
+    padding: 58px 18px 30px;
+  }
+
+  .search-layer-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Frame Atlas core rebuild (edition home / find / create) ---------- */
+
+.edition-cover {
+  max-width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: clamp(14px, 1.8vw, 24px) clamp(14px, 2.2vw, 34px) 64px;
+}
+
+.edition-masthead {
+  text-align: center;
+  margin-bottom: clamp(14px, 2.2vw, 24px);
+}
+
+.edition-kicker {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: var(--red);
+}
+
+.edition-masthead h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* ---------- homepage FIND entry ----------
+   One box, one visible medium filter, a few real examples. It never renders
+   results itself: submitting hands query + medium to #find. */
+.home-find {
+  max-width: 900px;
+  margin: 0 auto clamp(16px, 2.4vw, 26px);
+}
+
+.home-find-row {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+}
+
+.home-find-row:focus-within {
+  border-color: var(--ink);
+}
+
+.home-find-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 13px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--ink);
+}
+
+.home-find-input:focus {
+  outline: none;
+}
+
+.home-find-run {
+  flex: 0 0 auto;
+  border: 0;
+  border-left: 1px solid var(--line-strong);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0 24px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+}
+
+.home-find-run:hover {
+  background: var(--red);
+}
+
+.home-find-media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.home-find-media-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.home-find-media button {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--soft-ink);
+  cursor: pointer;
+}
+
+.home-find-media button.is-on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.home-find-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.home-find-examples .sug-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.home-find-examples button {
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--soft-ink);
+  cursor: pointer;
+}
+
+.home-find-examples button:hover {
+  border-style: solid;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.edition-masthead .small-nav {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.edition-masthead .small-nav a:hover {
+  color: var(--ink);
+}
+
+/* A dense wall, not a slideshow. CSS columns keep every plate at its ORIGINAL
+   aspect ratio (no uniform crop) while fitting many works into the first
+   screen. The column count adapts to the viewport, so how many plates are in
+   view follows screen size instead of being hard-coded. */
+.edition-plates {
+  columns: 5;
+  column-gap: clamp(10px, 1.2vw, 18px);
+}
+
+.edition-plates a.plate {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  break-inside: avoid;
+  margin: 0 0 clamp(10px, 1.2vw, 18px);
+}
+
+.plate figure {
+  margin: 0;
+  position: relative;
+}
+
+/* renderImg() already carries the artwork's own ratio on .img-slot. Letting the
+   height follow that ratio (instead of a fixed max-height) is what keeps every
+   plate uncropped. */
+.plate .img-slot,
+.plate .img-slot img {
+  height: auto;
+}
+
+.plate .img-slot {
+  background: var(--paper-deep);
+}
+
+.plate-info {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.plate-info strong {
+  display: block;
+  font-weight: 700;
+  color: var(--soft-ink);
+}
+
+.plate-info span {
+  display: block;
+}
+
+.plate-info em {
+  display: block;
+  font-style: normal;
+  opacity: 0.8;
+}
+
+/* Desktop: the caption only exists on hover/focus, so the default wall is
+   image-only. Touch devices never enter this block — there the caption stays in
+   normal flow BELOW the picture and can never cover it. */
+@media (hover: hover) and (pointer: fine) {
+  .plate-info {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 26px 10px 8px;
+    background: linear-gradient(to top, rgba(17, 17, 15, 0.88), rgba(17, 17, 15, 0));
+    color: #f2ebdd;
+    opacity: 0;
+    transition: opacity 0.16s ease;
+    pointer-events: none;
+  }
+
+  .plate-info strong,
+  .plate-info span,
+  .plate-info em {
+    color: inherit;
+  }
+
+  .plate:hover .plate-info,
+  .plate:focus-visible .plate-info {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1180px) {
+  .edition-plates {
+    columns: 3;
+  }
+}
+
+/* 手机仍然是参考墙：两列。单列会让首屏只剩一张图，退回「幻灯片」，
+   与「图片优先、首屏有密度」的目标相反。 */
+@media (max-width: 820px) {
+  .edition-plates {
+    columns: 2;
+  }
+}
+
+/* 又宽又矮的笔记本（1366×768、1440×768 一类）：6 列换取同样的首屏张数 ——
+   列数增加 → 单张变小 → 首屏可见作品数不随屏幕变矮而塌陷。
+   1341px 以上才升到 6 列：1280×800 用 5 列正好落在 12–16，6 列会挤成一片。
+   实测（qa/ui/probe.mjs）：1366×768 → 16 张；1280×800 → 14 张；1440×860 → 13 张。 */
+@media (min-width: 1341px) and (max-height: 800px) {
+  .edition-plates {
+    columns: 6;
+  }
+}
+
+/* The four verbs stay reachable, but as one quiet line. The first screen is
+   pictures plus the search box — no numbered product cards up top. */
+.edition-verbs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 28px;
+  margin-top: clamp(22px, 3.2vw, 40px);
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+}
+
+.edition-verbs a {
+  color: var(--soft-ink);
+  text-decoration: none;
+}
+
+.edition-verbs a:hover {
+  color: var(--red);
+}
+
+/* FIND */
+.find-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(20px, 3vw, 48px) clamp(16px, 2.6vw, 40px) 80px;
+}
+
+.find-page h1 {
+  margin: 0 0 20px;
+  font-family: var(--serif);
+  font-size: clamp(34px, 5vw, 64px);
+  font-weight: 500;
+  line-height: 1.02;
+}
+
+.find-modes {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.find-modes button {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--soft-ink);
+  cursor: pointer;
+}
+
+.find-modes button.is-on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+/* 媒介筛选在 find.js 里一直有标记，但 CSS 从未定义 .find-media*，于是长期以
+   浏览器默认样式出现。这里补齐，并沿用 FIND 模式按钮的同一套视觉语言。 */
+.find-media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.find-media-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.find-media button {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--soft-ink);
+  cursor: pointer;
+}
+
+.find-media button.is-on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.drop-zone {
+  display: block;
+  border: 1px dashed var(--line-strong);
+  padding: clamp(28px, 4vw, 48px);
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.drop-zone:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+#find-preview,
+#shoot-local-preview {
+  display: block;
+  max-width: 420px;
+  max-height: 320px;
+  margin: 16px auto 0;
+  border: 1px solid var(--line);
+}
+
+#find-preview[hidden],
+#shoot-local-preview[hidden] {
+  display: none;
+}
+
+.find-picks,
+.create-picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 12px 0 6px;
+}
+
+.find-picks button,
+.create-picks button,
+.create-picks a {
+  display: block;
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.find-picks button.is-on,
+.create-picks button.is-on {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* 只作用在卡片自己的比例外壳（直接子元素）。少了 `>` 时这条规则会连
+   renderImg() 放在 .img-slot 里的隐藏占位 span 一起命中，用同权重、
+   靠后的顺序把它的 display:none 盖掉 —— CREATE 的每张正常图片因此被
+   "图像暂不可用" 整块盖住。按钮卡（CREATE/FIND 的 picks）与链接卡
+   （SHOOT 的电影画面墙）共用同一套外壳。 */
+.find-picks button > span,
+.create-picks button > span,
+.create-picks a > span {
+  display: block;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.find-picks img,
+.create-picks img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.find-picks em,
+.create-picks em {
+  display: block;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--soft-ink);
+}
+
+/* 真正解码失败的作品从 CREATE 参考墙移除，不留一张「图像暂不可用」的大卡。 */
+.create-picks button.is-dead {
+  display: none;
+}
+
+.create-picks-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+/* STEP 3 — SHOOT 电影画面墙：链接卡与 picks 共用网格，多一行导演署名。 */
+.film-picks a em {
+  padding-bottom: 2px;
+}
+
+.film-ref-card small {
+  display: block;
+  padding: 0 10px 10px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* 电影画面详情页：来源描述是可以逐字核对的原文，限制行宽便于阅读。 */
+.film-source-desc {
+  max-width: 62ch;
+}
+
+/* STEP 4 — CREATE 导出区。默认禁用，只有真的生成过 Prompt 才可用。 */
+.prompt-export {
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.prompt-export h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+}
+
+.prompt-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prompt-export-actions button[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.prompt-export .quiet-note {
+  margin: 8px 0 0;
+}
+
+.intent-card {
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  padding: 18px 22px;
+}
+
+.intent-card h2 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--red);
+}
+
+.intent-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 13px;
+  color: var(--soft-ink);
+}
+
+.intent-card ul li::before {
+  content: "— ";
+  color: var(--muted);
+}
+
+/* 结果以作品图片为主：每个命中是一张卡片，图片占满卡片宽度并保持原始比例，
+   文字退到图片下方作次要信息。窄屏由 auto-fill 自动落到单列。 */
+.find-results {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.find-hit {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.find-hit:hover {
+  border-color: var(--ink);
+}
+
+/* 图片槽的比例由 find.js 内联写入（aspectRatioCss），高度交给比例本身，
+   因此这里不设 min-height，也不会出现统一裁切。 */
+.find-hit > span {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.find-hit img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.find-hit > div {
+  padding: 12px 14px 16px;
+}
+
+.find-hit strong {
+  font-size: 14px;
+}
+
+.find-hit em {
+  display: block;
+  margin: 2px 0 6px;
+  font-style: normal;
+  color: var(--soft-ink);
+  font-size: 12px;
+}
+
+.find-hit small {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--red);
+}
+
+.find-hit ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--soft-ink);
+}
+
+.find-hit ul li::before {
+  content: "· ";
+  color: var(--muted);
+}
+
+@media (max-width: 680px) {
+  .find-results {
+    grid-template-columns: 1fr;
+  }
+
+  /* Narrow screens: reference picks form at most 2 columns, never 3+,
+     so tiles stay wide enough for the title to read. */
+  .create-picks,
+  .find-picks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 参考候选也是墙，不是幻灯片：极窄屏仍保持两列（卡片约 150–170px 宽，
+   标题仍可读）。只有真正的窄条（≤340px）才退回单列。 */
+@media (max-width: 340px) {
+  .create-picks,
+  .find-picks {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* CREATE language sheet */
+.language-sheet {
+  margin-top: 28px;
+  border: 1px solid var(--line);
+  padding: 22px 26px;
+}
+
+.language-sheet h2 {
+  margin: 0 0 16px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--red);
+}
+
+.language-line {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.language-line input {
+  margin-top: 4px;
+  accent-color: var(--red);
+}
+
+.language-line strong {
+  display: block;
+  font-size: 14px;
+}
+
+.language-line em {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--soft-ink);
+  line-height: 1.5;
+}
+
+.language-line input:not(:checked) + span {
+  opacity: 0.35;
+}
+
+#make-prompt {
+  margin-top: 18px;
+}
+
+#made-prompt {
+  margin-top: 18px;
+}
+
+/* Detail relations */
+.relation-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.relation-row:hover {
+  background: var(--paper-deep);
+}
+
+.relation-thumb {
+  display: block;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.relation-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.relation-meta strong {
+  font-size: 13px;
+}
+
+.relation-meta small {
+  display: block;
+  margin: 2px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--red);
+}
+
+.relation-meta ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--soft-ink);
+}
+
+.relation-meta ul li::before {
+  content: "· ";
+  color: var(--muted);
+}
+
+.detail-head .d-artistline {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--red);
+}
+
+/* ---------- Frame Atlas V5.1 — Local Image → VisualIntent ---------- */
+
+.find-image-progress {
+  margin-top: 14px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.find-image-progress span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border: 1.5px solid var(--line);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: fa-spin 0.8s linear infinite;
+  vertical-align: -1px;
+}
+
+@keyframes fa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.find-image-error {
+  margin-top: 12px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--wash);
+  border-left: 3px solid var(--red);
+  border-radius: 2px;
+}
+
+.intent-card-image .vision-summary {
+  margin: 2px 0 0;
+  font-family: var(--serif);
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.finder-why {
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.finder-why summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+
+.finder-why-body {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.finder-reason-line strong {
+  font-size: 12.5px;
+}
+
+.finder-reason-line small {
+  display: block;
+  margin: 1px 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.finder-reason-line ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: var(--soft-ink);
+}
+
+/* ---- 名称命中区 FIND name matches ----
+   与视觉结果分开：这里的依据是名称文本比对，不是 VisualIntent 分数，也不含
+   任何视觉相似度。整区默认隐藏——没有名称命中时不留空壳、不占空间。 */
+.find-name-block {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+  display: grid;
+  gap: 12px;
+}
+
+.find-name-title {
+  margin: 0;
+  font-size: 15px;
+  color: var(--soft-ink);
+}
+
+.find-name-block > .quiet-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--soft-ink);
+}
+
+.find-name-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.find-name-hit {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  text-decoration: none;
+}
+
+.find-name-hit:hover {
+  border-color: var(--ink);
+}
+
+/* 图片槽比例由 JS 内联写入（aspectRatioCss），这里只给宽度：保持原比例。 */
+.find-name-hit > span {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.find-name-hit img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.find-name-hit > div {
+  padding: 10px 14px 14px;
+}
+
+/* 文字层只作用于卡片自己的文案 div：renderImg 在 .img-slot 里还带一个隐藏的
+   <small> 占位说明（图像暂不可用），不能被这里的字号/颜色带上。 */
+.find-name-hit > div strong {
+  display: block;
+  font-size: 14px;
+}
+
+.find-name-hit > div em {
+  display: block;
+  margin: 2px 0 6px;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--soft-ink);
+}
+
+.find-name-hit > div small {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ---- 远程渠道参考区 FIND remote references ----
+   独立成块并与本地结果分隔：依据类型不同（馆方分类文本 vs VisualIntent
+   评分），混排会让用户误以为远程件也经过了视觉分析。 */
+.find-remote {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hairline);
+  /* 远程卡片沿用本地结果的卡片语言（图片在上、文字在下），但分栏更密：
+     标题与说明占满整行，只有卡片参与排布，避免出现整幅宽度的巨图。 */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.find-remote > .find-remote-title,
+.find-remote > .quiet-note {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+/* STEP 2/3/4 — 远程电影候选卡。
+   三条核验轴与四个动作必须一眼可见：核验状态被折叠起来等于没有核验，
+   动作藏在 hover 里等于没有纠正入口。 */
+.find-remote > .find-remote-summary {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.find-hit-film {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.find-hit-film > span {
+  display: block;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.find-hit-film img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.find-remote-body strong,
+.find-remote-body em {
+  display: block;
+}
+
+.find-remote-nature {
+  margin: 4px 0;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.find-remote-axes {
+  margin: 4px 0;
+  padding-left: 16px;
+  font-size: 10px;
+  line-height: 1.55;
+  color: var(--soft-ink);
+}
+
+.find-remote-evidence {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.find-remote-prov {
+  display: block;
+  margin-top: 4px;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.find-remote-corrected {
+  margin: 4px 0;
+  font-size: 10px;
+  color: var(--red);
+}
+
+.find-remote-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.find-remote-actions .ghost-action {
+  font-size: 10px;
+  padding: 3px 7px;
+}
+
+.find-remote-flag {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.find-remote-flag label {
+  display: grid;
+  gap: 3px;
+}
+
+.find-remote-flag textarea {
+  width: 100%;
+  font: inherit;
+  padding: 4px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+
+.find-remote-flash {
+  margin: 6px 0 0;
+  font-size: 10px;
+  color: var(--soft-ink);
+}
+
+.find-remote-flash.is-error {
+  color: var(--red);
+}
+
+.find-remote-title {
+  font-size: 15px;
+  margin: 0 0 6px;
+  color: var(--soft-ink);
+}
+
+.find-remote .quiet-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--soft-ink);
+}
+
+.find-hit-remote {
+  border-style: dashed;
+}
+
+.find-hit-remote::after {
+  content: "↗";
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--soft-ink);
+}
+
+/* 390px：远程卡与本地卡同宽单列，不引入横向滚动。 */
+@media (max-width: 480px) {
+  .find-remote {
+    margin-top: 22px;
+    padding-top: 16px;
+  }
+
+  .find-hit-remote > div {
+    min-width: 0;
+  }
+}

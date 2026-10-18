@@ -1,0 +1,886 @@
+/* memory.css — Personal Visual Archive prototype (P5.1.5).
+   Three pages only; styled with the existing design tokens. */
+
+.memory-head {
+  margin-bottom: 2rem;
+}
+
+.memory-head .kicker {
+  letter-spacing: 0.14em;
+  color: var(--red);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.memory-head h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+}
+
+.memory-head p {
+  color: var(--soft-ink);
+  max-width: 42em;
+}
+
+.memory-cta {
+  display: inline-block;
+  margin: 1rem 0 0.25rem;
+  padding: 0.6rem 1.1rem;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+  font-size: 0.92rem;
+  border-radius: 3px;
+}
+
+.memory-cta:hover {
+  background: var(--red);
+}
+
+.memory-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.memory-search-cta {
+  display: inline-block;
+  margin: 1rem 0 0.25rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.92rem;
+  border-radius: 3px;
+}
+
+.memory-search-cta:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* P5.3.1 — profile CTA + Visual Identity Page (no dashboard, no charts) */
+.memory-profile-cta {
+  display: inline-block;
+  margin: 1rem 0 0.25rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px dashed var(--soft-ink);
+  color: var(--soft-ink);
+  text-decoration: none;
+  font-size: 0.92rem;
+  border-radius: 3px;
+}
+
+.memory-profile-cta:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.profile-headline {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.profile-body {
+  max-width: 46em;
+}
+
+.profile-section {
+  margin: 0 0 2rem;
+  padding: 1.25rem 1.4rem;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.profile-section .section-title {
+  margin: 0 0 0.9rem;
+}
+
+.profile-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px dotted var(--line, rgba(0, 0, 0, 0.1));
+}
+
+.profile-line:last-child {
+  border-bottom: none;
+}
+
+.profile-sentence {
+  margin: 0;
+  color: var(--ink);
+}
+
+.profile-fraction {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: var(--soft-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-atmosphere {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.profile-unavailable ul {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--soft-ink);
+}
+
+.profile-unavailable li {
+  margin-bottom: 0.4rem;
+}
+
+.memory-back {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: var(--soft-ink);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--line-strong);
+}
+
+.memory-back:hover {
+  color: var(--red);
+}
+
+/* ---- index grid ----------------------------------------------------------- */
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.memory-card {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.memory-card-media {
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.memory-card-media img,
+.memory-detail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.memory-card-placeholder,
+.memory-detail-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--serif);
+  font-size: 2.2rem;
+  color: var(--muted);
+  background: var(--paper-deep);
+}
+
+.memory-card-body {
+  padding: 0.85rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.memory-card-body h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  line-height: 1.3;
+}
+
+.memory-card-body h3 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.memory-card-body h3 a:hover {
+  color: var(--red);
+}
+
+.memory-card-meta {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* ---- chips ---------------------------------------------------------------- */
+.memory-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.memory-chip {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.22rem 0.62rem;
+  font-size: 0.78rem;
+  color: var(--soft-ink);
+  background: var(--paper);
+}
+
+.memory-card-chips {
+  flex: 1;
+}
+
+/* ---- delete --------------------------------------------------------------- */
+.memory-delete {
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.memory-delete:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.memory-card-delete {
+  margin-top: auto;
+}
+
+/* ---- P5.1.8 failed card / retry ------------------------------------------- */
+.memory-card-failed {
+  border-color: var(--red);
+  background: var(--paper);
+}
+
+.memory-card-media {
+  position: relative;
+}
+
+.memory-card-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.memory-card-error {
+  margin: 0.1rem 0 0;
+  font-size: 0.82rem;
+  color: var(--red);
+  line-height: 1.45;
+}
+
+.memory-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.memory-retry {
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  border: 1px solid var(--red);
+  background: var(--red);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.memory-retry:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.memory-count-failed {
+  color: var(--red);
+}
+
+/* ---- P5.1.8 batch upload --------------------------------------------------- */
+.batch-status {
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.92rem;
+  color: var(--soft-ink);
+  background: var(--paper);
+}
+
+.batch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.batch-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-bottom: 1px dashed var(--line);
+  padding: 0.45rem 0.2rem;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.batch-item-name {
+  font-family: var(--sans);
+  color: var(--ink);
+  min-width: 8em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 14em;
+}
+
+.batch-item-ok {
+  color: var(--soft-ink);
+}
+
+.batch-item-ok a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--line-strong);
+}
+
+.batch-item-fail {
+  color: var(--red);
+}
+
+.batch-item-working {
+  color: var(--muted);
+}
+
+.batch-item-pending {
+  color: var(--muted);
+}
+
+.memory-dropzone-count {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--red);
+}
+
+/* ---- upload form ---------------------------------------------------------- */
+.memory-form {
+  margin-top: 1rem;
+  max-width: 44em;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.memory-dropzone {
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 6px;
+  padding: 2.4rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  color: var(--soft-ink);
+  background: var(--paper);
+  transition: border-color 0.15s;
+}
+
+.memory-dropzone:hover {
+  border-color: var(--red);
+}
+
+.memory-dropzone-hint {
+  font-size: 1rem;
+}
+
+.memory-dropzone-hint small {
+  color: var(--muted);
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.memory-preview {
+  max-width: 320px;
+  max-height: 240px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  display: block;
+}
+
+.memory-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .memory-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.memory-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--soft-ink);
+}
+
+.memory-form input[type="text"],
+.memory-form select {
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.95rem;
+  font-family: var(--sans);
+}
+
+.memory-form input:focus,
+.memory-form select:focus {
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
+}
+
+.memory-submit {
+  align-self: flex-start;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 3px;
+  padding: 0.7rem 1.4rem;
+  font-size: 0.98rem;
+  cursor: pointer;
+}
+
+.memory-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.memory-form-error {
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 0.7rem 0.9rem;
+  border-radius: 3px;
+  font-size: 0.9rem;
+}
+
+/* ---- detail --------------------------------------------------------------- */
+.memory-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 720px) {
+  .memory-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+.memory-detail-media {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.memory-detail-body .section-title {
+  margin-top: 0;
+}
+
+/* ---- P5.2.2 search builder（按感觉找回）---------------------------------- */
+.search-builder {
+  margin-top: 1.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 1.1rem 1.2rem 1.2rem;
+  background: var(--paper);
+  max-width: 44em;
+}
+
+.search-builder-title {
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
+  color: var(--soft-ink);
+  font-family: var(--serif);
+}
+
+.search-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.search-group-label {
+  min-width: 3.2em;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.search-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.search-option {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--soft-ink);
+  font-size: 0.82rem;
+  padding: 0.28rem 0.75rem;
+  cursor: pointer;
+}
+
+.search-option:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.search-option.is-selected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.search-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.search-clear {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.88rem;
+  padding: 0.55rem 1rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.search-clear:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.search-outcome {
+  margin-top: 1.2rem;
+  max-width: 44em;
+}
+
+.search-outcome-note {
+  color: var(--soft-ink);
+  font-size: 0.95rem;
+}
+
+.search-outcome-none {
+  border: 1px dashed var(--line-strong);
+  border-radius: 6px;
+  padding: 1rem 1.1rem;
+  color: var(--soft-ink);
+  font-size: 0.92rem;
+  background: var(--paper);
+}
+
+.search-results {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.1rem;
+}
+
+/* ---- P5.2.2 retrieval card（结果卡片）------------------------------------ */
+.retrieval-card {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.retrieval-card-media {
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.retrieval-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.retrieval-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--serif);
+  font-size: 2rem;
+  color: var(--muted);
+  background: var(--paper-deep);
+}
+
+.retrieval-card-body {
+  padding: 0.85rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.retrieval-card-body h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.3;
+}
+
+.retrieval-card-body h3 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.retrieval-card-body h3 a:hover {
+  color: var(--red);
+}
+
+.retrieval-card-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.retrieval-card-why {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  color: var(--soft-ink);
+  letter-spacing: 0.04em;
+}
+
+.retrieval-reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.retrieval-reasons li {
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.retrieval-reasons li::before {
+  content: "✓ ";
+  color: var(--red);
+}
+
+.retrieval-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+
+.retrieval-field {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--paper);
+}
+
+.retrieval-score {
+  margin: auto 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ---- P5.6 · Visual Assistant (#memory/assistant) -------------------------- */
+/* 不是聊天窗口：三张任务卡，无对话线程，无 AI 生成区。 */
+.memory-assistant-cta {
+  display: inline-block;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  padding: 0.55rem 1.1rem;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.memory-assistant-cta:hover { border-color: var(--accent, #d4a24e); }
+
+.assistant-tasks {
+  display: grid;
+  gap: 1.2rem;
+  margin-top: 2rem;
+}
+
+.assistant-card {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1.2rem 1.4rem;
+  background: var(--paper);
+}
+
+.assistant-card-title {
+  font-size: 1.05rem;
+  margin: 0 0 0.8rem;
+}
+
+.assistant-card-input {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.assistant-input {
+  flex: 1 1 260px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.5rem 0.8rem;
+  font: inherit;
+  background: transparent;
+  color: inherit;
+}
+
+.assistant-output {
+  margin-top: 1rem;
+}
+
+.assistant-empty {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.assistant-summary {
+  font-size: 1rem;
+  margin: 0 0 0.6rem;
+}
+
+.assistant-evidence {
+  margin: 0 0 0.6rem;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.assistant-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0.4rem 0 0;
+}
+
+.assistant-query {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.8rem;
+}
+
+.assistant-results {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.assistant-direction {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.8rem;
+}
+
+.assistant-dir-row {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.2rem 0;
+  font-size: 0.9rem;
+}
+
+.assistant-dir-label {
+  flex: 0 0 2.6em;
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding-top: 0.1em;
+}
+
+.assistant-unavailable summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+.assistant-unavailable ul { padding-left: 1.1rem; color: var(--muted); font-size: 0.82rem; }
+
+/* ---- P5.8.1 · archive lifecycle bar --------------------------------------- */
+.memory-archive-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.memory-archive-btn {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.35rem 0.8rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.memory-archive-btn:hover { border-color: var(--accent, #d4a24e); }
+.memory-archive-danger:hover { border-color: #c0564e; color: #c0564e; }
+.memory-archive-msg { font-size: 0.82rem; color: var(--muted); }
+.memory-archive-msg-danger { color: #c0564e; }

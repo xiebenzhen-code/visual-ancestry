@@ -1,0 +1,51 @@
+/* R1.0-R1 — Intent Continuity Repair styles.
+   Task-context card (CREATE) + intent notes inside generated prompts.
+   Uses the project's existing design tokens (light theme). */
+
+.task-context-card {
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--red);
+  background: var(--paper);
+}
+
+.task-context-card .kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.task-context-card h2 {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.task-context-card ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  color: var(--soft-ink);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.task-context-card .quiet-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Intent annotation inside a generated prompt line: why this reference
+   matches the current task intent, or a conflict warning. */
+.intent-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-style: normal;
+  color: var(--red);
+}
