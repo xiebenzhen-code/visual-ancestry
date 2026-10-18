@@ -112,30 +112,49 @@ export function searchLocal(query) {
 
 export async function searchRemote(query, { limit = 24 } = {}) {
   const cached = getCachedRemote(query);
-  if (cached) return cached.slice(0, limit);
+  if (cached) {
+    // An entry only exists when every enabled channel answered, so a cache hit
+    // means "complete" — clear the flag instead of inheriting an old failure.
+    remoteUnavailable = false;
+    return cached.slice(0, limit);
+  }
 
   remoteUnavailable = false;
+  const enabled = adapters.filter((a) => a.enabled);
+  const per = Math.max(1, Math.ceil(limit / (enabled.length || 1)));
+
+  // Channels run concurrently. Sequential calls made one hanging museum add its
+  // full timeout to the wait of every search (measured: one hung channel turned a
+  // search into 22.8s of dead time). Each channel keeps its own hard timeout, and
+  // Promise.allSettled preserves adapter order so the merge stays deterministic.
+  const settled = await Promise.allSettled(
+    enabled.map((adapter) => withTimeout(adapter.search(query, { limit: per })))
+  );
+
   const out = [];
   const seen = new Set();
-  const per = Math.max(1, Math.ceil(limit / adapters.filter((a) => a.enabled).length || 1));
-  for (const adapter of adapters) {
-    if (!adapter.enabled) continue;
-    try {
-      const raws = await withTimeout(adapter.search(query, { limit: per }));
-      for (const raw of raws) {
-        if (!raw) continue;
-        const work = normalizeArtwork({ ...raw, analysisLevel: 0 });
-        if (seen.has(work.key)) continue;
-        seen.add(work.key);
-        remotePool.set(work.key, work);
-        out.push(work);
-      }
-    } catch (error) {
+  const failed = [];
+  settled.forEach((result, index) => {
+    const adapter = enabled[index];
+    if (result.status !== "fulfilled") {
+      failed.push(adapter.source);
       remoteUnavailable = true;
-      console.warn(`[artService] ${adapter.source} search failed:`, error.message);
+      console.warn(`[artService] ${adapter.source} search failed:`, result.reason?.message ?? result.reason);
+      return;
     }
-  }
-  storeCachedRemote(query, out);
+    for (const raw of result.value || []) {
+      if (!raw) continue;
+      const work = normalizeArtwork({ ...raw, analysisLevel: 0 });
+      if (seen.has(work.key)) continue;
+      seen.add(work.key);
+      remotePool.set(work.key, work);
+      out.push(work);
+    }
+  });
+
+  // Partial results must not be cached as if they were the full four-channel
+  // answer: a later cache hit would serve them for 24h with no failure notice.
+  if (failed.length === 0) storeCachedRemote(query, out);
   return out.slice(0, limit);
 }
 

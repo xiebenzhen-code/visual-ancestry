@@ -81,7 +81,22 @@ if (film.error) {
     }
   }
   const hasReviewReject = skipped.some((s) => String(s.why).includes("需要复查"));
-  console.log(`\n  断言5 导演字段保持 null 未被编造：${refs.every((r) => r.director === null) ? "PASS" : "FAIL"}`);
+  // 导演字段的诚实性要可证伪：每个导演值要么为空（null），要么能追溯到身份核验
+  // （verification.axes[0].status === "verified"），且不出现 "unknown"/空串之类
+  // 的占位伪装。早期这条断言要求「全部为 null」，导演核验功能上线后必然失败——
+  // 它验证的是功能缺失，不是诚实性。
+  const withDirector = refs.filter((r) => r.director);
+  const directorHonest = refs.every((r) =>
+    !r.director
+      ? r.director === null
+      : typeof r.director === "string" &&
+        r.director.trim().length > 0 &&
+        r.verification?.axes?.[0]?.status === "verified"
+  );
+  const tallyAgrees = film.verificationTally
+    ? film.verificationTally.directorVerified === withDirector.length
+    : true;
+  console.log(`\n  断言5 导演字段可追溯或如实为空：${directorHonest && tallyAgrees ? "PASS" : "FAIL"}（已核实 ${withDirector.length} / 如实留空 ${refs.length - withDirector.length}｜自报计数一致=${tallyAgrees}）`);
   console.log(`  断言6 可展示件均有图片与来源：${showable.every((r) => r.image?.url && r.sourceUrl) ? "PASS" : "FAIL"}`);
   if (hasReviewReject) console.log(`  断言7 真实数据上「分类需复查」硬过滤生效：PASS（已剔除 ${skipped.filter((s) => String(s.why).includes("需要复查")).length} 件）`);
 }

@@ -22,8 +22,10 @@ export const metAdapter = {
     // without it most hits are metadata-only records with no primaryImage.
     const sRes = await fetch(`${SEARCH_API}?q=${encodeURIComponent(query)}&hasImages=true`);
     if (!sRes.ok) throw new Error(`MET ${sRes.status}`);
-    const { objectIDs = [] } = await sRes.json();
-    const ids = objectIDs.slice(0, Math.min(limit * 4, 80));
+    const { objectIDs } = await sRes.json();
+    // Met answers a query with no matches as {"total":0,"objectIDs":null} — the
+    // null case, not undefined, so a bare default would still throw on .slice().
+    const ids = (objectIDs || []).slice(0, Math.min(limit * 4, 80));
     const out = [];
     for (const id of ids) {
       if (out.length >= limit) break;

@@ -1,8 +1,10 @@
-# Visual Ancestry
+# Visual Ancestry · Visual reference & creation toolkit
 
 > Find paintings with a filmmaker's eye; write shots with a painter's structure.
-> A visual research desk that searches public-domain paintings and film stills,
-> reads verifiable analysis of them, and turns a selection into a creation brief.
+
+Visual Ancestry connects art archives with open museum collections, helping creators find paintings and film stills by describing the shot they have in mind — then turn those references into a creation prompt and a shooting plan.
+
+**Find references → read the visual relationships → generate a prompt → keep what inspired you**
 
 [中文](./README.md) · [Architecture & data flow](./docs/ARCHITECTURE.md) · [Acceptance report](./docs/ACCEPTANCE-REPORT.md) · [Demo script](./docs/DEMO-SCRIPT.md) · [Agent Skill](./skill/visual-ancestry/SKILL.md)
 
@@ -19,17 +21,37 @@
 
 ---
 
-## What it is
+## What it helps you do
 
-A zero-framework web app plus a Node Agent Skill, sharing one implementation of
-retrieval and analysis.
+- **FIND · find references** — describe the frame you want ("cold night", "fog, vast empty space", "one figure, far away") or type a film title. Results come back with scores, reasons, source and licence.
+- **CREATE · write the prompt** — pick 2–4 references, generate a structured prompt, export Markdown or JSON. Only fields that genuinely exist are written.
+- **SHOOT · set the shot** — turn the visual principles in your references (composition, light, colour, space) into shooting guidance you can act on.
+- **MEMORY · keep the spark** — save the frames that matter into a personal visual archive you can export, move between machines, or clear. The data stays in your own browser.
 
-- **FIND** — search 51 public-domain paintings and film stills; optionally layer in
-  live Wikimedia Commons discovery.
-- **CREATE** — pick 2–4 references, generate a prompt, export Markdown.
-- **SHOOT** — turn selected visual principles into executable shooting guidance.
-- **MEMORY** — visual and aesthetic memory, exportable as a portable archive.
-- **Vision (optional)** — image upload analysis. **Without a provider it reports
+## Where the references come from
+
+- **Local archive** — public-domain paintings and film imagery, each one carrying its institution, its Commons file page and its licence.
+- **Open museum collections** — Art Institute of Chicago, The Met, Cleveland Museum of Art and Rijksmuseum, via their public keyless APIs.
+- **Wikimedia Commons** — film-still discovery, with identity verification and licence checks; anything that can't be verified is left blank rather than guessed.
+
+Results distinguish **visually relevant matches** from **text-metadata matches**: a work whose title happens to contain your keyword is never presented as "this is the shot you described".
+
+Known limit: the first connection to the Met API can take about 10 seconds and the adapter does not retry. That channel says so plainly when it fails; the other sources are unaffected.
+
+### Not available right now
+
+- **Vision image analysis is not connected** — no vision model is configured, so image upload and image search are genuinely unavailable (the server returns 503 and the UI says so). Nothing is faked.
+- **Animation retrieval is not finished** — the archive holds no animation assets, so choosing that medium gives an honest empty state.
+
+### What this release is
+
+This is a **GitHub source release**. There is **no hosted web app** in this repository; run it locally as described below.
+
+---
+
+## Technical notes
+
+The following is for people who want to read or change the code.
   unavailable; it never pretends to have worked.**
 
 ## Requirements
@@ -110,42 +132,28 @@ image understanding. See [`skill/visual-ancestry/SKILL.md`](./skill/visual-ances
 | `qa/` | Runnable acceptance harnesses (no browser profiles or screenshot evidence) |
 | `docs/` | Architecture notes and stage reports |
 
-## Capability boundaries (honest list)
+## Status (technical view)
 
 **Implemented and verified for real**
 
-- Retrieval across 51 local records (paintings + film images) with scores and match reasons
-- Live Wikimedia Commons film-image discovery with concept splitting and rights checks
-- Metropolitan Museum API retrieval (v1.1 search verified live; the old v1 search was
-  retired on 2026-10-01 and returns 410). Note: the first connection may time out after
-  ~10s and the adapter has no auto-retry; a failure is reported honestly for that channel
-  only and does not affect the others
-- 45 VisualIntent analysis records, each returned with provenance and source link
-- CREATE reference selection → prompt generation → copy / Markdown export
-- TaskContext reference carry-over between pages
-- Memory export and re-import
+- Local archive retrieval (51 paintings + 15 film images) with scores and reasons; Chinese and English
+  descriptions are first parsed into a structured VisualIntent, then scored
+- Open museum retrieval: AIC / Met / Cleveland / Rijksmuseum keyless APIs (Met uses the v1.1 search;
+  the old v1 endpoint was retired upstream)
+- Wikimedia Commons film discovery with multi-concept splitting, identity verification and licence checks
+- 45 VisualIntent records, returned with provenance and source links
+- CREATE: pick references → generate prompt → copy / export Markdown / JSON
+- TaskContext carry-over between pages, SHOOT guidance, memory export and re-import
+- Static path guard and budget fail-closed
 
-**Not finished / unavailable**
+Capabilities that are *not* available are listed under "Not available right now" above. Also:
+**no accounts, no cloud persistence, no native mobile shell** — memory data lives only in your own browser.
 
-- **Vision upload analysis (real provider)**: no real vision model is configured, so image
-  upload / image search is **actually unavailable** — the server returns 503 and the UI says
-  so honestly. The P3.1 mock security gate (intent schema validation, budget fail-closed,
-  static path guard) is genuinely verified, but that is **not** the same as real recognition
-  being available
-- **Film image coverage**: 15 images currently bundled (10 film frames / screenshots / stills
-  + 5 promotional images, each labelled by nature); not expanded further
-- **Animation**: the local archive has **no animation assets** and animation visual retrieval
-  is unavailable — choosing the animation medium yields an honest empty state rather than a
-  silent fall-through to "all"; this repo makes no claim of supporting animation retrieval
-- No accounts, no cloud persistence, no native mobile shell
+**Agent Skill boundaries**
 
-**Agent Skill capability boundaries**
-
-- Local capabilities (no external service): `search` (local archive), `intent` (reads the 45
-  VisualIntent records), `plan` (generates and exports a creation plan)
+- Local, no external service needed: `search`, `intent` (reads the 45 VisualIntent records), `plan`
 - Depends on external services: `vision-status` needs the server-side `/api/vision` (reports
-  unavailable honestly when unconfigured); `--external` retrieval needs Wikimedia Commons
-  access (roughly 9–20s)
+  unavailability honestly when unconfigured); `--external` retrieval needs Wikimedia Commons (roughly 9–20s)
 
 ## Asset licensing
 
@@ -161,6 +169,19 @@ pages and verification method are documented in
   redistribution
 - The licence verification scripts and evidence JSON ship with the repo
   (`qa/licence-audit/`) and can be reproduced from a fresh clone
+
+### Commercial use
+
+| Content | Licence | Commercial use |
+|---|---|---|
+| Source code | MIT | **Yes** (keep the copyright and licence notice) |
+| Bundled images (183 webp files) | Public domain / CC0 | **Yes**, no copyright restriction |
+| Live retrieval results (records and images fetched at runtime) | **Not covered by this repo's licence** — provided by each source under its own terms | Depends on the source's terms; this repo neither re-hosts nor mirrors them |
+| Generated prompts / shooting plans | Ship with the MIT code | **Yes**, but they are creative reference, not legal advice |
+
+Full wording in [`LICENSE-ASSETS.md` §6](./LICENSE-ASSETS.md). One caveat worth stating plainly:
+**MIT does not cover artwork copyright** — the code may be used commercially, but that does not make
+museum collections commercially reusable.
 
 ## Minimal real acceptance
 
