@@ -1,0 +1,205 @@
+{
+  "summary": {
+    "total": 15,
+    "pdConfirmed": 15,
+    "attention": 0,
+    "unverified": 0
+  },
+  "rows": [
+    {
+      "id": "film-nibelungen-siegfried",
+      "title": "尼伯龙根：西格弗里德",
+      "claimed": "pd",
+      "title_commons": "File:De foto toont een scene uit de film De Nibelungen, SFA006011032.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Unknown authorUnknown author"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-broken-blossoms",
+      "title": "凋谢的花朵",
+      "claimed": "pd",
+      "title_commons": "File:Gish and Barthelmess Broken Blossoms.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "United Artists"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-orphans-storm",
+      "title": "风暴中的孤儿",
+      "claimed": "pd",
+      "title_commons": "File:Orphans of the Storm (1921) 2.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "film still (D. W. Griffith Prod.)"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-ten-commandments",
+      "title": "十诫",
+      "claimed": "pd",
+      "title_commons": "File:Charles De Roche and Paul Swan in The Ten Commandments.png",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Cecil B. DeMille"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-sherlock-jr",
+      "title": "福尔摩斯二世",
+      "claimed": "pd",
+      "title_commons": "File:Silent film theater in Sherlock Jr., 1924.png",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Unknown photographerUnknown photographer"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-the-general",
+      "title": "将军号",
+      "claimed": "pd",
+      "title_commons": "File:The General 18.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "film screenshot (United Artists)"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-toll-of-the-sea",
+      "title": "海逝",
+      "claimed": "pd",
+      "title_commons": "File:Toll of the Sea screenshot 1.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Cinematography J.A. Ball / Editing by Hal C. Kern "
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-man-movie-camera",
+      "title": "持摄影机的人",
+      "claimed": "pd",
+      "title_commons": "File:Man with a movie camera 1929 3.png",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Dziga Vertov"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-pandoras-box",
+      "title": "潘多拉的魔盒",
+      "claimed": "pd",
+      "title_commons": "File:Louise Brooks + Pandora's Box + Act 7 18.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Unknown authorUnknown author"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-diary-lost-girl",
+      "title": "失落少女日记",
+      "claimed": "pd",
+      "title_commons": "File:Diary-of-a-Lost-Girl-louise-brooks.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Unknown authorUnknown author"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-gold-rush",
+      "title": "淘金记",
+      "claimed": "pd",
+      "title_commons": "File:The Gold Rush (SAYRE 17911).jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Unknown authorUnknown author"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-city-lights",
+      "title": "城市之光",
+      "claimed": "pd",
+      "title_commons": "File:City Lights promo still.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Still from City Lights, produced by the film studi"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-modern-times",
+      "title": "摩登时代",
+      "claimed": "pd",
+      "title_commons": "File:Chaplin - Modern Times.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "United Artists"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-s13-intolerance",
+      "title": "党同伐异",
+      "claimed": "pd",
+      "title_commons": "File:Griffith-intolerance.jpg",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Wisconsin Center for Film and Theater Research"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "film-s02-the-kid",
+      "title": "孩子",
+      "claimed": "pd",
+      "title_commons": "File:Still from Charles Chaplin - The Kid - 1921 - Charles Chaplin Productions - EYE FOT2413.JPG",
+      "commons": {
+        "license": "Public domain",
+        "copyrighted": "False",
+        "usageTerms": "Public domain",
+        "artist": "Charles Chaplin, The Kid, 1921, Charles Chaplin Pr"
+      },
+      "verdict": "PD-CONFIRMED"
+    }
+  ]
+}

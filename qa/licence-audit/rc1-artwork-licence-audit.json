@@ -1,0 +1,884 @@
+{
+  "summary": {
+    "total": 46,
+    "pdConfirmed": 46,
+    "attention": 0,
+    "unverified": 0
+  },
+  "rows": [
+    {
+      "id": "wanderer",
+      "file": "Caspar David Friedrich - Wanderer above the sea of fog.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Hamburger Kunsthalle / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Caspar David Friedrich",
+        "credit": "The photographic reproduction was done by Cybershot800i. (Di",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "monk-by-sea",
+      "file": "Caspar David Friedrich - Der Mönch am Meer - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Alte Nationalgalerie / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Der_M%C3%B6nch_am_Meer_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Caspar David Friedrich",
+        "credit": "Google Arts &amp; Culture  — KwEv_TMiJhn5kA",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Der_M%C3%B6nch_am_Meer_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "calling",
+      "file": "The Calling of Saint Matthew-Caravaggo (1599-1600).jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Calling_of_Saint_Matthew-Caravaggo_(1599-1600).jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Caravaggio",
+        "credit": "Self-scanned",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:The_Calling_of_Saint_Matthew-Caravaggo_(1599-1600).jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "socrates",
+      "file": "Jacques-Louis David - The Death of Socrates - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The Metropolitan Museum of Art / Wikimedia Commons",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/436105",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Jacques-Louis David",
+        "credit": "Google Arts &amp; Culture  — sAGm14MzWjaN9Q",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Jacques-Louis_David_-_The_Death_of_Socrates_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "milkmaid",
+      "file": "Johannes Vermeer - Het melkmeisje - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Rijksmuseum / Wikimedia Commons",
+      "sourceUrl": "https://www.rijksmuseum.nl/en/collection/SK-A-2344",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Johannes Vermeer",
+        "credit": "Google Arts &amp; Culture  — AHrw. Z3. Av6. Zhjg 9. AHrw. Z3",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "pearl",
+      "file": "Meisje met de parel.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Mauritshuis / Wikimedia Commons",
+      "sourceUrl": "https://www.mauritshuis.nl/en/our-collection/artworks/670-girl-with-a-pearl-earring-johannes-vermeer/",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Johannes Vermeer",
+        "credit": "Copied from Mauritshuis website, resampled and uploaded by C",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Meisje_met_de_parel.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "jatte",
+      "file": "Georges Seurat - A Sunday on La Grande Jatte -- 1884 - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Art Institute of Chicago / Wikimedia Commons",
+      "sourceUrl": "https://www.artic.edu/artworks/27992/a-sunday-on-la-grande-jatte-1884",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Georges Seurat",
+        "credit": "Google Arts &amp; Culture  — twGyqq52R-lYpA",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Georges_Seurat_-_A_Sunday_on_La_Grande_Jatte_--_1884_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "meninas",
+      "file": "Las Meninas, by Diego Velázquez, from Prado in Google Earth.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Museo del Prado / Wikimedia Commons",
+      "sourceUrl": "https://www.museodelprado.es/en/the-collection/art-work/las-meninas/9fdc7800-9ade-48b0-ab8b-edee94ea877f",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Diego Velázquez",
+        "credit": "The Prado in Google Earth:  Home page 7th level of zoom, JPE",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Las_Meninas,_by_Diego_Vel%C3%A1zquez,_from_Prado_in_Google_Earth.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "waterlilies",
+      "file": "Claude Monet - Water Lilies - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Art Institute of Chicago / Wikimedia Commons",
+      "sourceUrl": "https://www.artic.edu/artworks/16568/water-lilies",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Claude Monet",
+        "credit": "JwFZ8s09sSc0Gg at Google Cultural Institute maximum zoom lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Water_Lilies_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "starry",
+      "file": "Van Gogh - Starry Night - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "MoMA / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Vincent van Gogh",
+        "credit": "Google Arts &amp; Culture  — bgEuwDxel93-Pg",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "fighting-temeraire",
+      "file": "Turner, J. M. W. - The Fighting Téméraire tugged to her last Berth to be broken.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The National Gallery / Wikimedia Commons",
+      "sourceUrl": "https://www.nationalgallery.org.uk/paintings/joseph-mallord-william-turner-the-fighting-temeraire",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "J. M. W. Turner",
+        "credit": "http://www.nationalgallery.org.uk/paintings/joseph-mallord-w",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Turner,_J._M._W._-_The_Fighting_T%C3%A9m%C3%A9raire_tugged_to_her_last_Berth_to_be_broken.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "dance-class",
+      "file": "The Dance Class MET DT46.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The Metropolitan Museum of Art / Wikimedia Commons",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/438817",
+      "commons": {
+        "license": "CC0",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "copyrighted": "True",
+        "artist": "Edgar Degas",
+        "credit": "This file was donated to Wikimedia Commons as part of a proj",
+        "restrictions": null,
+        "usageTerms": "Creative Commons Zero, Public Domain Dedication",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:The_Dance_Class_MET_DT46.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "scream",
+      "file": "Edvard Munch - The Scream - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The National Museum of Norway / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Edvard Munch",
+        "credit": "",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "hunters-snow",
+      "file": "Pieter Bruegel the Elder - Hunters in the Snow (Winter) - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Kunsthistorisches Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_The_Hunters_in_the_Snow_(January)_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Pieter Brueghel the Elder",
+        "credit": "WgFmzFNNN74nUg at Google Cultural Institute maximum zoom lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "the-kiss",
+      "file": "The Kiss - Gustav Klimt - Google Cultural Institute.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Belvedere / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Gustav Klimt",
+        "credit": "Google Art Project",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "night-watch",
+      "file": "The Night Watch - HD.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Rijksmuseum / Wikimedia Commons",
+      "sourceUrl": "https://www.rijksmuseum.nl/en/collection/SK-C-5",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Rembrandt",
+        "credit": "http://hyper-resolution.org/view.html?i=Rijksmuseum/SK-C-5/S",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:The_Night_Watch_-_HD.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "third-of-may",
+      "file": "El Tres de Mayo, by Francisco de Goya, from Prado thin black margin.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Museo del Prado / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:El_Tres_de_Mayo,_by_Francisco_de_Goya,_from_Prado_thin_black_margin.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "El_Tres_de_Mayo,_by_Francisco_de_Goya,_from_Prado_in_Google_",
+        "credit": "This file was derived from:  El Tres de Mayo, by Francisco d",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:El_Tres_de_Mayo,_by_Francisco_de_Goya,_from_Prado_thin_black_margin.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "paris-rainy-day",
+      "file": "Gustave Caillebotte - Paris Street; Rainy Day - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Art Institute of Chicago / Wikimedia Commons",
+      "sourceUrl": "https://www.artic.edu/artworks/20684/paris-street-rainy-day",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Gustave Caillebotte",
+        "credit": "5wEUCOlEf-EaVQ at Google Cultural Institute maximum zoom lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Gustave_Caillebotte_-_Paris_Street;_Rainy_Day_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "bar-folies",
+      "file": "Edouard Manet, A Bar at the Folies-Bergère.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Courtauld Gallery / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Edouard_Manet,_A_Bar_at_the_Folies-Berg%C3%A8re.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Édouard Manet",
+        "credit": "https://images.artistsspace.org/ln8ji75r",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Edouard_Manet,_A_Bar_at_the_Folies-Berg%C3%A8re.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "hay-wain",
+      "file": "John Constable - The Hay Wain.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The National Gallery / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:John_Constable_-_The_Hay_Wain_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "John Constable",
+        "credit": "The Yorck Project (2002)       10.000 Meisterwerke der Maler",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:John_Constable_-_The_Hay_Wain.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "whistlers-mother",
+      "file": "Whistlers Mother high res.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Musee d'Orsay / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Whistlers_Mother_high_res.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "James McNeill Whistler",
+        "credit": "Musée d'Orsay",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Whistlers_Mother_high_res.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "garden-earthly",
+      "file": "The Garden of Earthly Delights by Bosch High Resolution.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Museo del Prado / Wikimedia Commons",
+      "sourceUrl": "https://www.museodelprado.es/en/the-collection/art-work/the-garden-of-earthly-delights-triptych/02388242-6d6a-4e9e-a992-e1311eab3609",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Hieronymus Bosch",
+        "credit": "The Prado in Google Earth:  Home page scaled down from 8 lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:The_Garden_of_Earthly_Delights_by_Bosch_High_Resolution.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "american-gothic",
+      "file": "Grant Wood - American Gothic - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Art Institute of Chicago / Wikimedia Commons",
+      "sourceUrl": "https://www.artic.edu/artworks/6565/american-gothic",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Grant Wood",
+        "credit": "5QEPm0jCc183Aw at Google Cultural Institute maximum zoom lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "primavera",
+      "file": "Sandro Botticelli - La Primavera - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Uffizi Gallery / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_Primavera_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Sandro Botticelli",
+        "credit": "Google Arts &amp; Culture  — yQER9P-WIU2k9A",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_Primavera_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "mont-sainte-victoire",
+      "file": "Paul Cézanne - Mont Sainte-Victoire - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The Metropolitan Museum of Art / Wikimedia Commons",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/435877",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Paul Cézanne",
+        "credit": "dgFm740uqOu5Cw at Google Cultural Institute maximum zoom lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Paul_C%C3%A9zanne_-_Mont_Sainte-Victoire_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "impression-sunrise",
+      "file": "Claude Monet, Impression, soleil levant.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Musee Marmottan Monet / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Claude_Monet,_Impression,_soleil_levant.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Claude Monet",
+        "credit": "wartburg.edu",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Claude_Monet,_Impression,_soleil_levant.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "wheatfield-crows",
+      "file": "Vincent van Gogh - Wheatfield with crows - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Van Gogh Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vincent_van_Gogh_-_Wheatfield_with_Crows_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Vincent van Gogh",
+        "credit": "dwFdD5AMQfpSew at Google Cultural Institute maximum zoom lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Vincent_van_Gogh_-_Wheatfield_with_crows_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "birth-of-venus",
+      "file": "Sandro Botticelli - La nascita di Venere - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Uffizi Gallery / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Sandro Botticelli",
+        "credit": "Google Arts &amp; Culture  — MQEeq50LABEBVg",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "fan-kuan-travelers",
+      "file": "Fan Kuan - Travelers Among Mountains and Streams - Google Art Project.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "National Palace Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fan_Kuan_-_Travelers_Among_Mountains_and_Streams_-_Google_Art_Project.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Fan Kuan",
+        "credit": "WAHwkSr8lMK0uA at Google Cultural Institute maximum zoom lev",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Fan_Kuan_-_Travelers_Among_Mountains_and_Streams_-_Google_Art_Project.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "guo-xi-early-spring",
+      "file": "Guo Xi - Early Spring (large).jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "National Palace Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Guo_Xi_-_Early_Spring_(large).jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Guo Xi",
+        "credit": "http://www.npm.gov.tw/en/collection/selections_02.htm?docno=",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Guo_Xi_-_Early_Spring_(large).jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "wang-ximeng-thousand-li",
+      "file": "Wang Ximeng. A Thousand Li of Rivers and Mountains. (Complete, 51,3x1191,5 cm). 1113. Palace museum, Beijing.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The Palace Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_Thousand_Li_of_Rivers_and_Mountains_(Wang_Ximeng).jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Wang Xi",
+        "credit": "Guoxue.zynews.com",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Wang_Ximeng._A_Thousand_Li_of_Rivers_and_Mountains._(Complete,_51,3x1191,5_cm)._1113._Palace_museum,_Beijing.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "fuchun-mountains",
+      "file": "Dwelling in the Fuchun Mountains (first half).JPG",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Zhejiang Provincial Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dwelling_in_the_Fuchun_Mountains_(first_half).jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Huang Gongwang",
+        "credit": "Zhejiang Provincial Museum in Hangzhou",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Dwelling_in_the_Fuchun_Mountains_(first_half).JPG"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "ma-yuan-angler",
+      "file": "Angler on a Wintry Lake, by Ma Yuan, 1195.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Tokyo National Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ma_Yuan_-_Angler_on_a_Wintry_Lake.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Ma Yuan",
+        "credit": "http://www.emuseum.jp/detail/100823",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Angler_on_a_Wintry_Lake,_by_Ma_Yuan,_1195.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "xia-gui-streams",
+      "file": "溪山清远图.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "National Palace Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Xia_Gui_-_Pure_and_Remote_View_of_Streams_and_Mountains.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Xia Gui",
+        "credit": "http://ishare.iask.sina.com.cn/f/22837619.html",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:%E6%BA%AA%E5%B1%B1%E6%B8%85%E8%BF%9C%E5%9B%BE.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "ni-zan-rongxi",
+      "file": "Ni Zan. The Rongxi Studio.1372. 74,7x35,3. National Palace Museum, Taipei.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "National Palace Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ni_Zan_-_Rongxi_Studio.jpg",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Ni Zan",
+        "credit": "http://www.npm.gov.tw/en/collection/selections_02.htm?docno=",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Ni_Zan._The_Rongxi_Studio.1372._74,7x35,3._National_Palace_Museum,_Taipei.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "bada-lotus-birds",
+      "file": "Anban Album Bird Bada shanren.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Bada_Shanren",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Bada Shanren",
+        "credit": "Bunjinga Sui Hen vol. 6: Bada Shanren, Chuokoron-Sha, Inc.  ",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Anban_Album_Bird_Bada_shanren.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "shitao-album",
+      "file": "Shitao (Zhu Ruoji) - Landscape - 1989.363.153 - Metropolitan Museum of Art.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Shitao",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Shitao",
+        "credit": "Metropolitan Museum of Art",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Shitao_(Zhu_Ruoji)_-_Landscape_-_1989.363.153_-_Metropolitan_Museum_of_Art.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "huizong-cranes",
+      "file": "宋徽宗 - 瑞鶴圖.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Liaoning Provincial Museum / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Auspicious_Cranes",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "宋徽宗",
+        "credit": "web",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:%E5%AE%8B%E5%BE%BD%E5%AE%97_-_%E7%91%9E%E9%B6%B4%E5%9C%96.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "qianlong-review",
+      "file": "The Qianlong Emperor in Ceremonial Armour on Horseback.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Giuseppe_Castiglione",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Giuseppe Castiglione",
+        "credit": "https://www.dpm.org.cn/collection/paint/228806.html",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:The_Qianlong_Emperor_in_Ceremonial_Armour_on_Horseback.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "wave",
+      "file": "Great Wave off Kanagawa2.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "The Metropolitan Museum of Art / Wikimedia Commons",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/45434",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "After Katsushika Hokusai",
+        "credit": "Restored version of File:Great Wave off Kanagawa.jpg (rotate",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Great_Wave_off_Kanagawa2.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "hiroshige-shower",
+      "file": "Hiroshige, Sudden shower over Shin-Ōhashi bridge and Atake, 1857.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Sudden_Shower_over_Shin-%C5%8Chashi_bridge_and_Atake",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Utagawa Hiroshige",
+        "credit": "This image  is available from the United States Library of C",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Hiroshige,_Sudden_shower_over_Shin-%C5%8Chashi_bridge_and_Atake,_1857.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "utamaro-three-beauties",
+      "file": "Utamaro (1793) Three Beauties of the Present Time, MFAB 21.6382.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Museum of Fine Arts Boston / Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Three_Beauties_of_the_Present_Day",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Kitagawa Utamaro",
+        "credit": "http://www.mfa.org/collections/object/three-beauties-of-the-",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Utamaro_(1793)_Three_Beauties_of_the_Present_Time,_MFAB_21.6382.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "court-of-gayumars",
+      "file": "The Court of Gayumars.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Court_of_Gayumars",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Attributed to Sultan Muhammad",
+        "credit": "Transferred from ru.wikipedia to Commons.\nOriginal uploader ",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:The_Court_of_Gayumars.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "bahram-gur-karg",
+      "file": "Bahram Gur kills a dragon in India. From the Book of Kings (Shahnama) (CBL Per 104.60v).jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Great_Mongol_Shahnama",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Unknown artistUnknown artist",
+        "credit": "https://viewer.cbl.ie/viewer/image/Per_104_60/2/",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Bahram_Gur_kills_a_dragon_in_India._From_the_Book_of_Kings_(Shahnama)_(CBL_Per_104.60v).jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "radha-krishna-grove",
+      "file": "Krishna and Radha, Kangra school, watercolor and gold, Tokyo National Museum.JPG",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Kangra_painting",
+      "commons": {
+        "license": "CC0",
+        "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "copyrighted": "True",
+        "artist": "Wmpearl",
+        "credit": "Own work",
+        "restrictions": null,
+        "usageTerms": "Creative Commons Zero, Public Domain Dedication",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Krishna_and_Radha,_Kangra_school,_watercolor_and_gold,_Tokyo_National_Museum.JPG"
+      },
+      "verdict": "PD-CONFIRMED"
+    },
+    {
+      "id": "jahangir-globe",
+      "file": "Jahangir holding a globe, 1614-1618.jpg",
+      "pdClaim": true,
+      "rightsClaim": "Public domain / institutional public-domain record",
+      "source": "Wikimedia Commons",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Jahangir",
+      "commons": {
+        "license": "Public domain",
+        "licenseUrl": null,
+        "copyrighted": "False",
+        "artist": "Bichtir",
+        "credit": "Chester Beatty Library",
+        "restrictions": null,
+        "usageTerms": "Public domain",
+        "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Jahangir_holding_a_globe,_1614-1618.jpg"
+      },
+      "verdict": "PD-CONFIRMED"
+    }
+  ]
+}

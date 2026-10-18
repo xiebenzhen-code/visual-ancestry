@@ -114,30 +114,53 @@ image understanding. See [`skill/visual-ancestry/SKILL.md`](./skill/visual-ances
 
 **Implemented and verified for real**
 
-- Retrieval across 51 local records (paintings + film stills) with scores and match reasons
-- Live Wikimedia Commons film-still discovery with concept splitting and rights checks
-- 46 VisualIntent analysis records, each returned with provenance and source link
+- Retrieval across 51 local records (paintings + film images) with scores and match reasons
+- Live Wikimedia Commons film-image discovery with concept splitting and rights checks
+- Metropolitan Museum API retrieval (v1.1 search verified live; the old v1 search was
+  retired on 2026-10-01 and returns 410). Note: the first connection may time out after
+  ~10s and the adapter has no auto-retry; a failure is reported honestly for that channel
+  only and does not affect the others
+- 45 VisualIntent analysis records, each returned with provenance and source link
 - CREATE reference selection → prompt generation → copy / Markdown export
 - TaskContext reference carry-over between pages
 - Memory export and re-import
 
 **Not finished / unavailable**
 
-- **Vision upload analysis**: no provider configured; the UI honestly shows `not-configured`
-- **Film still coverage**: only what the archive contains; not expanded
-- **Animation**: the retrieval pipeline supports the `animation` medium, but the local
-  archive has no animation works, so it reports an honest empty state rather than
-  silently falling through to "all"
+- **Vision upload analysis (real provider)**: no real vision model is configured, so image
+  upload / image search is **actually unavailable** — the server returns 503 and the UI says
+  so honestly. The P3.1 mock security gate (intent schema validation, budget fail-closed,
+  static path guard) is genuinely verified, but that is **not** the same as real recognition
+  being available
+- **Film image coverage**: 15 images currently bundled (10 film frames / screenshots / stills
+  + 5 promotional images, each labelled by nature); not expanded further
+- **Animation**: the local archive has **no animation assets** and animation visual retrieval
+  is unavailable — choosing the animation medium yields an honest empty state rather than a
+  silent fall-through to "all"; this repo makes no claim of supporting animation retrieval
 - No accounts, no cloud persistence, no native mobile shell
+
+**Agent Skill capability boundaries**
+
+- Local capabilities (no external service): `search` (local archive), `intent` (reads the 45
+  VisualIntent records), `plan` (generates and exports a creation plan)
+- Depends on external services: `vision-status` needs the server-side `/api/vision` (reports
+  unavailable honestly when unconfigured); `--external` retrieval needs Wikimedia Commons
+  access (roughly 9–20s)
 
 ## Asset licensing
 
-Code is MIT. Image assets are licensed **per item** — see [`LICENSE`](./LICENSE) and
-`src/data/artworks/*`, `src/data/filmStills*.js`:
+Code is MIT. Image assets are licensed **per item**; the per-item licences, source file
+pages and verification method are documented in
+[`LICENSE-ASSETS.md`](./LICENSE-ASSETS.md):
 
-- 46 paintings are public domain, sourced from museum open-access records and Wikimedia Commons
-- 5 still-in-copyright modern works carry **no bundled image**, only the record
-- Film stills come from Wikimedia Commons under each entry's own label
+- 46 bundled paintings: **44 Public domain + 2 CC0** (public-domain dedication), each
+  verified live against its Wikimedia Commons file page (verification date 2026-10-18)
+- 15 film images: all Public domain (verified via Commons file pages); 5 of them are
+  promotional images and 10 are film frames / screenshots / stills, labelled per item
+- 5 further paintings ship without images (catalogue records only) and involve no
+  redistribution
+- The licence verification scripts and evidence JSON ship with the repo
+  (`qa/licence-audit/`) and can be reproduced from a fresh clone
 
 ## Minimal real acceptance
 
@@ -155,6 +178,13 @@ node skill/visual-ancestry/scripts/va.mjs plan --refs bahram-gur-karg --out plan
 
 Harnesses (require local Edge): `node qa/ui/ui-final-acceptance.mjs`,
 `node qa/find/edge-cdp-e2e.mjs`, `node qa/ui/round3-check.mjs`.
+
+Licence verification reproduction (keyless, read-only Commons public API):
+
+```bash
+node qa/licence-audit/rc1-artwork-licence-audit.mjs   # per-item check of 46 paintings
+node qa/licence-audit/rc1-film-licence-audit.mjs      # per-item check of 15 film images
+```
 
 ## Data & privacy
 

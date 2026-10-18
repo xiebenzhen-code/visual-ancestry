@@ -109,13 +109,12 @@ if (!(await verify("首页检索视图", "#find-text", "（等待 30s 后仍为 
 const density = await evalJs(`(async () => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   for (let i = 0; i < 60; i++) {
-    const vh = window.innerHeight;
-    const imgs = [...document.querySelectorAll('.album-wall img')].filter((x) => {
-      if (x.offsetParent === null) return false;
-      const r = x.getBoundingClientRect();
-      return r.bottom > 0 && r.top < vh;
-    });
-    if (imgs.length && imgs.every((x) => x.complete)) break;
+    // 口径对齐：等待集合与下方计数集合保持一致（全部可见图片，含 Fold 下方
+    // 懒加载项），并以真实解码 naturalWidth>0 为准——complete 对加载失败的
+    // 图片同样为 true，不能作为解码证据。预算用完后仍不解码的图会进入下方
+    // 计数，断言照常失败，不放过真实坏图。
+    const imgs = [...document.querySelectorAll('.album-wall img')].filter((x) => x.offsetParent !== null);
+    if (imgs.length && imgs.every((x) => x.naturalWidth > 0)) break;
     await sleep(400);
   }
   window.scrollTo(0, 0); await sleep(300);
@@ -354,12 +353,9 @@ if (await verify("390px 首页", "#find-text", "（等待 30s 后仍为 null）"
   const mob = await evalJs(`(async () => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let i = 0; i < 50; i++) {
-      const imgs = [...document.querySelectorAll('.album-wall img')].filter((x) => {
-        if (x.offsetParent === null) return false;
-        const r = x.getBoundingClientRect();
-        return r.bottom > 0 && r.top < window.innerHeight;
-      });
-      if (imgs.length && imgs.every((x) => x.complete)) break;
+      // 同桌面块：等待集合与计数集合一致，以 naturalWidth>0 为解码证据。
+      const imgs = [...document.querySelectorAll('.album-wall img')].filter((x) => x.offsetParent !== null);
+      if (imgs.length && imgs.every((x) => x.naturalWidth > 0)) break;
       await sleep(400);
     }
     const imgs = [...document.querySelectorAll('.album-wall img')].filter((x) => x.offsetParent !== null);

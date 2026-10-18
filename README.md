@@ -108,29 +108,44 @@ Skill **直接 import 网页用的那份检索与分析模块**，不另写一�
 
 **已实现并真实验证**
 
-- 51 件本地档案检索（绘画 + 电影画面），带评分与命中理由
-- Wikimedia Commons 实时电影画面检索，含概念拆分与权利判定
-- 46 条 VisualIntent 分析记录，读取时携带 provenance 与来源链接
+- 51 件本地档案检索（绘画 + 电影影像），带评分与命中理由
+- Wikimedia Commons 实时电影影像检索，含概念拆分与权利判定
+- Met 博物馆 API 检索（v1.1 搜索接口实测可用；旧 v1 已于 2026-10-01 退役返回 410）。
+  注意：首次连接可能约 10s 超时，适配器无自动重试；失败时该通道诚实报错，不影响其他通道
+- 45 条 VisualIntent 分析记录，读取时携带 provenance 与来源链接
 - CREATE 选参 → 生成 Prompt → 复制 / 导出 Markdown
 - TaskContext 参考在页间正确传递
 - 记忆的导出与再导入
 
 **未完成 / 不可用**
 
-- **Vision 上传识图**：Provider 未配置，界面如实显示 `not-configured`
-- **电影截图数量**：只有档案里已收录的部分，未做扩充
-- **Animation**：检索管线已支持 `animation` 媒介，但本地档案里没有动画作品，
-  选它会如实显示空状态，不会退化成「全部」
+- **Vision 上传识图（真实 Provider）**：未配置任何真实识图模型，上传图片 / 以图搜图
+  **实际不可用**——服务端返回 503，界面如实显示不可用。P3.1 的 Mock 安全门禁
+  （意图结构校验、预算 fail-closed、静态路径守卫）已经真实验证，但那**不等于**真实识图可用
+- **电影影像覆盖**：当前收录 15 件（10 件影片帧 / 截图 / 剧照 + 5 件宣传类影像，
+  性质逐件标注），未做进一步扩充
+- **Animation**：本地档案**没有动画素材**，动画视觉检索不可用——选择 animation 媒介
+  只会得到如实的空状态，不会退化成「全部」，本仓库也不宣称支持动画视觉检索
 - 无用户系统、无云端持久化、无移动端原生壳
+
+**Agent Skill 的能力边界**
+
+- 本地能力（不依赖外部服务）：`search`（本地档案检索）、`intent`（读取 45 条
+  VisualIntent 记录）、`plan`（生成并导出创作方案）
+- 依赖外部服务：`vision-status` 需要服务端 `/api/vision`（未配置时如实报告不可用）；
+  带 `--external` 的检索需要访问 Wikimedia Commons（约 9–20s）
 
 ## 素材许可
 
-代码 MIT。图片素材许可**逐件不同**，见 [`LICENSE`](./LICENSE) 与
-`src/data/artworks/*`、`src/data/filmStills*.js`：
+代码 MIT。图片素材许可**逐件不同**；逐件许可、来源文件页与核验方法见
+[`LICENSE-ASSETS.md`](./LICENSE-ASSETS.md)：
 
-- 46 件绘画为公共领域作品，来源为各馆藏与 Wikimedia Commons
-- 5 件仍受版权保护的现代作品**未附带图片**，只保留著录
-- 电影画面来自 Wikimedia Commons，按各条目自身标注
+- 46 件附带图像的绘画：**44 件 Public domain + 2 件 CC0**（公有领域奉献），
+  全部经 Wikimedia Commons 文件页实时核验（核验日期 2026-10-18）
+- 15 件电影影像：均为 Public domain（Commons 文件页核验）；其中 5 件为宣传类影像，
+  10 件为影片帧 / 截图 / 剧照，性质已逐件标注
+- 另有 5 件绘画未附带图像（仅保留著录），不涉及再分发
+- 许可核验脚本与证据 JSON 随仓库分发（`qa/licence-audit/`），全新克隆后可复现
 
 ## 最小真实验收
 
@@ -147,6 +162,13 @@ node skill/visual-ancestry/scripts/va.mjs plan --refs bahram-gur-karg --out plan
 ```
 
 验收脚本（需要本机 Edge）：`node qa/ui/ui-final-acceptance.mjs`、`node qa/find/edge-cdp-e2e.mjs`、`node qa/ui/round3-check.mjs`。
+
+许可核验复现（免密钥，只读 Commons 公共 API）：
+
+```bash
+node qa/licence-audit/rc1-artwork-licence-audit.mjs   # 逐件核验 46 件画作
+node qa/licence-audit/rc1-film-licence-audit.mjs      # 逐件核验 15 件电影影像
+```
 
 ## 数据与隐私
 
