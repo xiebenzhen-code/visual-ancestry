@@ -177,7 +177,7 @@ pages and verification method are documented in
 | Source code | MIT | **Yes** (keep the copyright and licence notice) |
 | Bundled images (183 webp files) | Public domain / CC0 | **Yes**, no copyright restriction |
 | Live retrieval results (records and images fetched at runtime) | **Not covered by this repo's licence** — provided by each source under its own terms | Depends on the source's terms; this repo neither re-hosts nor mirrors them |
-| Generated prompts / shooting plans | Ship with the MIT code | **Yes**, but they are creative reference, not legal advice |
+| Generated prompts / shooting plans | **Not covered by the MIT licence** (they are product output, not licensed material) | Free to use, but they are creative reference, **not legal advice** |
 
 Full wording in [`LICENSE-ASSETS.md` §6](./LICENSE-ASSETS.md). One caveat worth stating plainly:
 **MIT does not cover artwork copyright** — the code may be used commercially, but that does not make

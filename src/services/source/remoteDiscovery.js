@@ -848,12 +848,25 @@ for (const page of pages) {
 // artService.searchRemote 已经把 AIC/Met/Cleveland/Rijks 归一化并缓存。
 // 本文件只做两件新增的事：把结果并入统一 Reference 契约，以及在渠道完全
 // 不可用时如实返回降级标记（而不是静默返回空数组）。
-export async function discoverPaintingReferences(query, { limit = 8, searchRemote, rawIndex = null } = {}) {
-  if (typeof searchRemote !== "function") {
+export async function discoverPaintingReferences(query, { limit = 8, searchRemote, searchRemoteWithStatus, rawIndex = null } = {}) {
+  // Prefer the status-aware entry point when the caller provides one: it returns
+  // which channels failed alongside the works. Falling back to the plain
+  // searchRemote keeps every existing caller (and harness) working unchanged —
+  // they simply get no channel-level detail.
+  const hasStatus = typeof searchRemoteWithStatus === "function";
+  if (!hasStatus && typeof searchRemote !== "function") {
     return { error: "searchRemote not provided", references: [], channel: "museums" };
   }
   try {
-    const works = await searchRemote(query, { limit });
+    let works;
+    let failedSources = [];
+    if (hasStatus) {
+      const outcome = await searchRemoteWithStatus(query, { limit });
+      works = outcome.works;
+      failedSources = outcome.failed || [];
+    } else {
+      works = await searchRemote(query, { limit });
+    }
     // artService may return either raw adapter records or normalized works.
     // When it returns normalized ones the channel text is already gone, so the
     // original raw record (same sourceId) is looked up when the caller passed
@@ -910,7 +923,23 @@ export async function discoverPaintingReferences(query, { limit = 8, searchRemot
         provenance: "channel-metadata",
       };
     });
-    return { channel: "museums", references, count: references.length };
+    // Channel outcome travels with the references. "Some channels failed but we
+    // still have works" is a PARTIAL result: the UI shows the works AND says
+    // which sources were missing. Reporting it as degraded would throw away real
+    // results; reporting it as complete would be a lie.
+    const partial = failedSources.length > 0 && references.length > 0;
+    const allFailed = failedSources.length > 0 && references.length === 0;
+    return {
+      channel: "museums",
+      references,
+      count: references.length,
+      failedSources,
+      partial,
+      degraded: allFailed,
+      ...(allFailed
+        ? { note: `博物馆渠道均未响应（${failedSources.join("、")}）；本地检索不受影响。` }
+        : {}),
+    };
   } catch (e) {
     return {
       channel: "museums",

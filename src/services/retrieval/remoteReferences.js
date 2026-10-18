@@ -12,7 +12,7 @@
 // 4. 渠道故障时如实返回 degraded，不静默返回空数组——页面要能解释
 //    「为什么远程没有结果」，而不是让用户以为远程没有作品。
 
-import { searchRemote } from "../artService.js";
+import { searchRemote, searchRemoteWithStatus } from "../artService.js";
 import {
   discoverPaintingReferences,
   discoverCommonsFilmStills,
@@ -200,6 +200,7 @@ export async function findRemotePaintings(query, { media = "all", limit = REMOTE
     const outcome = await discoverPaintingReferences(query, {
       limit,
       searchRemote,
+      searchRemoteWithStatus,
     });
     if (outcome.error || outcome.degraded) {
       return {
@@ -228,7 +229,13 @@ export async function findRemotePaintings(query, { media = "all", limit = REMOTE
     return {
       results,
       degraded: false,
-      note: "",
+      // Some museums answered, some did not: keep the real results and say which
+      // sources are missing. This is NOT degradation — claiming "channels down"
+      // would hide works we actually got.
+      partial: Boolean(outcome.partial),
+      note: outcome.partial
+        ? `部分来源本次未响应（${(outcome.failedSources || []).join("、")}）；以上为其余来源的结果。`
+        : "",
       // 被过滤掉的件数如实告知：用户知道有多少因无依据未列出。
       unrelatedCount: references.filter((r) => r.showable).length - results.length,
     };
@@ -355,6 +362,9 @@ export async function findRemoteReferences(query, { media = "all" } = {}) {
   const notes = [];
   if (paintings.degraded) notes.push(paintings.note);
   if (films.degraded) notes.push(films.note);
+  // 部分失败也要透传：用户看到真实结果的同时必须知道少了哪些来源，否则
+  // 「四馆检索」会被当成「全部来源都答了」。
+  if (paintings.partial && paintings.note) notes.push(paintings.note);
   // 「渠道不支持该查询语义」必须透传。缺了这段，中文查询时用户只会看到
   // 一句笼统的「以下来自博物馆与 Commons 渠道」，完全不知道电影渠道其实
   // 根本没检索——这正是「不得假报无影片素材」要防的情况。

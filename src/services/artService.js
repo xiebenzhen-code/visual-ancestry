@@ -110,13 +110,18 @@ export function searchLocal(query) {
   return filterArtworks(artworks, { query });
 }
 
-export async function searchRemote(query, { limit = 24 } = {}) {
+// Status-aware variant: the channel outcome travels with the results instead of
+// living in a module-level flag. The flag is process-wide, so two overlapping
+// searches overwrite each other's state and the UI can be told "a channel is
+// down" because of somebody else's query. Callers that render per-source
+// conclusions use this one; searchRemote() stays as the array-shaped wrapper.
+export async function searchRemoteWithStatus(query, { limit = 24 } = {}) {
   const cached = getCachedRemote(query);
   if (cached) {
     // An entry only exists when every enabled channel answered, so a cache hit
     // means "complete" — clear the flag instead of inheriting an old failure.
     remoteUnavailable = false;
-    return cached.slice(0, limit);
+    return { works: cached.slice(0, limit), failed: [], complete: true, cached: true };
   }
 
   remoteUnavailable = false;
@@ -155,7 +160,21 @@ export async function searchRemote(query, { limit = 24 } = {}) {
   // Partial results must not be cached as if they were the full four-channel
   // answer: a later cache hit would serve them for 24h with no failure notice.
   if (failed.length === 0) storeCachedRemote(query, out);
-  return out.slice(0, limit);
+  return {
+    works: out.slice(0, limit),
+    failed,
+    // `complete` is what callers render: true only when every enabled channel
+    // answered (or the cache hit was written under that condition).
+    complete: failed.length === 0,
+    cached: false,
+  };
+}
+
+// Array-shaped wrapper kept for every existing caller (home feed, search layer,
+// mixed feed, the Agent Skill). Behaviour is identical to before this refactor.
+export async function searchRemote(query, { limit = 24 } = {}) {
+  const { works } = await searchRemoteWithStatus(query, { limit });
+  return works;
 }
 
 // true when the last museum call failed/timed out (UI shows the failure

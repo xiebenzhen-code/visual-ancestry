@@ -21,10 +21,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 --------------------------------------------------------------------------
-素材许可（与代码许可分开）
-bundled/ 下的图片不是本项目原创，许可逐件不同：
-  · 46 件绘画为公共领域作品（来源为各馆藏与 Wikimedia Commons），
-    rightsStatus = "Public domain / institutional public-domain record"
-  · 5 件仍受版权保护的现代作品**未附带图片**，只保留著录用于检索与分析完整性
-  · 电影画面来自 Wikimedia Commons，按各条目自身的公有领域/自由许可标注
-逐件来源与权利状态见 src/data/artworks/* 与 src/data/filmStills*.js。
+SCOPE OF THIS LICENCE — software only
+
+The MIT terms above cover the SOFTWARE: the source code under src/, server/,
+scripts/, skill/ and qa/, plus the project's own documentation and generated
+files. They do NOT grant any right in material the project does not own:
+
+  · Bundled images under public/assets/ are museum artworks and film imagery.
+    They are public domain or CC0 per item; see LICENSE-ASSETS.md for the
+    per-item evidence and source file pages.
+  · Museum collection images and records fetched at runtime come from
+    Art Institute of Chicago, The Met, Cleveland Museum of Art, Rijksmuseum and
+    Wikimedia Commons, and remain under those providers' own terms. This
+    project neither re-hosts nor redistributes them; verify their licence
+    separately before reusing anything.
+  · Museum artwork copyright is not granted by this licence. Being able to use
+    the code commercially does not make any museum collection commercially
+    reusable.
+
+Outputs the product generates for you (CREATE prompts, SHOOT guidance, search
+scores) are reference material, not licensed material, and not legal advice.
+
+Full asset licensing and commercial-use breakdown: LICENSE-ASSETS.md.
+
