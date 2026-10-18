@@ -99,12 +99,18 @@ async function search() {
     const concepts = conceptTerms(query);
     try {
       const ext = await discoverCommonsFilmStills(query, { limit: Math.min(limit, 8) });
+      const extItems = (ext.results || ext.items || []).slice(0, limit);
       payload.external = {
-        ok: true,
+        // 「请求成功」与「有命中」是两件事。0 条时若还报 ok:true，
+        // 调用方会以为拿到了外部参考 —— 这里分开说。
+        ok: extItems.length > 0,
+        requested: true,
+        empty: extItems.length === 0,
         source: "Wikimedia Commons",
         fromCache: Boolean(ext.fromCache),
+        cacheNote: "缓存依赖浏览器 localStorage；Node 环境下不生效，每次都是实时请求。",
         concepts,
-        results: (ext.results || ext.items || []).slice(0, limit).map((it) => ({
+        results: extItems.map((it) => ({
           key: it.key || it.id,
           title: it.title || "",
           creator: it.creator || "",
@@ -112,6 +118,10 @@ async function search() {
           rights: it.rights?.label || it.rightsStatus || "",
         })),
       };
+      if (!extItems.length) {
+        payload.external.note =
+          `Commons 请求成功但没有命中（概念 ${concepts.terms.map((t) => t.term).join("、") || "无"}）。未映射词：${concepts.unmapped.join("、") || "无"}。本地结果不受影响。`;
+      }
     } catch (err) {
       payload.external = { ok: false, source: "Wikimedia Commons", message: String(err.message || err) };
     }

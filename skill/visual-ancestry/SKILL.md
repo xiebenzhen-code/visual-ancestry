@@ -39,6 +39,18 @@ node va.mjs search "孤独 夜晚" --json                  # machine-readable
   local results stay valid.
 - Empty results are reported as an empty list, never padded with invented works.
 
+Two things to read `external` correctly:
+
+- `ok` means **hits**, not "the request worked". A successful request that matched
+  nothing returns `ok:false, requested:true, empty:true` plus a `note` saying which
+  concept terms actually reached Commons and which words were unmapped. A Chinese
+  emotion word like 孤独 often has no Commons film-still equivalent and is dropped
+  by the concept splitter — that is the honest behaviour, not a failure.
+- `fromCache` is **always false** here. The product's discovery cache lives in
+  `window.localStorage`, which does not exist in Node, so every `--external` call
+  is a live request (measured 9–20 s). Budget for the latency; don't wrap it in a
+  retry loop that fires several of these.
+
 ### 2. Read VisualIntent analysis
 
 ```bash

@@ -138,6 +138,10 @@ export function promptExportToMarkdown(payload) {
   if (payload.visualIntent) {
     for (const [key, value] of Object.entries(payload.visualIntent)) {
       if (value === null || value === undefined || value === "") continue;
+      // 空数组也要跳过：[] 不是 ""，会漏过上面的判断，
+      // 然后 join() 出空串，导出里留下一条 "- emotion: " 的空 bullet
+      //（Agent 实测发现）。空 bullet 不是信息，是让读的人以为漏了内容。
+      if (Array.isArray(value) && value.length === 0) continue;
       push(`- ${key}: ${Array.isArray(value) ? value.join(" / ") : value}`);
     }
   } else {
