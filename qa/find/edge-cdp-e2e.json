@@ -1,0 +1,112 @@
+{
+  "localImmediate": {
+    "count": 6,
+    "remoteBusy": true,
+    "remoteText": "正在检索远程渠道…",
+    "keys": [
+      "local:monk-by-sea",
+      "local:xia-gui-streams",
+      "film-man-movie-camera"
+    ]
+  },
+  "afterRemote": {
+    "localCount": 6,
+    "remoteText": "\n      \n        远程渠道参考\n        博物馆与 Commons 渠道已检索，但没有找到与「这次查询」相关的可展示参考。另有 2 件馆藏与查询无关联，未列入。本地检索结果不受影响。\n        \n    \n      电影渠道：本次扫描 69 条、排除 69 条未通过判据；多概念召回：「landscape」 均按受控词分别检索；未参与检索的词：雾（渠道无法按此语义检索，未做任何替换）。各检索词实际贡献：「landscape」(景观)→0 件。命中位置：；仅片名撞词的候选画面未被验证，一律标注「待视觉核验」。图像性质分布：。图像分析：0/0 件（原因 vision-un",
+    "remoteCards": 0,
+    "firstKeys": [
+      "local:monk-by-sea",
+      "local:xia-gui-streams",
+      "film-man-movie-camera"
+    ]
+  },
+  "shots": [
+    "find-01-cn-query",
+    "find-02-landscape",
+    "find-03-film",
+    "find-04-390px"
+  ],
+  "landscapeImages": {
+    "total": 4,
+    "decoded": 2,
+    "items": [
+      {
+        "w": 450,
+        "h": 329,
+        "src": "https://images.metmuseum.org/CRDImages/dp/web-large/DP811071.jpg"
+      },
+      {
+        "w": 449,
+        "h": 321,
+        "src": "https://images.metmuseum.org/CRDImages/ad/web-large/ap29.35.jpg"
+      },
+      {
+        "w": 0,
+        "h": 0,
+        "src": "https://openaccess-cdn.clevelandart.org/1972.47/1972.47_print.jpg"
+      },
+      {
+        "w": 0,
+        "h": 0,
+        "src": "https://openaccess-cdn.clevelandart.org/1967.19/1967.19_print.jpg"
+      }
+    ]
+  },
+  "remoteCardMeta": {
+    "href": "https://www.metmuseum.org/art/collection/search/340468",
+    "hasTarget": true,
+    "text": " Landscape (recto); Landscape (verso) 图像暂不可用 · 仅档案与分析 Perugino (Pietro di Cristoforo Vannucci) Landscape (recto); Landscape (verso) The Metropolitan Museum of Art · 匹配分 3 · 依据：馆方分类字段 标题包含你的查询词「landscape」 "
+  },
+  "filmImgs": {
+    "total": 4,
+    "decoded": 2,
+    "text": " 远程渠道参考 以下来自博物馆与Commons 渠道，依据仅为馆方分类字段的文本匹配，不是模型对图像的视觉分析。另有 1 件与本次查询无关联，未列入。 电影渠道：本次扫描 69 条、排除 69 条未通过判据；多概念召回：「landscape」 均按受控词分别检索；所有词都按受控词参与了检索。各检索词实际贡献：「landscape」(景观)→0 件。命中位置：；仅片名撞词的候选画面未被验证，一律标注「待视觉核验」。图像性质分布：。图像分析：0/0 件（原因 vision-unavailable）。 Landscape (recto); Landscape (verso) 图像暂不可用 · 仅档案"
+  },
+  "unsupported": {
+    "localCount": 0,
+    "localText": "没有足够重叠的视觉关系。",
+    "text": " 远程渠道参考 以下来自博物馆与Commons 渠道，依据仅为馆方分类字段的文本匹配，不是模型对图像的视觉分析。另有 1 件与本次查询无关联，未列入。 电影渠道：本次扫描 69 条、排除 69 条未通过判据；多概念召回：「landscape」 均按受控词分别检索；所有词都按受控词参与了检索。各检索词实际贡献：「landscape」(景观)→0 件。命中位置：；仅片名撞词的候选画面未被验证，一律标注「待视觉核验」。图像性质分布：。图像分析：0/0 件（原因 vision-unavailable）。 Landscape"
+  },
+  "race": {
+    "race": {
+      "localFirst": "",
+      "remoteText": " 远程渠道参考 以下来自博物馆与Commons 渠道，依据仅为馆方分类字段的文本匹配，不是模型对图像的视觉分析。另有 1 件与本次查询无关联，未列入。 电影渠道：本次扫描 69 条、排除 69 条未通过判据；多概念召回：「landscape」 均按受控词分别检索；所有词都按受控词参与了检索。各检索词实际贡献：「landscape」(景观)→0 件。命中位置：；仅片名撞词的候选画面未被验证，一律标注"
+    },
+    "nightLocal": [
+      "星月夜",
+      "Vincent van Gogh",
+      "雾海上的旅人",
+      "Caspar David Friedrich"
+    ]
+  },
+  "mobile": {
+    "scrollW": 390,
+    "clientW": 390,
+    "overflow": false,
+    "remoteOverflow": false
+  },
+  "degraded": {
+    "localCount": 6,
+    "text": " 远程渠道参考 博物馆与 Commons 渠道已检索，但没有找到与「这次查询」相关的可展示参考。另有 2 件馆藏与查询无关联，未列入。本地检索结果不受影响。 电影渠道：本次扫描 69 条、排除 69 条未通过判据；多概念召回：「landscape」 均按受控词分别检索；未参与检索的词：雾（渠道无法按此语义检索，未做任何替换）。各检索词实际贡献：「landscape」(景观)→0 件。命中位置：；仅片名撞词的候选画面未被验证，一律标注「待视觉核验」。图像性质分布：。图像分析：0"
+  },
+  "routes": [
+    {
+      "hash": "#create",
+      "mounted": true
+    },
+    {
+      "hash": "#shoot",
+      "mounted": true
+    },
+    {
+      "hash": "#memory",
+      "mounted": true
+    }
+  ],
+  "jsErrors": [],
+  "shotErrors": [],
+  "summary": {
+    "pass": 23,
+    "fail": 0,
+    "failures": []
+  }
+}

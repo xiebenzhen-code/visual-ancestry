@@ -1,0 +1,83 @@
+{
+  "ok": true,
+  "step": "normalize",
+  "input": {
+    "srcW": 1920,
+    "srcH": 2459,
+    "sentW": 999,
+    "sentH": 1280,
+    "compressedBytes": 199975,
+    "mimeType": "image/jpeg"
+  },
+  "httpStatus": 200,
+  "clientLatencyMs": 22245,
+  "bridgeLatencyMs": 22229,
+  "rawResponse": {
+    "ok": true,
+    "intent": {
+      "arousal": "low",
+      "atmosphere": [
+        "空旷",
+        "雾"
+      ],
+      "cameraDistance": "medium",
+      "cameraHeight": "eye",
+      "cameraRelation": "observational",
+      "colorTemperature": "cool",
+      "contrast": "high",
+      "emotion": [],
+      "environmentDominance": "high",
+      "humanRelation": "isolated",
+      "lightDirection": "front",
+      "lightQuality": "diffuse",
+      "melancholy": "medium",
+      "motion": "still",
+      "negativeSpace": "high",
+      "saturation": "low",
+      "socialDistance": "high",
+      "spatialDepth": "deep",
+      "subject": "single-figure",
+      "subjectPosition": "center",
+      "subjectScale": "medium",
+      "visualDensity": "sparse"
+    },
+    "latencyMs": 22229
+  },
+  "schemaValid": true,
+  "normalizedIntent": {
+    "emotion": [],
+    "atmosphere": [
+      "空旷",
+      "雾"
+    ],
+    "subject": "single-figure",
+    "subjectScale": "medium",
+    "subjectPosition": "center",
+    "spatialDepth": "deep",
+    "negativeSpace": "high",
+    "environmentDominance": "high",
+    "composition": "",
+    "geometry": "",
+    "lightDirection": "front",
+    "lightQuality": "diffuse",
+    "colorTemperature": "cool",
+    "saturation": "low",
+    "contrast": "high",
+    "humanRelation": "isolated",
+    "cameraDistance": "medium",
+    "cameraHeight": "eye",
+    "cameraRelation": "observational",
+    "motion": "still",
+    "visualDensity": "sparse",
+    "arousal": "low",
+    "socialDistance": "high",
+    "melancholy": "medium",
+    "source": "vision"
+  },
+  "unknownEnums": 0,
+  "unknownEnumsDetail": [],
+  "secretLeak": 0,
+  "realRequestCount": 1,
+  "consoleErrors": [],
+  "curlTime": "2026-09-26T08:49:24.085Z"
+}

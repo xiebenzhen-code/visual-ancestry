@@ -1,0 +1,49 @@
+{
+  "instances": {
+    "first": "1",
+    "second": "2"
+  },
+  "adversarial": {
+    "instA": "2",
+    "instB": "3",
+    "aState": {
+      "instance": "2",
+      "localCount": 0,
+      "localFirst": "",
+      "pendingRemote": 2
+    },
+    "bState": {
+      "instance": "3",
+      "localCount": 6,
+      "localFirst": "海边的僧侣",
+      "pendingRemote": 4
+    },
+    "released": "released-A",
+    "afterA": {
+      "instance": "3",
+      "localCount": 6,
+      "localFirst": "海边的僧侣",
+      "remoteCards": 0,
+      "hasStale": false,
+      "remoteText": "正在检索远程渠道…"
+    },
+    "releasedTotal": 11,
+    "afterB": {
+      "remoteText": "\n      \n        远程渠道参考\n        博物馆与 Common  渠道已检索，但没有找到与「这次查询」相关的可展示参考。本地检索结果不受影响。\n      ",
+      "responded": true,
+      "stillStaleFree": true
+    }
+  },
+  "taskContext": {
+    "ok": true,
+    "hasIntent": true,
+    "keys": [
+      "taskId",
+      "intent",
+      "referenceKeys",
+      "principles",
+      "fresh"
+    ]
+  },
+  "shot": true
+}
