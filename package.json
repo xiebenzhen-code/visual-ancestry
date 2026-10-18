@@ -1,0 +1,24 @@
+{
+  "name": "visual-ancestry",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "影视视觉研究工具：公共领域绘画与电影画面检索、可核验的 VisualIntent 分析、创作参考方案生成与导出。",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node scripts/server.mjs .",
+    "dev": "node scripts/dev-server.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/preview-server.mjs",
+    "skill:search": "node skill/visual-ancestry/scripts/va.mjs search",
+    "skill:intent": "node skill/visual-ancestry/scripts/va.mjs intent",
+    "skill:plan": "node skill/visual-ancestry/scripts/va.mjs plan",
+    "skill:vision": "node skill/visual-ancestry/scripts/va.mjs vision-status"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.4"
+  }
+}
