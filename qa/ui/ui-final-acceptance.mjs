@@ -348,8 +348,9 @@ report.groups.push({ group: "panel", panelFlow });
 // 390px
 await call("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true, screenWidth: 390, screenHeight: 844 });
 await call("Page.navigate", { url: `${BASE}/?final2=1#index` });
-await sleep(1800);
-if (await verify("390px 首页", "#find-text")) {
+await sleep(1200);
+await waitFor("#find-text", "390px 首页");
+if (await verify("390px 首页", "#find-text", "（等待 30s 后仍为 null）")) {
   const mob = await evalJs(`(async () => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let i = 0; i < 50; i++) {
