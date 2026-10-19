@@ -309,7 +309,30 @@ for (const [tag, w, h] of [["desktop", 1440, 900], ["mobile", 390, 844]]) {
   check(`B/${tag}: 图片路径发出 Commons 请求（原缺失已修）`, reqs.length > 0, `${reqs.length} 条`);
   check(`B/${tag}: 远程候选如实返回或说明`, (dom?.remoteCards || 0) > 0 || /未找到|未发起|不支持/.test(dom?.remoteText || ""),
     `${dom?.remoteCards} 张 / 文本长度 ${(dom?.remoteText||"").length}`);
-  check(`B/${tag}: 远程图已解码`, (dom?.remoteImgs || 0) === 0 || dom?.remoteDecoded === dom?.remoteImgs, `${dom?.remoteDecoded}/${dom?.remoteImgs}`);
+  // P4.9 收尾后，仅片名撞词的候选移入默认收起的探索区。
+  // 实测诊断：远程区 5 张图全为 loading=lazy，其中第 5 张在收起的 details 里。
+  // 所以判据应当是「滚动到每张正式区图片并等解码」，而不是一次性数解码数量。
+  const visImgs = await evaluate(`
+    (async () => {
+      // 仅处理不在 details 里的图（正式区）；收起区不展开就不请求，是正确行为。
+      const imgs = [...document.querySelectorAll("#find-remote img")].filter(im => !im.closest("details"));
+      for (const im of imgs) {
+        im.scrollIntoView({ block: "center" });
+        await new Promise(r => setTimeout(r, 300));
+        if (!(im.complete && im.naturalWidth > 0)) {
+          await new Promise(res => {
+            im.addEventListener("load", res, { once: true });
+            im.addEventListener("error", res, { once: true });
+            setTimeout(res, 3000);
+          });
+        }
+      }
+      window.scrollTo(0, 0);
+      return { total: imgs.length, decoded: imgs.filter(im => im.complete && im.naturalWidth > 0).length };
+    })()
+  `);
+  check(`B/${tag}: 正式区图片全部解码（收起区不计）`, (visImgs?.total || 0) === 0 || visImgs?.decoded === visImgs?.total,
+    `${visImgs?.decoded}/${visImgs?.total} 正式区`);
   check(`B/${tag}: 明确标注画面相似性未验证`, dom?.hasUnverifiedStatement === true);
 
   audit[`B-${tag}`] = { dom, reqs: reqs.slice(0, 10) };

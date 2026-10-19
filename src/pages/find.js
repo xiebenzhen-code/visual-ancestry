@@ -1012,21 +1012,41 @@ function renderRemoteSection(remote, { fromImage = false } = {}) {
       }${unrelatedCount ? `另有 ${unrelatedCount} 件与本次查询无关联，未列入。` : ""}</p>
       ${note ? `<p class="quiet-note">${escapeHtml(note)}</p>` : ""}
       ${filmSummary}
-      <div class="find-remote-results">
-      ${results.map((item) =>
-        item.medium === "film" ? renderRemoteFilmCard(item, remote.film) : `
-        <a class="find-hit find-hit-remote" href="${escapeHtml(item.artwork.remote?.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">
-          <span style="${aspectRatioCss(item.artwork)}">${renderImg(item.artwork)}</span>
-          <div>
-            <strong>${escapeHtml(item.artwork.artist || item.artwork.remote?.channelName || "作者未知")}</strong>
-            <em>${escapeHtml(item.artwork.titleZh || item.artwork.title)}</em>
-            ${creditLine(item)}
-            <small>${escapeHtml(item.artwork.remote?.channelName || "远程渠道")} · 匹配分 ${item.retrievalScore} · 依据：馆方分类字段</small>
-            <ul>${(item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>
-          </div>
-        </a>`
-      ).join("")}
-      </div>
+      ${(() => {
+        // P4.9 收尾 — 按展示资格分流：
+        //   primary     正式列表（片名查询的一切；视觉查询中元数据命中的）
+        //   exploratory 「更多电影线索」收起区（视觉查询中仅片名撞词的）
+        // 片名查询（proper-noun）整体保持原样 —— 用户就是在找这部电影，
+        // 片名匹配是正路，不该被降级。
+        const filmItems = results.filter((it) => it.medium === "film");
+        const otherItems = results.filter((it) => it.medium !== "film");
+        const isTitleQuery = filmItems.length > 0 && filmItems.every((it) => it.display?.isProperNounQuery);
+        const primary = isTitleQuery ? filmItems : filmItems.filter((it) => it.display?.tier !== "exploratory");
+        const exploratory = isTitleQuery ? [] : filmItems.filter((it) => it.display?.tier === "exploratory");
+        const primaryCount = primary.length;
+        const exploratoryCount = exploratory.length;
+        window.__tierCounts = { primaryCount, exploratoryCount };
+        const filmCard = (it) => renderRemoteFilmCard(it, remote.film);
+        const paintingCard = (it) => `
+         <a class="find-hit find-hit-remote" href="${escapeHtml(it.artwork.remote?.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">
+           <span style="${aspectRatioCss(it.artwork)}">${renderImg(it.artwork)}</span>
+           <div>
+             <strong>${escapeHtml(it.artwork.artist || it.artwork.remote?.channelName || "作者未知")}</strong>
+             <em>${escapeHtml(it.artwork.titleZh || it.artwork.title)}</em>
+             ${creditLine(it)}
+             <small>${escapeHtml(it.artwork.remote?.channelName || "远程渠道")} · 匹配分 ${it.retrievalScore} · 依据：馆方分类字段</small>
+             <ul>${(it.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>
+           </div>
+         </a>`;
+        return `
+          ${primary.length ? `<div class="find-remote-results">${primary.map((it) => it.medium === "film" ? filmCard(it) : paintingCard(it)).join("")}</div>` : ""}
+          ${exploratory.length ? `<details class="find-remote-more-clues">
+            <summary>更多电影线索（${exploratory.length} 条 · 仅片名命中，画面相似性尚未验证）</summary>
+            <div class="find-remote-results find-remote-exploratory">${exploratory.map(filmCard).join("")}</div>
+          </details>` : ""}
+          ${!primary.length && !exploratory.length ? otherItems.map(paintingCard).join("") : ""}
+        `;
+      })()}
 
     </section>`;
 }

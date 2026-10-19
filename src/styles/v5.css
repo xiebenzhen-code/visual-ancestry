@@ -2148,3 +2148,52 @@ body.search-open {
     padding: 10px 12px 12px;
   }
 }
+
+/* P4.9 收尾 — 探索线索区：视觉查询中仅片名撞词的候选，
+   默认收起，展开后才显示卡片。它不是正式参考，是线索。 */
+.find-remote-more-clues {
+  grid-column: 1 / -1;
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.find-remote-more-clues > summary {
+  padding: 10px 0;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.find-remote-more-clues > summary::-webkit-details-marker {
+  display: none;
+}
+
+.find-remote-more-clues > summary::before {
+  content: "+ ";
+  color: var(--red);
+}
+
+.find-remote-more-clues[open] > summary::before {
+  content: "− ";
+}
+
+.find-remote-more-clues > summary:hover {
+  color: var(--ink);
+}
+
+.find-remote-more-clues > summary:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: -2px;
+}
+
+.find-remote-more-clues > .find-remote-exploratory {
+  margin-top: 8px;
+}
+
+/* P4.9 收尾 — 展示资格说明（片名匹配 / 元数据命中 / 仅片名撞词） */
+.find-remote-tier {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--soft-ink);
+}

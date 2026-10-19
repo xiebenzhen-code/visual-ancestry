@@ -86,6 +86,7 @@ export function renderRemoteFilmCard(item, film) {
       <div class="find-remote-body">
         <em class="find-remote-title">${escapeHtml(title)}${year ? ` · ${escapeHtml(year)}` : ""}</em>
         <p class="find-remote-nature">图像性质：${escapeHtml(kindLabel)}（${escapeHtml(kindBadge)}）</p>
+        ${item.display?.reason ? `<p class="find-remote-tier">${escapeHtml(item.display.reason)}</p>` : ""}
         ${recallLine(art)}
         <p class="find-remote-source"><a href="${escapeHtml(remote.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">Commons 原始来源</a>
           ${remote.rights?.licenseShortName ? ` · ${escapeHtml(String(remote.rights.licenseShortName))}` : ""}</p>

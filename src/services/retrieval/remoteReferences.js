@@ -79,6 +79,55 @@ const FILM_LOCATION_LABEL = {
 
 // 导出供验收脚本读取：让 QA 用**产品同一个函数**判定相关性，而不是复刻一份逻辑。
 // 复刻的风险是两边悄悄分叉，然后「验收通过但线上不对」。
+// P4.9 收尾 — 展示资格分级。
+//
+// 任务书的核心约束：**片名查询允许以片名匹配召回；图片与视觉描述查询
+// 不能仅因片名命中就获得视觉相似推荐资格。**
+//
+// 这不是一个布尔开关能解决的事，因为有三类查询 × 两类召回依据：
+//   查询侧：proper-noun（片名透传） / multi-concept（视觉概念） / 图片 VisualIntent
+//   召回侧：title-only（仅片名撞词）     / description|category（元数据命中）
+//
+// 分级规则（与 visualStatusFor 的语义对齐，但以展示为目的）：
+//   primary   — 可以出现在正式参考列表：
+//               · 片名查询的一切结果（用户就是在找这部片）
+//               · 视觉查询中**描述/类目命中**的（元数据文字确实描述了该概念）
+//   exploratory — 只能进「更多电影线索」收起区：
+//               · 视觉查询中**仅片名撞词**的（The Crowd ≠ 画面有人群）
+//
+// 另外一条硬规则：本产品**从未分析过任何一张远程候选图**（无付费 Vision），
+// 所以 primary 也绝不宣称「视觉匹配成功」，只说「元数据匹配」。
+export function classifyFilmDisplay(item) {
+  const art = item.artwork || {};
+  const rb = art.recallBasis || {};
+  const strategy = rb.strategy || null;
+  const matched = rb.matched || [];
+  const titleOnlyOnly = matched.length > 0 && matched.every((m) => m.location === "title-only");
+  const visualVerified = art.analysisLevel === 1; // 只有真的分析过图像才可能为 true
+
+  // 图片 VisualIntent 查询永远不算片名查询：它没有「用户输入的片名」。
+  const isProperNounQuery = strategy === "proper-noun";
+
+  let tier = "primary";
+  let reason = "";
+  if (!isProperNounQuery && titleOnlyOnly) {
+    tier = "exploratory";
+    reason = "仅片名撞词，画面相似性未验证";
+  } else if (isProperNounQuery) {
+    reason = "片名匹配（你查询了这部电影）";
+  } else {
+    reason = "元数据命中（描述或类目提到该概念）";
+  }
+
+  return {
+    tier,
+    reason,
+    // 一律不宣称视觉匹配成功：没有分析过图像就没有这个资格。
+    visualMatchStatus: visualVerified ? "verified" : "unverified",
+    isProperNounQuery,
+    titleOnlyOnly,
+  };
+}
 export function filmMatchBasis(ref) {
   const rb = ref.recallBasis || {};
   const matched = rb.matched || [];
@@ -299,7 +348,7 @@ export async function findRemoteFilm(query, { media = "all", limit = REMOTE_FILM
     const results = ordered
       .filter((x) => x.ref.showable)
       .slice(0, limit)
-      .map((x) => filmItem(x.ref, query));
+      .map((x) => ({ ...filmItem(x.ref, query), display: classifyFilmDisplay(filmItem(x.ref, query)) }));
     return {
       results,
       degraded: false,
@@ -402,6 +451,8 @@ export async function findRemoteFilmFromIntent(intent, { limit = 6 } = {}) {
       seen.add(key);
       merged.push({
         ...item,
+        // P4.9 收尾 — 每条带展示资格分级（primary / exploratory）
+        display: classifyFilmDisplay(item),
         intentConcept: {
           term: bucket.term,
           // 该词来自 VisualIntent 的哪个字段
@@ -546,6 +597,8 @@ export async function findRemoteReferences(query, { media = "all" } = {}) {
     unrelatedCount: (paintings.unrelatedCount || 0) + (films.unrelatedCount || 0),
     // STEP 2/3/4 的电影渠道可解释数据（绘画渠道不参与这些概念，这里原样透传）。
     film: {
+      // P4.9 收尾 — scannedCount 也要透传，否则文字路径的摘要显示「扫描 未知 条」。
+      scannedCount: films.scannedCount || 0,
       verificationTally: films.verificationTally || null,
       natureKinds: films.natureKinds || null,
       concepts: films.concepts || null,
