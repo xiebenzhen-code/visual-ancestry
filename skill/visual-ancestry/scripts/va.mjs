@@ -99,7 +99,25 @@ async function search() {
     const concepts = conceptTerms(query);
     try {
       const ext = await discoverCommonsFilmStills(query, { limit: Math.min(limit, 8) });
-      const extItems = (ext.results || ext.items || []).slice(0, limit);
+      const extItemsRaw = ext.results || ext.items || [];
+      // P4.12 — 黑白电影影像硬性排除。
+      // 这个 CLI 走的是 discoverCommonsFilmStills 原始输出，绕开了 FIND 里那道
+      // 色度门。现在在本地池层面还碰不到它（extItems 因字段名不匹配恒为空），
+      // 但规则必须在这里也写明，否则字段名一修就是活口子。
+      //
+      // 判定只做**影片级事实**这一层：CLI 在 Node 里跑，没有 canvas，
+      // 无法测像素。所以拿不到影片级事实的一律按 unknown 排除并记录，
+      // 与产品规则第 4 条一致（不确认就不纳入）。
+      const { FILM_COLOR_FACTS } = await imp("src/services/retrieval/monochromePolicy.js");
+      const extKept = [];
+      const extExcluded = [];
+      for (const it of extItemsRaw) {
+        const id = it.key || it.id || "";
+        const fact = FILM_COLOR_FACTS[id];
+        if (fact && fact.verdict === "color") extKept.push(it);
+        else extExcluded.push({ id, verdict: fact ? fact.verdict : "unknown", reason: fact ? fact.basis : "无影片级色彩事实，CLI 环境无法测像素" });
+      }
+      const extItems = extKept.slice(0, limit);
       payload.external = {
         // 「请求成功」与「有命中」是两件事。0 条时若还报 ok:true，
         // 调用方会以为拿到了外部参考 —— 这里分开说。
@@ -117,6 +135,12 @@ async function search() {
           pageUrl: it.pageUrl || it.url || "",
           rights: it.rights?.label || it.rightsStatus || "",
         })),
+      };
+      payload.external.colorFilter = {
+        rule: "黑白电影影像不进推荐列表",
+        excludedCount: extExcluded.length,
+        excluded: extExcluded,
+        note: extExcluded.length ? `有 ${extExcluded.length} 条外部候选因黑白或无法确认色彩被排除。` : "",
       };
       if (!extItems.length) {
         payload.external.note =

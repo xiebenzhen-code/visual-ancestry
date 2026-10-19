@@ -120,6 +120,29 @@ async function scanForLeaks(distRoot) {
     for (const hit of hard) console.error("  " + hit);
     process.exit(1);
   }
+
+  // P4.12 — 产品规则检查：黑白电影影像必须被硬性排除。
+  // 为什么放在构建里：dist 是构建产物、不进版本库。源码改对但忘记重建，
+  // 用户拿到的仍是旧产物，规则一条都不生效，而仓库看起来完全正确。
+  // 这里断言两件事：
+  //   1) 产物里不得把原始候选直接赋给 FILM_POOL；
+  //   2) 产物里必须存在过滤函数名，说明过滤真的被编译进去了。
+  const rawPoolAssign = "const FILM_POOL = filmStillCandidates();";
+  const filterMarker = "filterFilmCandidates";
+  const policyProblems = [];
+  for (const file of files) {
+    if (!file.endsWith("retrievalService.js")) continue;
+    const text = await readFile(file, "utf8");
+    const rel = path.relative(root, file);
+    if (text.includes(rawPoolAssign)) policyProblems.push(`${rel} -> 未过滤的 FILM_POOL 赋值`);
+    if (!text.includes(filterMarker)) policyProblems.push(`${rel} -> 缺少黑白过滤（filterFilmCandidates）`);
+  }
+  if (policyProblems.length) {
+    console.error("PRODUCT POLICY CHECK FAILED（黑白电影影像硬性排除）:");
+    for (const hit of policyProblems) console.error("  " + hit);
+    console.error("  修复：确认源码已接入 monochromePolicy，然后重新 `npm run build`。");
+    process.exit(1);
+  }
   const ctxSummary = context.length
     ? ` (context tokens to review: ${[...new Set(context.map((c) => c.split(" -> ")[1]))].join(", ")})`
     : "";

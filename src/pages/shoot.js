@@ -5,7 +5,7 @@
 
 import { artworks, findArtwork } from "../data/artworks.js";
 import { filmStills } from "../data/filmStills.js";
-import { filmStillAsArtwork } from "../services/retrieval/retrievalService.js";
+import { filmStillAsArtwork, filmStillPool } from "../services/retrieval/retrievalService.js";
 import { findByKey } from "../services/artService.js";
 import { referencesForArtwork } from "../data/filmReferences.js";
 import {
@@ -48,10 +48,15 @@ export function renderShootIndex(app) {
   // 电影画面墙：全部通过许可与画面身份核验的帧，按年份排序（1916→1936）。
   // 之前这里是两个一模一样的文字块（重复渲染的缺陷），且只有片名、没有画面 ——
   // 现在它是一面真的图像墙：与绘画参考卡同一个网格、同一条 tiered-image 管线。
-  const filmRefs = filmStills
-    .filter((still) => still.shootTranslation && still.image)
+  // P4.12 — 电影墙必须查过滤后的池，不能查原始 filmStills。
+  // MEASURED 缺陷（独立审阅发现）：原先直接读 filmStills，于是 SHOOT 首屏
+  // 铺出 14 张黑白/sepia 剧照；用户点进去却因按 id 解析已改为查过滤池，
+  // 落到「暂无可用的 SHOOT 指导」——看得见、点不进，比漏过滤更难解释。
+  const filmPool = filmStillPool();
+  const filmRefs = filmPool
+    .filter((item) => item.shootTranslation && item.image)
     .slice()
-    .sort((a, b) => a.year - b.year);
+    .sort((a, b) => (a.film?.year ?? 0) - (b.film?.year ?? 0));
   app.innerHTML = `
     <section class="workflow">
       <p class="kicker">SHOOT</p>
@@ -86,11 +91,11 @@ export function renderShootIndex(app) {
               (still) => `
           <a class="film-ref-card" href="#shoot/${escapeHtml(still.id)}">
             <span style="${aspectRatioCss({ image: still.image })}">${renderImg(
-                { ...still, titleZh: still.titleZh },
+                { ...still, titleZh: still.film?.titleZh || still.title },
                 { sizes: PICK_SIZES }
               )}</span>
-            <em>${escapeHtml(still.titleZh)} · ${escapeHtml(String(still.year))}</em>
-            <small>导演 ${escapeHtml(still.directorZh)}</small>
+            <em>${escapeHtml(still.film?.titleZh || still.title)} · ${escapeHtml(String(still.film?.year ?? ""))}</em>
+            <small>导演 ${escapeHtml(still.film?.directorZh || "")}</small>
           </a>`
             )
             .join("")}
@@ -481,7 +486,11 @@ export function renderShoot(app, id) {
   // R5 STEP 3 — a film still is a legitimate SHOOT reference. It is resolved
   // through the same artwork-shaped view the retrieval layer uses, so SHOOT
   // needs no second code path; only the LABELS differ (导演, not 画家).
-  const filmStill = filmStills.find((f) => f.id === bare || f.id === id);
+  // P4.12 — 黑白电影影像不得通过直连 id 进入 SHOOT。
+  // 这里原来直接查 filmStills（未过滤的原始数据），因此 #shoot/film-the-general
+  // 仍能打开一张黑白片。改为查过滤后的电影池：被排除的影片解析不到，
+  // 落到下面的「暂无可用的 SHOOT 指导」分支。
+  const filmStill = filmStillPool().find((f) => f.id === bare || f.id === id) || null;
   const artwork = filmStill
     ? filmStillAsArtwork(filmStill)
     : findArtwork(bare) || findByKey(bare) || findByKey(id);

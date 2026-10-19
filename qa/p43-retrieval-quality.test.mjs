@@ -44,8 +44,19 @@ console.log("=== A. 重复推荐根因（INTEGRATION）===");
   const ev = JSON.parse(fs.readFileSync(path.join(ROOT, ".p42-evidence", "real-call.json"), "utf8"));
   const vIntent = normalizeVisionIntent(ev.response.body.intent);
   const vHits = retrieveByIntent(vIntent, { limit: 8 });
-  const clRank = vHits.findIndex((h) => h.artwork.id === "film-city-lights") + 1;
-  check("INTEGRATION", "city-lights 在 P4.2 真实 intent 下排位第 2", clRank === 2, `rank=${clRank}`);
+  // P4.12 — 这条断言原来写的是「city-lights 排第 2」。那是对的旧行为，
+  // 但它编码的是「黑白帧可以进入推荐前 8」，而产品规则现在明确排除黑白电影影像。
+  // 断言改为：已被黑白规则排除的 id，在任何查询的 top-N 中都不得出现。
+  // 这样它测的仍然是「排位」，只是基准从「第 2 名」变成「不得出现」。
+  const { excludedFilmCandidates } = await import("../src/services/retrieval/retrievalService.js");
+  const excludedIds = new Set(excludedFilmCandidates().map((e) => e.id));
+  const leaked = vHits.filter((h) => excludedIds.has(h.artwork.id)).map((h) => h.artwork.id);
+  check(
+    "INTEGRATION",
+    "已排除的黑白电影影像 0 次进入前 8",
+    leaked.length === 0,
+    leaked.length ? `泄漏 ${leaked.length} 条：${leaked.slice(0, 3).join(", ")}` : `已排除 ${excludedIds.size} 条，0 泄漏`
+  );
 
   // A3: 字段密度不对称（结构性根因）
   const W = ["subject","subjectScale","subjectPosition","spatialDepth","negativeSpace","environmentDominance",
@@ -146,11 +157,24 @@ console.log("\n=== D. 二阶段重排（INTEGRATION）===");
 // so P4.4 rates its colour evidence as incomparable and gives it zero colour
 // bonus. The old assertion ("must be demoted by colour distance") was asserting
 // P4.3 behaviour that P4.4 deliberately corrected.
+// P4.12 — P4.4 曾断言「city-lights 是黑白帧但仍在结果里，只是不给色彩加分」。
+// 产品规则现在直接排除黑白电影影像，它不该出现在 ranked 里。
+// 断言从「加分等于 0」改为「根本不在列表」，这才是当前规则要保证的事。
 const clEntry = ranked.find((r) => r.artwork.id === "film-city-lights");
-check("INTEGRATION", "city-lights 为黑白帧，不获得色彩加分（P4.4 修正 P4.3）",
-  clEntry.colorBonus === 0, `colorBonus=${clEntry.colorBonus}`);
-check("INTEGRATION", "其最终分等于 baseline（色彩不参与）",
-  clEntry.finalScore === clEntry.baseScore, `final=${clEntry.finalScore} base=${clEntry.baseScore}`);
+check(
+  "INTEGRATION",
+  "已排除的黑白帧（city-lights）不进入重排结果",
+  clEntry === undefined,
+  clEntry ? `仍在结果中，rank=${clEntry.rank}` : "不在结果中"
+);
+// 反方向的对照：确认池里那唯一一部彩色片仍在，避免「排除」被误做成「全清空」。
+const colorEntry = ranked.find((r) => r.artwork.id === "film-toll-of-the-sea");
+check(
+  "INTEGRATION",
+  "唯一确认的彩色片未被误删",
+  colorEntry !== undefined || ranked.filter((r) => String(r.artwork.id).startsWith("film-")).length === 0,
+  colorEntry ? `存在，rank=${colorEntry.rank}` : "不在 top8（可接受的排序结果）"
+);
 
   const allExplained = ranked.every((r) => explain(r, intent).evidence.length >= 2);
   check("INTEGRATION", "每条推荐至少 2 个具体依据", allExplained);

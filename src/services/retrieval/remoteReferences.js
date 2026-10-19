@@ -20,6 +20,8 @@ import {
 } from "../source/remoteDiscovery.js";
 import { rerankWithVision } from "../source/filmVisionRerank.js";
 import { applyCorrections } from "./filmCorrections.js";
+// P4.12 — 黑白电影影像硬性排除（远程候选只能靠实测像素判定）。
+import { gateRemoteFilmByColor } from "./filmColorGate.js";
 
 // 远程参考的展示上限。本地池仍然优先——远程是补充，不是替代。
 const REMOTE_ARTWORK_LIMIT = 8;
@@ -348,10 +350,20 @@ export async function findRemoteFilm(query, { media = "all", limit = REMOTE_FILM
     const order = new Map(visionOutcome.results.map((r, i) => [r.sourceId, i]));
     const ordered = matchedRefs.slice().sort((a, b) => (order.get(a.ref.sourceId) ?? 99) - (order.get(b.ref.sourceId) ?? 99));
 
-    const results = ordered
+    // P4.12 — 黑白硬性排除，且**必须在截断之前**。
+    //
+    // MEASURED 缺陷（独立审阅发现）：初版写成 slice(0,limit) → gate，
+    // 于是只有前 limit 条进色度判定，第 limit+1 名起的彩色候选永远不被看到。
+    // 后果不是"少返回几条"，而是把"我们只看了 6 条"谎报成"6 条因黑白被排除"。
+    // 现在对 showable 全量判定，再取前 limit。
+    const showableAll = ordered
       .filter((x) => x.ref.showable)
-      .slice(0, limit)
       .map((x) => ({ ...filmItem(x.ref, query), display: classifyFilmDisplay(filmItem(x.ref, query)) }));
+
+    const gated = await gateRemoteFilmByColor(showableAll, { concurrency: 2 });
+    const results = gated.results.slice(0, limit);
+    // 因超过 limit 而未展示的数量 —— 与"因黑白被排除"是两件事，必须分开记。
+    const overLimit = Math.max(0, gated.results.length - results.length);
     return {
       results,
       degraded: false,
@@ -382,6 +394,19 @@ export async function findRemoteFilm(query, { media = "all", limit = REMOTE_FILM
         excluded: corrected.excluded,
         excludedCount: corrected.excluded.length,
         total: corrected.correctionCount,
+      },
+      // P4.12 — 黑白排除的如实记录。界面必须显示，不能静默。
+      colorFilter: {
+        rule: "黑白电影影像不进推荐列表",
+        excluded: gated.excluded,
+        excludedCount: gated.excluded.length,
+        keptCount: results.length,
+        examinedCount: showableAll.length,
+        overLimit,
+        // 三种"少"必须分开说：规则排除 / 超限量未展示 / 检索本身没找到。
+        shortfallNote: gated.excluded.length > 0
+          ? `本次核验 ${showableAll.length} 条候选，其中 ${gated.excluded.length} 条因黑白或无法确认色彩被排除；结果不足 ${limit} 条时不补足。`
+          : "",
       },
     };
   } catch (e) {

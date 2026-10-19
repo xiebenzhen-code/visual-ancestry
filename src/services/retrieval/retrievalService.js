@@ -7,6 +7,9 @@ import { scoreIntent } from "./scoring.js";
 import { cinemaRelations } from "./relationBuilder.js";
 import { filmStills, FILM_STILL_RIGHTS } from "../../data/filmStills.js";
 import { emptyVisualIntent } from "./visualIntent.js";
+// P4.12 — 黑白电影影像硬性排除。产品规则，不是评分偏好：
+// 判定放在候选进入推荐池之前，评分无法绕过（池子里根本没有它）。
+import { filterFilmCandidates, FILM_COLOR_FACTS } from "./monochromePolicy.js";
 import { analyzeImage as runVision } from "../vision/visionService.js";
 // P4.4 — 缺失值感知排序 + 色彩证据 + 艺术语境（全部为可选增强，不替换 baseline）
 import { rankWithMissingAwareness } from "./missingAwareRanking.js";
@@ -147,12 +150,24 @@ function filmStillCandidates() {
     }));
 }
 
-const FILM_POOL = filmStillCandidates();
+// P4.12 — 黑白电影影像在进入池子之前就被剔除。
+// 只在这里过滤：curatedPool / filmStillPool / filmStillAsArtwork 全部经过同一个池，
+// 因此 FIND、CREATE、SHOOT 与文字检索不会各自漏一条路径。
+const FILM_POOL_AUDIT = filterFilmCandidates(filmStillCandidates());
+const FILM_POOL = FILM_POOL_AUDIT.kept;
+
+/** 被黑白规则排除的电影影像（供页面与测试如实上报，不可用于补足数量）。 */
+export function excludedFilmCandidates() {
+  return FILM_POOL_AUDIT.excluded.slice();
+}
 
 // The same artwork-shaped view, for pages that resolve a reference by id
 // (SHOOT). One shape, one code path — only the labels differ per medium.
 export function filmStillAsArtwork(still) {
-  return filmStillCandidates().find((c) => c.id === still.id) || null;
+  // P4.12 — 必须查过滤后的 FILM_POOL，不能查 filmStillCandidates()。
+  // MEASURED 缺陷：原先查原始候选，于是 #shoot/film-the-general 这类直连链接
+  // 仍能把已排除的黑白片解析成有效 artwork，绕过 pool 过滤。
+  return FILM_POOL.find((c) => c.id === still?.id) || null;
 }
 
 export function filmStillPool() {

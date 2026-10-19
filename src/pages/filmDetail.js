@@ -5,6 +5,9 @@
 // 把帧当单幅绘画展示会让"导演"变成"画家"，所以这里单列。
 
 import { filmStills, FILM_STILL_RIGHTS } from "../data/filmStills.js";
+// P4.12 — 黑白电影影像的详情页也必须关死：只查过滤后的池。
+// filmStills 仍保留给「这条记录是否存在」的判断，但能否展示要看池子。
+import { filmStillPool, excludedFilmCandidates } from "../services/retrieval/retrievalService.js";
 import { escapeHtml } from "../utils/html.js";
 import { renderImg, bindImgFallback, aspectRatioCss } from "../utils/image.js";
 import { setRouteActive } from "../app/events.js";
@@ -24,8 +27,19 @@ const IMAGE_KIND_LABEL = {
 
 export function renderFilmStill(app, id) {
   setRouteActive("find");
+  // P4.12 — 被黑白规则排除的影片，详情页如实说明原因，而不是"未找到"。
+  // MEASURED：原先直查 filmStills，于是 #film/film-the-general 仍能打开完整详情，
+  // 等于给已排除的黑白片留了一个可直连的落地页。
+  const excludedEntry = excludedFilmCandidates().find((e) => e.id === id);
+  if (excludedEntry) {
+    app.innerHTML = `<section class="artwork-page"><p class="quiet-note">这张电影画面未纳入 AIGC 参考：${escapeHtml(excludedEntry.reason)}。</p>
+      <p class="quiet-note">当前规则不使用黑白电影影像作为创作参考。</p>
+      <p><a href="#find">回到 FIND</a></p></section>`;
+    return;
+  }
+  const poolItem = filmStillPool().find((c) => c.id === id);
   const still = filmStills.find((s) => s.id === id);
-  if (!still) {
+  if (!still || !poolItem) {
     app.innerHTML = `<section class="artwork-page"><p class="quiet-note">未找到该电影画面记录。</p>
       <p><a href="#find">回到 FIND</a></p></section>`;
     return;
