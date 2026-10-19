@@ -4,7 +4,9 @@ import { artworks } from "../data/artworks.js";
 import {
   retrieveByText,
   retrieveByImage,
-  retrieveByArtwork,
+  retrieveByArtworkChecked,
+  buildEnhancement,
+  ENHANCEMENT_EVIDENCE,
   intentSummary,
   intentForArtwork,
   provenanceForArtwork,
@@ -438,7 +440,10 @@ let lastRemote = null;
     const { intent, results, resultBasis, emptyReason, queryAnalysis } = retrieveByText(query, {
       limit: 6,
       media,
-      enhanced: { signatures: allSignatures(), querySig: null },
+      enhanced: buildEnhancement({
+        evidence: ENHANCEMENT_EVIDENCE.NONE,
+        signatures: allSignatures(),
+      }),
     });
     // 本地先出结果：这一步是新任务，必须 beginTask。
     // P4.4 — 结果依据与空结果原因一并交给渲染，避免「空且无解释」。
@@ -561,9 +566,20 @@ let lastRemote = null;
       // 远程区段清空——当前展示的是本地作品关系，不附带渠道发现结果。
       clearRemote();
       const intent = artworkIntentFor(artwork);
-      // retrieveByArtwork returns the ranked array itself (unlike
-      // retrieveByText, which returns { intent, results }).
-      const results = retrieveByArtwork(artwork, { limit: 6 });
+      // P4.13-F — 与作品详情页共用 checked 接口与同一条增强策略（档案签名）。
+      // 无效起点（缺 key / 未知作品）必须报错，不能渲染成一份看似正常的推荐。
+      const outcome = retrieveByArtworkChecked(artwork, { limit: 6 });
+      const results = outcome.results;
+      if (!outcome.ok) {
+        renderOutcome(
+          app,
+          intent,
+          [],
+          `《${artwork.titleZh || artwork.title}》无法作为检索起点（${outcome.error}），因此不返回推荐。`
+        );
+        paintNameHits("", activeMedia, []);
+        return;
+      }
       // renderOutcome opens the new task itself: the intent when the search
       // produced results, an intent-less reset when it did not.
       renderOutcome(
@@ -716,7 +732,11 @@ let lastRemote = null;
       // 于是选了「电影」仍返回绘画，而且页面不说明筛选没生效。
       // 这里把当前媒介原样传下去，三种选择的语义与文字检索保持一致。
       media: activeMedia,
-      enhanced: { signatures: allSignatures(), querySig: sigForSearch },
+      enhanced: buildEnhancement({
+        evidence: ENHANCEMENT_EVIDENCE.UPLOADED_PIXELS,
+        querySig: sigForSearch,
+        signatures: allSignatures(),
+      }),
     })
       .then((outcome) => {
         progress.hidden = true;

@@ -16,7 +16,7 @@ import { rankWithMissingAwareness } from "./missingAwareRanking.js";
 import { rerank as rerankWithColorAndDiversity, explain as explainRerank } from "./rerank.js";
 import { buildArtContext, matchableObservations } from "./artContext.js";
 import { colorDistance as colorDistanceForOriginal } from "./rerank.js";
-import { allSignatures, signatureIndexMeta, assertUploadSignatureOrigin } from "./colorIndex.js";
+import { allSignatures, signatureFor, signatureIndexMeta, assertUploadSignatureOrigin } from "./colorIndex.js";
 import { applyVisualLexicon, searchByLexicon, analyzeQuery } from "./queryLexicon.js";
 
 // P3.1 alignment: artworks with a validated REAL vision intent (frozen P2.8
@@ -192,8 +192,22 @@ function curatedPool(media = "all") {
 
 // intentSource "auto": vision-intent cache first, rule fallback (default).
 // intentSource "rule": force the pre-P3.1 rule derivation (evaluation probe).
+// P4.13-F — 缓存键必须来自可解析的身份，不能是「undefined|auto」。
+// 缺陷实录：调用方传 {id} 这类缺 key 的对象时，所有作品共用同一个缓存槽，
+// 先查的作品把 intent 写给了后来者（实测 starry 与 wanderer 返回完全相同的榜单）。
+function artworkIdentity(artwork) {
+  if (!artwork || typeof artwork !== "object" || Array.isArray(artwork)) return "";
+  const key = typeof artwork.key === "string" ? artwork.key.trim() : "";
+  if (key) return key;
+  const id = typeof artwork.id === "string" ? artwork.id.trim() : "";
+  return id ? `id:${id}` : "";
+}
+
 function intentOf(artwork, intentSource = "auto") {
-  const cacheKey = `${artwork.key}|${intentSource}`;
+  const identity = artworkIdentity(artwork);
+  // 没有身份可用时不做缓存：无槽可归，缓存只会制造串门。
+  if (!identity) return intentFromArtwork(artwork || null);
+  const cacheKey = `${identity}|${intentSource}`;
   if (!intentCache.has(cacheKey)) {
     // Film stills ship a hand-authored, license-verified 22-field intent. There
     // is no calibration cache entry and no rule derivation for them — inventing
@@ -436,8 +450,133 @@ return {
   };
 }
 
+// P4.13-F — 检索增强的「证据来源」必须显式命名。
+// 此前三个入口各自拼 enhanced：作品页与 FIND 选画干脆不传，上传图传像素签名，
+// 文字查询传 null。结果是同一件作品在不同入口给出互斥的第一名（实测：
+// 作品页 birth-of-venus 31.4，上传 utamaro-three-beauties 26.5）。
+export const ENHANCEMENT_EVIDENCE = {
+  // 用户上传图自己的像素（浏览器 canvas 现算，绝不查本地资产索引）
+  UPLOADED_PIXELS: "uploaded-pixels",
+  // 档案作品已有的像素签名（color-signatures.json，按 artwork id 索引）
+  ARCHIVE_SIGNATURE: "archive-signature",
+  // 没有可比较的像素证据（文本查询，或签名缺失）
+  NONE: "none",
+};
+
+export function buildEnhancement({ evidence, artwork = null, querySig = null, signatures = null } = {}) {
+  // 签名表默认取共享索引；也允许调用方显式传入（保持「调用方决定证据来源」可见）。
+  const signatureMap = signatures || allSignatures();
+
+  if (evidence === ENHANCEMENT_EVIDENCE.UPLOADED_PIXELS) {
+    const ok = !!(querySig && querySig.ok);
+    return {
+      evidence,
+      signatures: signatureMap,
+      querySig: ok ? querySig : null,
+      querySignatureOrigin: ok ? assertUploadSignatureOrigin(querySig).reason : "unavailable",
+      // 降级必须被记录，不能假装「没有色彩项」等价于「色彩很近」。
+      degradation: ok ? null : "上传图签名计算失败，色彩项不参与",
+    };
+  }
+
+  if (evidence === ENHANCEMENT_EVIDENCE.ARCHIVE_SIGNATURE) {
+    const sig = artwork && artwork.id ? signatureFor(artwork.id) : null;
+    return {
+      evidence,
+      signatures: signatureMap,
+      // 保持 origin 为 precomputed-local-asset：这是档案签名，不是上传像素。
+      // assertUploadSignatureOrigin 会拒绝它，防止被误标成上传证据。
+      querySig: sig,
+      querySignatureOrigin: sig ? "precomputed-local-asset" : "unavailable",
+      degradation: sig ? null : "档案作品无色彩签名，色彩项不参与",
+    };
+  }
+
+  return {
+    evidence: ENHANCEMENT_EVIDENCE.NONE,
+    signatures: signatureMap,
+    querySig: null,
+    querySignatureOrigin: "unavailable",
+    degradation: "无可比较的像素证据，色彩项不参与",
+  };
+}
+
+export const RETRIEVAL_ARTWORK_ERRORS = {
+  NOT_AN_OBJECT: "not-an-object",
+  MISSING_KEY: "missing-key",
+  UNKNOWN: "unknown-artwork",
+};
+
+// P4.13-F — 调用方可能传 {id}、null、陌生对象或已下线作品。
+// 此前这些都会静默走进 intentOf → intentFromArtwork，产出一份「看起来正常」
+// 的榜单（实测传 {id:"starry"} 与 {id:"wanderer"} 返回完全相同的 Top5）。
+// 现在必须显式判定：宁可返回空结果 + 错误码，也不返回貌似正常但不相关的榜单。
+export function resolveRetrievalArtwork(artwork) {
+  if (!artwork || typeof artwork !== "object" || Array.isArray(artwork)) {
+    return { ok: false, error: RETRIEVAL_ARTWORK_ERRORS.NOT_AN_OBJECT, artwork: null };
+  }
+  const identity = artworkIdentity(artwork);
+  if (!identity) {
+    return { ok: false, error: RETRIEVAL_ARTWORK_ERRORS.MISSING_KEY, artwork: null };
+  }
+  const key = typeof artwork.key === "string" ? artwork.key.trim() : "";
+  const id = typeof artwork.id === "string" ? artwork.id.trim() : "";
+  // 按完整目录校验：作品页对无图作品也必须能给出明确错误，而不是空榜单。
+  const match = key
+    ? artworks.find((item) => item.key === key)
+    : artworks.find((item) => item.id === id);
+  if (!match) {
+    return { ok: false, error: RETRIEVAL_ARTWORK_ERRORS.UNKNOWN, artwork: null };
+  }
+  // 记录是靠什么身份认出来的：调用方没传 key 却被 id 兜住时必须可见，不能算「静默」。
+  return { ok: true, error: null, artwork: match, resolution: key ? "key" : "id" };
+}
+
+// 带错误状态的检索入口。页面必须用这个，才能区分
+// 「这件作品没有相关作品」与「这件作品不能作为检索起点」。
+export function retrieveByArtworkChecked(artwork, options = {}) {
+  const resolved = resolveRetrievalArtwork(artwork);
+  if (!resolved.ok) {
+    return {
+      ok: false,
+      error: resolved.error,
+      artwork: null,
+      resolution: null,
+      intent: null,
+      results: [],
+      enhancement: null,
+    };
+  }
+
+  const { enhanced: requested, ...rest } = options;
+  const enhancement =
+    requested === null
+      ? null
+      : requested || buildEnhancement({
+          evidence: ENHANCEMENT_EVIDENCE.ARCHIVE_SIGNATURE,
+          artwork: resolved.artwork,
+        });
+
+  const intent = intentOf(resolved.artwork, rest.intentSource);
+  const results = retrieveByIntent(intent, {
+    ...rest,
+    excludeKey: resolved.artwork.key,
+    enhanced: enhancement,
+  });
+
+  return {
+    ok: true,
+    error: null,
+    artwork: resolved.artwork,
+    resolution: resolved.resolution,
+    intent,
+    results,
+    enhancement,
+  };
+}
+
 export function retrieveByArtwork(artwork, options = {}) {
-  return retrieveByIntent(intentOf(artwork, options.intentSource), { ...options, excludeKey: artwork.key });
+  return retrieveByArtworkChecked(artwork, options).results;
 }
 
 // Single source of truth for "which intent does this artwork carry" and "where

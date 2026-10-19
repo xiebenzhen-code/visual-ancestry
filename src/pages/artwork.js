@@ -4,7 +4,7 @@
 // Last: collapsed Artwork facts (museum, source, rights, region, evidence).
 
 import { findByKey, findLocalById } from "../services/artService.js";
-import { retrieveByArtwork, relationsFor, provenanceLabel } from "../services/retrieval/retrievalService.js";
+import { retrieveByArtworkChecked, relationsFor, provenanceLabel } from "../services/retrieval/retrievalService.js";
 import { setRouteActive, attachSaveHandlers } from "../app/events.js";
 import { renderImg, bindImgFallback, aspectRatioCss } from "../utils/image.js";
 import { escapeHtml } from "../utils/html.js";
@@ -61,10 +61,16 @@ function whyItWorksSection(artwork) {
 }
 
 function relationsSection(artwork) {
-  const hits = retrieveByArtwork(artwork, { limit: 4 });
-  if (!hits.length) return "";
+  // P4.13-F — 与 FIND 选画共用同一条增强策略（档案签名）与同一套参数来源，
+  // 使「同一作品 + 同一候选范围 + 同一图像证据」在两个入口得到同一排序。
+  // 用 checked 区分「没有相关作品」与「这件作品不能作为检索起点」。
+  const outcome = retrieveByArtworkChecked(artwork, { limit: 4 });
+  if (!outcome.ok || !outcome.results.length) return "";
+  const hits = outcome.results;
   return `
-    <section class="analysis-section" id="visual-relations">
+    <section class="analysis-section" id="visual-relations" data-retrieval-evidence="${escapeHtml(
+      (outcome.enhancement && outcome.enhancement.evidence) || "none"
+    )}">
       <h2 class="section-title">VISUAL RELATIONS</h2>
       ${hits
         .map(
