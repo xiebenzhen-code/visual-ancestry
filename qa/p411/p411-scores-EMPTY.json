@@ -1,0 +1,77 @@
+{
+  "format": "p411-blind-scores",
+  "version": 1,
+  "status": "EMPTY — 等待用户评分",
+  "sampleId": "p411-american-gothic-v1",
+  "ruleVersion": "p411-rule-v1",
+  "rubricVersion": "p411-rubric-v1",
+  "baseCommit": "8eafcecead445a3f49bf58084d4178677e2105f7",
+  "orderSeed": 20261019,
+  "design": {
+    "scorers": 1,
+    "candidates": 8,
+    "sessions": 1,
+    "scale": "0-3 + NA"
+  },
+  "note": "未填写的模板。真实评分由用户在 blind-review.html 完成后导出，文件名形如 p411-scores-*.json。不要把本文件当作已采集数据。",
+  "scores": {
+    "A": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    },
+    "B": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    },
+    "C": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    },
+    "D": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    },
+    "E": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    },
+    "F": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    },
+    "G": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    },
+    "H": {
+      "D1": null,
+      "D2": null,
+      "D3": null,
+      "D4": null
+    }
+  },
+  "why": {
+    "A": "",
+    "B": "",
+    "C": "",
+    "D": "",
+    "E": "",
+    "F": "",
+    "G": "",
+    "H": ""
+  }
+}

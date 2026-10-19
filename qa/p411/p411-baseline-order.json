@@ -1,0 +1,63 @@
+{
+  "sampleId": "p411-american-gothic-v1",
+  "baseCommit": "8eafcecead445a3f49bf58084d4178677e2105f7",
+  "note": "评分完成后才查看。只记录两个基线的排列，不含任何人工评分。",
+  "baselineA": {
+    "name": "现有系统 VisualIntent 排序（retrieveByArtwork）",
+    "order": [
+      {
+        "blindId": "B",
+        "systemRank": 1,
+        "systemScore": 31.4,
+        "media": "artwork"
+      },
+      {
+        "blindId": "C",
+        "systemRank": 1,
+        "systemScore": 25.9,
+        "media": "film"
+      },
+      {
+        "blindId": "E",
+        "systemRank": 2,
+        "systemScore": 26.5,
+        "media": "artwork"
+      },
+      {
+        "blindId": "F",
+        "systemRank": 2,
+        "systemScore": 25.4,
+        "media": "film"
+      },
+      {
+        "blindId": "A",
+        "systemRank": 3,
+        "systemScore": 25.9,
+        "media": "artwork"
+      },
+      {
+        "blindId": "H",
+        "systemRank": 11,
+        "systemScore": 22.4,
+        "media": "artwork"
+      },
+      {
+        "blindId": "G",
+        "systemRank": 38,
+        "systemScore": 10.5,
+        "media": "artwork"
+      },
+      {
+        "blindId": "D",
+        "systemRank": 41,
+        "systemScore": 2,
+        "media": "artwork"
+      }
+    ]
+  },
+  "baselineB": {
+    "name": "P4.10 实验性像素距离排序",
+    "status": "UNAVAILABLE",
+    "reason": "P4.10 的效度检验证明该描述子无法区分「同图裁切」与「不同画面」（重叠 0.0423），因此不参与排序，样本也未记录 pixelDistance。此项是「无数据」，不是「表现差」。"
+  }
+}

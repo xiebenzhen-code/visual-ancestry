@@ -1,0 +1,96 @@
+{
+  "sampleId": "p411-american-gothic-v1",
+  "ruleVersion": "p411-rule-v1",
+  "baseCommit": "8eafcecead445a3f49bf58084d4178677e2105f7",
+  "generatedAt": "2026-10-19T15:21:27.043Z",
+  "map": [
+    {
+      "blindId": "A",
+      "candidateId": "the-kiss",
+      "title": "The Kiss",
+      "artist": "Gustav Klimt",
+      "year": "1907-1908",
+      "media": "artwork",
+      "layer": "L3",
+      "systemRank": 3,
+      "systemScore": 25.9
+    },
+    {
+      "blindId": "B",
+      "candidateId": "birth-of-venus",
+      "title": "The Birth of Venus",
+      "artist": "Sandro Botticelli",
+      "year": "c. 1485",
+      "media": "artwork",
+      "layer": "L1",
+      "systemRank": 1,
+      "systemScore": 31.4
+    },
+    {
+      "blindId": "C",
+      "candidateId": "film-ten-commandments",
+      "title": "The Ten Commandments",
+      "artist": "Cecil B. DeMille",
+      "year": "1923",
+      "media": "film",
+      "layer": "L1",
+      "systemRank": 1,
+      "systemScore": 25.9
+    },
+    {
+      "blindId": "D",
+      "candidateId": "bar-folies",
+      "title": "A Bar at the Folies-Bergere",
+      "artist": "Edouard Manet",
+      "year": "1882",
+      "media": "artwork",
+      "layer": "L3",
+      "systemRank": 41,
+      "systemScore": 2
+    },
+    {
+      "blindId": "E",
+      "candidateId": "utamaro-three-beauties",
+      "title": "Three Beauties of the Present Day",
+      "artist": "Kitagawa Utamaro",
+      "year": "c. 1793",
+      "media": "artwork",
+      "layer": "L2",
+      "systemRank": 2,
+      "systemScore": 26.5
+    },
+    {
+      "blindId": "F",
+      "candidateId": "film-the-general",
+      "title": "The General",
+      "artist": "Buster Keaton / Clyde Bruckman",
+      "year": "1926",
+      "media": "film",
+      "layer": "L2",
+      "systemRank": 2,
+      "systemScore": 25.4
+    },
+    {
+      "blindId": "G",
+      "candidateId": "fighting-temeraire",
+      "title": "The Fighting Temeraire",
+      "artist": "J. M. W. Turner",
+      "year": "1839",
+      "media": "artwork",
+      "layer": "L4",
+      "systemRank": 38,
+      "systemScore": 10.5
+    },
+    {
+      "blindId": "H",
+      "candidateId": "fan-kuan-travelers",
+      "title": "Travelers Among Mountains and Streams",
+      "artist": "Fan Kuan",
+      "year": "c. 1000",
+      "media": "artwork",
+      "layer": "L4",
+      "systemRank": 11,
+      "systemScore": 22.4
+    }
+  ]
+}

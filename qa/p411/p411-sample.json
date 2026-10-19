@@ -1,0 +1,404 @@
+{
+  "sampleId": "p411-american-gothic-v1",
+  "frozenAt": "2026-10-19T15:21:27.043Z",
+  "ruleVersion": "p411-rule-v1",
+  "baseCommit": "8eafcecead445a3f49bf58084d4178677e2105f7",
+  "branch": "exp/p411-visual-relevance-blind",
+  "orderSeed": 20261019,
+  "queryArtwork": {
+    "candidateId": "american-gothic",
+    "title": "American Gothic",
+    "titleZh": "美国哥特式",
+    "artist": "Grant Wood",
+    "year": "1930",
+    "tiers": {
+      "thumb": {
+        "path": "public/assets/artworks/american-gothic/thumb.webp",
+        "w": 480,
+        "h": 579,
+        "bytes": 29652,
+        "sha256": "C5ED782C4DC4241C49795EDF0996D8BFF350141A86BC38E5E3045948AFC8D3FE"
+      },
+      "preview": {
+        "path": "public/assets/artworks/american-gothic/preview.webp",
+        "w": 960,
+        "h": 1159,
+        "bytes": 156698,
+        "sha256": "0D79E72F6DD69C0335E9E245436746C0635716F2A0048973ADABA53B23ECDD9D"
+      },
+      "detail": {
+        "path": "public/assets/artworks/american-gothic/detail.webp",
+        "w": 1920,
+        "h": 2317,
+        "bytes": 841084,
+        "sha256": "3F5F52B4181D833BAB5177E12382B92EF57CB17EB0CE6E0E63F7EBA790B2316E"
+      }
+    },
+    "license": {
+      "license": "Public domain",
+      "evidenceUrl": "https://commons.wikimedia.org/wiki/File:Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg",
+      "rawLine": "| american-gothic | Public domain | https://commons.wikimedia.org/wiki/File:Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg |"
+    }
+  },
+  "candidates": [
+    {
+      "blindId": "A",
+      "layer": "L3",
+      "media": "artwork",
+      "candidateId": "the-kiss",
+      "title": "The Kiss",
+      "titleZh": "吻",
+      "artist": "Gustav Klimt",
+      "year": "1907-1908",
+      "subjectType": "PERSON",
+      "orientation": "square",
+      "systemRank": 3,
+      "systemScore": 25.9,
+      "license": {
+        "license": "Public domain",
+        "evidenceUrl": "https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg",
+        "rawLine": "| the-kiss | Public domain | https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg |"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/artworks/the-kiss/thumb.webp",
+          "w": 480,
+          "h": 482,
+          "bytes": 58354,
+          "sha256": "331C95293B5A9817F07B5E3CB16CC2DCBE05BF0961248A6D5B22786BE198E338"
+        },
+        "preview": {
+          "path": "public/assets/artworks/the-kiss/preview.webp",
+          "w": 960,
+          "h": 964,
+          "bytes": 276992,
+          "sha256": "BE91ECF52A333152ECDEAF968F6110FED66DB96DED26011553011861A4D57656"
+        },
+        "detail": {
+          "path": "public/assets/artworks/the-kiss/detail.webp",
+          "w": 1920,
+          "h": 1927,
+          "bytes": 1450096,
+          "sha256": "0F3AEB5F19F0AC40EC250325EE752DD93CFC6407371577BA16AC22D22AC3E0D7"
+        }
+      }
+    },
+    {
+      "blindId": "B",
+      "layer": "L1",
+      "media": "artwork",
+      "candidateId": "birth-of-venus",
+      "title": "The Birth of Venus",
+      "titleZh": "维纳斯的诞生",
+      "artist": "Sandro Botticelli",
+      "year": "c. 1485",
+      "subjectType": "PERSON",
+      "orientation": "landscape",
+      "systemRank": 1,
+      "systemScore": 31.4,
+      "license": {
+        "license": "Public domain",
+        "evidenceUrl": "https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project.jpg",
+        "rawLine": "| birth-of-venus | Public domain | https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project.jpg |"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project.jpg",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/artworks/birth-of-venus/thumb.webp",
+          "w": 480,
+          "h": 302,
+          "bytes": 25022,
+          "sha256": "AC34C49E0247AD8BF9482E1CE38D2C7F8396D7E5822761AD94625D7143E8DC21"
+        },
+        "preview": {
+          "path": "public/assets/artworks/birth-of-venus/preview.webp",
+          "w": 960,
+          "h": 603,
+          "bytes": 101156,
+          "sha256": "EE325BC8A1034AF66D0133CB42EA417B72E5A023E0374FAD45353E69E6893CA3"
+        },
+        "detail": {
+          "path": "public/assets/artworks/birth-of-venus/detail.webp",
+          "w": 1920,
+          "h": 1206,
+          "bytes": 491014,
+          "sha256": "DF8BAB5DDCF7929BBE8ECF0967BCD85C2493C4B870D98F08A807B799D53D121C"
+        }
+      }
+    },
+    {
+      "blindId": "C",
+      "layer": "L1",
+      "media": "film",
+      "candidateId": "film-ten-commandments",
+      "title": "The Ten Commandments",
+      "titleZh": "十诫",
+      "artist": "Cecil B. DeMille",
+      "year": "1923",
+      "subjectType": "PERSON_PLACE",
+      "orientation": "portrait",
+      "systemRank": 1,
+      "systemScore": 25.9,
+      "license": {
+        "license": "十诫",
+        "evidenceUrl": "影片帧",
+        "rawLine": "| film-ten-commandments | 十诫 | 影片帧 | Commons 描述：\"A frame from the 1923 film\" | Public domain |"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Charles_De_Roche_and_Paul_Swan_in_The_Ten_Commandments.png",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/film/film-ten-commandments/thumb.webp",
+          "w": 480,
+          "h": 335,
+          "bytes": 11194,
+          "sha256": "F0619C73FF5D49CB46F9E65B00C37A6E5CE0AFC6F355ADB146D1604AD18D1BCD"
+        },
+        "preview": {
+          "path": "public/assets/film/film-ten-commandments/preview.webp",
+          "w": 960,
+          "h": 670,
+          "bytes": 25118,
+          "sha256": "A06ECAFCDC6B1FB40822CD3E4073B46654ECB1E22251338F13C34ED420D815B6"
+        },
+        "detail": {
+          "path": "public/assets/film/film-ten-commandments/detail.webp",
+          "w": 962,
+          "h": 671,
+          "bytes": 28720,
+          "sha256": "8D14D8C93BC4B9E835D52837F4ABDA0B7B7F4F118308D2632AF667F43414B119"
+        }
+      }
+    },
+    {
+      "blindId": "D",
+      "layer": "L3",
+      "media": "artwork",
+      "candidateId": "bar-folies",
+      "title": "A Bar at the Folies-Bergere",
+      "titleZh": "女神游乐厅的吧台",
+      "artist": "Edouard Manet",
+      "year": "1882",
+      "subjectType": "PERSON",
+      "orientation": "landscape",
+      "systemRank": 41,
+      "systemScore": 2,
+      "license": {
+        "license": "Public domain",
+        "evidenceUrl": "https://commons.wikimedia.org/wiki/File:Edouard_Manet,_A_Bar_at_the_Folies-Berg%C3%A8re.jpg",
+        "rawLine": "| bar-folies | Public domain | https://commons.wikimedia.org/wiki/File:Edouard_Manet,_A_Bar_at_the_Folies-Berg%C3%A8re.jpg |"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Edouard_Manet,_A_Bar_at_the_Folies-Berg%C3%A8re.jpg",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/artworks/bar-folies/thumb.webp",
+          "w": 480,
+          "h": 359,
+          "bytes": 34786,
+          "sha256": "56B1B120E3DDE64A98910E113C667DCECA04B5B748746AB37E8B4BFE6809DA0D"
+        },
+        "preview": {
+          "path": "public/assets/artworks/bar-folies/preview.webp",
+          "w": 960,
+          "h": 717,
+          "bytes": 164598,
+          "sha256": "2DDC54878AEB56BE2D7E5F1B6755CEE519237F2A73A15298E0444D945B755815"
+        },
+        "detail": {
+          "path": "public/assets/artworks/bar-folies/detail.webp",
+          "w": 1920,
+          "h": 1434,
+          "bytes": 901716,
+          "sha256": "CE3C95CE5FD54F7688ACB70B40021752A2128CCCA73681320A3E6B6535235DFA"
+        }
+      }
+    },
+    {
+      "blindId": "E",
+      "layer": "L2",
+      "media": "artwork",
+      "candidateId": "utamaro-three-beauties",
+      "title": "Three Beauties of the Present Day",
+      "titleZh": "当时三美人",
+      "artist": "Kitagawa Utamaro",
+      "year": "c. 1793",
+      "subjectType": "PERSON",
+      "orientation": "vertical",
+      "systemRank": 2,
+      "systemScore": 26.5,
+      "license": {
+        "license": "Public domain",
+        "evidenceUrl": "https://commons.wikimedia.org/wiki/File:Utamaro_(1793)_Three_Beauties_of_the_Present_Time,_MFAB_21.6382.jpg",
+        "rawLine": "| utamaro-three-beauties | Public domain | https://commons.wikimedia.org/wiki/File:Utamaro_(1793)_Three_Beauties_of_the_Present_Time,_MFAB_21.6382.jpg |"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/Category:Three_Beauties_of_the_Present_Day",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/artworks/utamaro-three-beauties/thumb.webp",
+          "w": 480,
+          "h": 705,
+          "bytes": 46416,
+          "sha256": "8D9BAA566217029251EF6189F32F096C2451542E8AE0AFDBF2DCC5C8BADE7442"
+        },
+        "preview": {
+          "path": "public/assets/artworks/utamaro-three-beauties/preview.webp",
+          "w": 960,
+          "h": 1410,
+          "bytes": 228682,
+          "sha256": "DE2DDA9F1C2E71C6904CF43B6C5C2F7508B112E62EEED3BF9C7C54C0B822B2E2"
+        },
+        "detail": {
+          "path": "public/assets/artworks/utamaro-three-beauties/detail.webp",
+          "w": 960,
+          "h": 1410,
+          "bytes": 244168,
+          "sha256": "999DF04B7CEEAD8CF1868A468ED8A291B53E86396E1D908516EE5A0BCF04EDE8"
+        }
+      }
+    },
+    {
+      "blindId": "F",
+      "layer": "L2",
+      "media": "film",
+      "candidateId": "film-the-general",
+      "title": "The General",
+      "titleZh": "将军号",
+      "artist": "Buster Keaton / Clyde Bruckman",
+      "year": "1926",
+      "subjectType": "PERSON_PLACE",
+      "orientation": "portrait",
+      "systemRank": 2,
+      "systemScore": 25.4,
+      "license": {
+        "license": "将军号",
+        "evidenceUrl": "影片截图",
+        "rawLine": "| film-the-general | 将军号 | 影片截图 | Commons 描述：\"cropped screenshot\" | Public domain |"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_General_18.jpg",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/film/film-the-general/thumb.webp",
+          "w": 480,
+          "h": 381,
+          "bytes": 10120,
+          "sha256": "162B5750997AAF88CA5A64ECD91787DCDC24EE282AE5C50D6E212DF6EA2686AB"
+        },
+        "preview": {
+          "path": "public/assets/film/film-the-general/preview.webp",
+          "w": 545,
+          "h": 433,
+          "bytes": 13688,
+          "sha256": "4D006E37AB38F33217B0A436EAFA74EAB4C2728E058C2DD239E1FFC21549E8B5"
+        },
+        "detail": {
+          "path": "public/assets/film/film-the-general/detail.webp",
+          "w": 545,
+          "h": 433,
+          "bytes": 16326,
+          "sha256": "355A3929E1139BA79142D0B206694C58CC10AF1863B23D6BD9FAE037F649D8EC"
+        }
+      }
+    },
+    {
+      "blindId": "G",
+      "layer": "L4",
+      "media": "artwork",
+      "candidateId": "fighting-temeraire",
+      "title": "The Fighting Temeraire",
+      "titleZh": "被拖去解体的无畏号",
+      "artist": "J. M. W. Turner",
+      "year": "1839",
+      "subjectType": "PLACE",
+      "orientation": "landscape",
+      "systemRank": 38,
+      "systemScore": 10.5,
+      "license": {
+        "license": "Public domain",
+        "evidenceUrl": "https://commons.wikimedia.org/wiki/File:Turner,_J._M._W._-_The_Fighting_T%C3%A9m%C3%A9raire_tugged_to_her_last_Berth_to_be_broken.jpg",
+        "rawLine": "| fighting-temeraire | Public domain | https://commons.wikimedia.org/wiki/File:Turner,_J._M._W._-_The_Fighting_T%C3%A9m%C3%A9raire_tugged_to_her_last_Berth_to_be_broken.jpg |"
+      },
+      "sourceUrl": "https://www.nationalgallery.org.uk/paintings/joseph-mallord-william-turner-the-fighting-temeraire",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/artworks/fighting-temeraire/thumb.webp",
+          "w": 480,
+          "h": 357,
+          "bytes": 12590,
+          "sha256": "289A2FEA67A5E843A3A74061B6A8BD51CC8B2356FFC8CE544FD9438DDAF06567"
+        },
+        "preview": {
+          "path": "public/assets/artworks/fighting-temeraire/preview.webp",
+          "w": 960,
+          "h": 713,
+          "bytes": 65986,
+          "sha256": "C93936A66D7DA48525E90C8EE5059D51776BFF78953080AC8BE426E0B2FF77D3"
+        },
+        "detail": {
+          "path": "public/assets/artworks/fighting-temeraire/detail.webp",
+          "w": 1920,
+          "h": 1426,
+          "bytes": 519374,
+          "sha256": "B805ED45027756644C592DFDF615BE7487F73F49FCAC6FC1AF0191E6BCFB7AD7"
+        }
+      }
+    },
+    {
+      "blindId": "H",
+      "layer": "L4",
+      "media": "artwork",
+      "candidateId": "fan-kuan-travelers",
+      "title": "Travelers Among Mountains and Streams",
+      "titleZh": "溪山行旅图",
+      "artist": "Fan Kuan",
+      "year": "c. 1000",
+      "subjectType": "PLACE",
+      "orientation": "vertical",
+      "systemRank": 11,
+      "systemScore": 22.4,
+      "license": {
+        "license": "Public domain",
+        "evidenceUrl": "https://commons.wikimedia.org/wiki/File:Fan_Kuan_-_Travelers_Among_Mountains_and_Streams_-_Google_Art_Project.jpg",
+        "rawLine": "| fan-kuan-travelers | Public domain | https://commons.wikimedia.org/wiki/File:Fan_Kuan_-_Travelers_Among_Mountains_and_Streams_-_Google_Art_Project.jpg |"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fan_Kuan_-_Travelers_Among_Mountains_and_Streams_-_Google_Art_Project.jpg",
+      "tiers": {
+        "thumb": {
+          "path": "public/assets/artworks/fan-kuan-travelers/thumb.webp",
+          "w": 480,
+          "h": 963,
+          "bytes": 62154,
+          "sha256": "E06E6EA533A6BC9B82F24C63A9F6CA943CFA647A556668E56EDB3F262A664FCB"
+        },
+        "preview": {
+          "path": "public/assets/artworks/fan-kuan-travelers/preview.webp",
+          "w": 960,
+          "h": 1925,
+          "bytes": 382758,
+          "sha256": "0C3D8D0E4A66783D54A420FA6AA85D5DF5508D3CD444EE00BCB4587F9689E5A9"
+        },
+        "detail": {
+          "path": "public/assets/artworks/fan-kuan-travelers/detail.webp",
+          "w": 1920,
+          "h": 3850,
+          "bytes": 2306226,
+          "sha256": "CC43C6287E9A03644E6B080401B2E544E18DFD851B3A63251CF735A76BA4E5C7"
+        }
+      }
+    }
+  ],
+  "exclusion": [
+    {
+      "candidateId": "wang-ximeng-thousand-li",
+      "reason": "极端长卷或预览图过小，评分会退化为看不清而非不相似"
+    },
+    {
+      "candidateId": "xia-gui-streams",
+      "reason": "极端长卷或预览图过小，评分会退化为看不清而非不相似"
+    },
+    {
+      "candidateId": "huizong-cranes",
+      "reason": "极端长卷或预览图过小，评分会退化为看不清而非不相似"
+    }
+  ],
+  "note": "A–H 顺序由 orderSeed 固定种子随机生成，与系统排名无关。评分前不得揭示 candidateId。"
+}

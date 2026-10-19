@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-10-19T15:21:27.043Z",
+  "sampleId": "p411-american-gothic-v1",
+  "files": {
+    "query.webp": {
+      "sha256": "0D79E72F6DD69C0335E9E245436746C0635716F2A0048973ADABA53B23ECDD9D",
+      "bytes": 156698,
+      "role": "query",
+      "candidateId": "american-gothic",
+      "sourcePath": "public/assets/artworks/american-gothic/preview.webp"
+    },
+    "cand-A.webp": {
+      "sha256": "BE91ECF52A333152ECDEAF968F6110FED66DB96DED26011553011861A4D57656",
+      "bytes": 276992,
+      "role": "candidate",
+      "blindId": "A",
+      "layer": "L3",
+      "candidateId": "the-kiss",
+      "sourcePath": "public/assets/artworks/the-kiss/preview.webp"
+    },
+    "cand-B.webp": {
+      "sha256": "EE325BC8A1034AF66D0133CB42EA417B72E5A023E0374FAD45353E69E6893CA3",
+      "bytes": 101156,
+      "role": "candidate",
+      "blindId": "B",
+      "layer": "L1",
+      "candidateId": "birth-of-venus",
+      "sourcePath": "public/assets/artworks/birth-of-venus/preview.webp"
+    },
+    "cand-C.webp": {
+      "sha256": "A06ECAFCDC6B1FB40822CD3E4073B46654ECB1E22251338F13C34ED420D815B6",
+      "bytes": 25118,
+      "role": "candidate",
+      "blindId": "C",
+      "layer": "L1",
+      "candidateId": "film-ten-commandments",
+      "sourcePath": "public/assets/film/film-ten-commandments/preview.webp"
+    },
+    "cand-D.webp": {
+      "sha256": "2DDC54878AEB56BE2D7E5F1B6755CEE519237F2A73A15298E0444D945B755815",
+      "bytes": 164598,
+      "role": "candidate",
+      "blindId": "D",
+      "layer": "L3",
+      "candidateId": "bar-folies",
+      "sourcePath": "public/assets/artworks/bar-folies/preview.webp"
+    },
+    "cand-E.webp": {
+      "sha256": "DE2DDA9F1C2E71C6904CF43B6C5C2F7508B112E62EEED3BF9C7C54C0B822B2E2",
+      "bytes": 228682,
+      "role": "candidate",
+      "blindId": "E",
+      "layer": "L2",
+      "candidateId": "utamaro-three-beauties",
+      "sourcePath": "public/assets/artworks/utamaro-three-beauties/preview.webp"
+    },
+    "cand-F.webp": {
+      "sha256": "4D006E37AB38F33217B0A436EAFA74EAB4C2728E058C2DD239E1FFC21549E8B5",
+      "bytes": 13688,
+      "role": "candidate",
+      "blindId": "F",
+      "layer": "L2",
+      "candidateId": "film-the-general",
+      "sourcePath": "public/assets/film/film-the-general/preview.webp"
+    },
+    "cand-G.webp": {
+      "sha256": "C93936A66D7DA48525E90C8EE5059D51776BFF78953080AC8BE426E0B2FF77D3",
+      "bytes": 65986,
+      "role": "candidate",
+      "blindId": "G",
+      "layer": "L4",
+      "candidateId": "fighting-temeraire",
+      "sourcePath": "public/assets/artworks/fighting-temeraire/preview.webp"
+    },
+    "cand-H.webp": {
+      "sha256": "0C3D8D0E4A66783D54A420FA6AA85D5DF5508D3CD444EE00BCB4587F9689E5A9",
+      "bytes": 382758,
+      "role": "candidate",
+      "blindId": "H",
+      "layer": "L4",
+      "candidateId": "fan-kuan-travelers",
+      "sourcePath": "public/assets/artworks/fan-kuan-travelers/preview.webp"
+    }
+  }
+}
