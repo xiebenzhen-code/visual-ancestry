@@ -178,24 +178,90 @@ body {
 .album-search input[type="search"]::placeholder { color: var(--va-ink-3); }
 .album-search input[type="search"]:focus-visible { outline: 2px solid var(--va-focus); outline-offset: 1px; }
 
-.album-run,
-.album-search-row button {
+/* P4.7 — 搜索按钮保留一处克制的实心，它是页面唯一的主行动。
+   其余筛选按钮取消实心填充，改成文字式 Tab + 细下划线：
+   旧版每个 .is-on 都是 --va-ink 实心块，一屏排出十几块黑矩形，压过了画册本身。 */
+.album-run {
   font-family: var(--va-sans);
   font-size: var(--va-fs-sm);
-  letter-spacing: 0.06em;
-  border: 1px solid var(--va-rule);
-  background: transparent;
-  color: var(--va-ink-2);
+  letter-spacing: 0.08em;
+  border: 1px solid var(--va-ink);
+  background: var(--va-ink);
+  color: var(--va-bg-raised);
   border-radius: var(--va-radius);
-  padding: 10px 16px;
+  padding: 10px 22px;
   cursor: pointer;
   min-height: 44px;
   white-space: nowrap;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
 }
-.album-run { background: var(--va-ink); border-color: var(--va-ink); color: var(--va-bg-raised); padding-inline: 26px; }
-.album-run:hover { background: var(--va-accent); border-color: var(--va-accent); }
-.album-search-row button:hover { color: var(--va-ink); border-color: var(--va-ink-3); }
-.album-search-row button.is-on { background: var(--va-ink); border-color: var(--va-ink); color: var(--va-bg-raised); }
+
+.album-run:hover {
+  background: var(--va-accent);
+  border-color: var(--va-accent);
+}
+
+.album-run:focus-visible {
+  outline: 2px solid var(--va-focus);
+  outline-offset: 2px;
+}
+
+/* 筛选用文字 Tab：无边框、无底色，靠字重与下划线表达选中。
+   45px 的可点区域保留，触屏仍然好按。 */
+.album-search-row button {
+  position: relative;
+  font-family: var(--va-sans);
+  font-size: var(--va-fs-sm);
+  letter-spacing: 0.04em;
+  font-weight: 400;
+  border: 0;
+  background: none;
+  color: var(--va-ink-3);
+  border-radius: 0;
+  padding: 12px 2px 8px;
+  margin-bottom: -1px;
+  cursor: pointer;
+  min-height: 44px;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+
+.album-search-row button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: transparent;
+  transition: background-color 0.18s ease, height 0.18s ease;
+}
+
+.album-search-row button:hover {
+  color: var(--va-ink);
+}
+
+.album-search-row button:hover::after {
+  background: var(--va-rule);
+}
+
+.album-search-row button.is-on {
+  background: none;
+  border-color: transparent;
+  color: var(--va-ink);
+  font-weight: 600;
+}
+
+.album-search-row button.is-on::after {
+  background: var(--va-ink);
+  height: 1.5px;
+}
+
+.album-search-row button:focus-visible {
+  outline: 2px solid var(--va-focus);
+  outline-offset: 3px;
+  color: var(--va-ink);
+}
 
 /* 两行筛选压到一行：媒介与方式并排，减少「设置面板」观感 */
 .album-search-row {
@@ -378,9 +444,12 @@ body {
   .album-search-row button { padding: 7px 10px; min-height: 38px; font-size: var(--va-fs-xs); }
   .album-search-row { padding: 4px 0; gap: 6px; }
   .album-head { flex-direction: column; align-items: flex-start; gap: var(--va-sp-1); padding-top: var(--va-sp-4); }
-  .album-search { flex-wrap: wrap; }
-  .album-search input[type="search"] { font-size: 1rem; flex-basis: 100%; }
-  .album-run { flex: 1 1 auto; }
+  /* P4.7 — 旧版这里让 .album-run 用 flex:1 1 auto 撑满整行，
+     小屏上就是一条贯通全宽的纯黑横条，压过了作品墙。
+     改成与输入框同一行、按内容宽度排布，并收窄内边距。 */
+  .album-search { flex-wrap: nowrap; gap: 8px; }
+  .album-search input[type="search"] { font-size: 1rem; flex: 1 1 auto; min-width: 0; }
+  .album-run { flex: 0 0 auto; padding: 9px 16px; }
   .find-results { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--va-sp-4); }
   .work-panel {
     inset: 0;

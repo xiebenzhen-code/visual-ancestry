@@ -952,66 +952,10 @@ body.search-open {
   line-height: 1.02;
 }
 
-.find-modes {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 18px;
-}
-
-.find-modes button {
-  border: 1px solid var(--line-strong);
-  background: transparent;
-  border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--soft-ink);
-  cursor: pointer;
-}
-
-.find-modes button.is-on {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-
-/* 媒介筛选在 find.js 里一直有标记，但 CSS 从未定义 .find-media*，于是长期以
-   浏览器默认样式出现。这里补齐，并沿用 FIND 模式按钮的同一套视觉语言。 */
-.find-media {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 18px;
-}
-
-.find-media-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--muted);
-}
-
-.find-media button {
-  border: 1px solid var(--line-strong);
-  background: transparent;
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--soft-ink);
-  cursor: pointer;
-}
-
-.find-media button.is-on {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-
+/* P4.7 — 模式与媒介筛选的真实样式在 album.css 的 .album-search-row button。
+   这里曾有一份针对 .find-modes/.find-media 的定义，但这两个类在 DOM 里并不存在，
+   写了也不会生效，只会造成「改过样式」的错觉。已移除，只保留下面一处兜底：
+   非首页 FIND（#find）用同样的文字 Tab 语言。 */
 .drop-zone {
   display: block;
   border: 1px dashed var(--line-strong);
@@ -1188,12 +1132,59 @@ body.search-open {
 
 /* 结果以作品图片为主：每个命中是一张卡片，图片占满卡片宽度并保持原始比例，
    文字退到图片下方作次要信息。窄屏由 auto-fill 自动落到单列。 */
+/* P4.7 — 结果区不再是一层网格。
+   旧版 #find-results 直接是网格，于是「原作匹配 / 参考列表」两个 section
+   被当成两张卡片并排，左侧「没有足够可信的原作证据」说明只占半宽，
+   右侧参考卡另起一列，看起来像两栏错位。
+   现在外层是纵向单列，参考卡各自成网格。 */
 .find-results {
-  margin-top: 24px;
+  margin-top: 22px;
+  display: block;
+}
+
+.find-results > * + * {
+  margin-top: 26px;
+}
+
+#find-results {
+  display: block;
+}
+
+.find-references {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 18px;
   align-items: start;
+}
+
+.find-original-match {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.find-section-title {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.find-section-title + .quiet-note {
+  grid-column: 1 / -1;
+  margin: -12px 0 0;
+}
+
+.find-no-original {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 62ch;
 }
 
 .find-hit {
@@ -1400,6 +1391,9 @@ body.search-open {
 
 /* ---------- Frame Atlas V5.1 — Local Image → VisualIntent ---------- */
 
+/* P4.7 — display:flex 会压过 [hidden] 默认的 display:none，
+   导致 progress.hidden = true 之后「正在理解画面…」仍然留在页面上。
+   这里显式补一条 [hidden] 规则，让 hidden 真正生效。 */
 .find-image-progress {
   margin-top: 14px;
   font-size: 12px;
@@ -1408,6 +1402,10 @@ body.search-open {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.find-image-progress[hidden] {
+  display: none;
 }
 
 .find-image-progress span::before {
@@ -1733,4 +1731,271 @@ body.search-open {
   .find-hit-remote > div {
     min-width: 0;
   }
+}
+
+/* ===========================================================
+   P4.7 — FIND 视觉整理
+   =========================================================== */
+
+/* 1) 上传区：未上传时只有一个轻量入口，不预占高度。
+      旧版 #find-preview 带 420x320 的最大尺寸和边框，未填 src 时仍会撑出一个
+      悬在作品墙前方的空框，容易与页面元素混淆。现在未上传时它完全 hidden，
+      上传后由 .find-upload-card 承担「待检索图片」的身份。 */
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px dashed var(--line-strong);
+  padding: clamp(20px, 3vw, 30px) clamp(16px, 3vw, 28px);
+  text-align: left;
+  color: var(--soft-ink);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.drop-zone:hover {
+  border-color: var(--ink);
+  background: rgba(37, 33, 27, 0.02);
+}
+
+.drop-zone:focus-within {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* 上传后隐藏拖拽入口：label 是 display:flex，[hidden] 需要显式覆盖。 */
+.drop-zone[hidden] {
+  display: none;
+}
+
+.drop-zone-lead {
+  font-size: 13px;
+  color: var(--soft-ink);
+}
+
+.drop-zone-note {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.find-upload-card {
+  display: flex;
+  gap: clamp(12px, 2vw, 20px);
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.35);
+  padding: clamp(10px, 1.6vw, 14px);
+}
+
+/* display:flex 会覆盖 [hidden]，必须显式声明。
+   不加这条，未上传时「待检索图片」卡片也会显示出来（空的）。 */
+.find-upload-card[hidden] {
+  display: none;
+}
+
+.find-upload-thumb {
+  flex: 0 0 auto;
+  width: clamp(84px, 14vw, 120px);
+  background: var(--paper-deep);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.find-upload-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 140px;
+  object-fit: cover;
+}
+
+.find-upload-thumb img[hidden] {
+  display: none;
+}
+
+.find-upload-meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.find-upload-label {
+  margin: 0 0 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.find-upload-name {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.find-upload-actions {
+  display: flex;
+  gap: 14px;
+}
+
+/* 文字式次级操作，不用实心按钮抢主角。 */
+.link-action {
+  border: 0;
+  background: none;
+  padding: 0 0 2px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--red);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.18s ease;
+}
+
+.link-action:hover {
+  border-bottom-color: var(--red);
+}
+
+.link-action:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
+}
+
+/* 2) 参考卡：图片优先，默认只留一条核心依据。
+      「有故事」与「无故事」共用同一骨架 —— 故事只是可展开区里多一节，
+      不改变卡片高度节奏，所以两类卡的版式不会出现严重差异。 */
+.find-ref-card {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+
+.find-ref-card .find-hit {
+  border: 0;
+  background: none;
+  text-decoration: none;
+  color: inherit;
+}
+
+.find-ref-card .find-hit:hover {
+  border-color: transparent;
+}
+
+.find-ref-head {
+  padding: 12px 14px 10px;
+}
+
+.find-ref-lead {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--soft-ink);
+}
+
+.find-ref-more {
+  border-top: 1px solid var(--line);
+}
+
+.find-ref-more > summary {
+  padding: 9px 14px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.find-ref-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.find-ref-more > summary::before {
+  content: "+ ";
+  color: var(--red);
+}
+
+.find-ref-more[open] > summary::before {
+  content: "− ";
+}
+
+.find-ref-more > summary:hover {
+  color: var(--ink);
+}
+
+.find-ref-more > summary:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: -2px;
+}
+
+.find-ref-more-body {
+  padding: 0 14px 14px;
+  font-size: 12px;
+  color: var(--soft-ink);
+}
+
+.find-ref-more-body ul {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.find-ref-more-body ul li {
+  margin: 0 0 4px;
+  line-height: 1.55;
+}
+
+.find-ref-more-body ul li::before {
+  content: "· ";
+  color: var(--muted);
+}
+
+.find-ref-label {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.find-ref-label:first-child {
+  margin-top: 0;
+}
+
+/* 3) 全局焦点可见。旧版对多数控件没有 :focus-visible，键盘用户看不到焦点。 */
+/* 图片分析按钮：与搜索按钮同一套主操作视觉，但不再额外加一块纯黑矩形。
+   用下边框 + 箭头表达可点，尺寸仍满足触屏。 */
+.find-page #find-image-run {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 10px 16px;
+  min-height: 42px;
+  border-radius: 0;
+  margin-top: 4px;
+}
+
+.find-page #find-image-run:hover {
+  border-color: var(--ink);
+  background: rgba(37, 33, 27, 0.03);
+}
+
+.find-page a:focus-visible,
+.find-page button:focus-visible,
+.find-page input:focus-visible,
+.find-page textarea:focus-visible,
+.find-page summary:focus-visible,
+.find-page [tabindex]:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* 4) 结果区贴近搜索区：作品墙让位后不该再留大片空白。 */
+.find-results {
+  scroll-margin-top: 16px;
 }

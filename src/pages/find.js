@@ -206,11 +206,26 @@ export function renderFind(app, { asHome = false } = {}) {
           </div>
           <div data-find-panel="text" hidden></div>
           <div data-find-panel="image" hidden>
+            <!-- P4.7 STEP 3 — 未上传时只有一个轻量入口，不预占高度。 -->
             <label class="drop-zone" id="find-drop">
-              把图片拖到这里，或点击选择。图片只在本地预览。
+              <span class="drop-zone-lead">把图片拖到这里，或点击选择</span>
+              <span class="drop-zone-note">仅在本机预览，不上传原图以外的任何信息</span>
               <input id="find-file" type="file" accept="image/*" hidden />
             </label>
-            <img id="find-preview" alt="" hidden />
+            <!-- 上传后：图片成为组件的一部分，带文件名与更换、移除。
+                 图片本身带 hidden，未上传时不占任何空间（旧版曾以 420x320 的空框
+                 悬在作品墙上方，容易被误读为页面元素）。 -->
+            <div class="find-upload-card" id="find-upload-card" hidden>
+              <div class="find-upload-thumb"><img id="find-preview" alt="即将用于检索的图片预览" hidden /></div>
+              <div class="find-upload-meta">
+                <p class="find-upload-label">待检索图片</p>
+                <p class="find-upload-name" id="find-file-name"></p>
+                <div class="find-upload-actions">
+                  <button class="link-action" type="button" id="find-file-replace">更换图片</button>
+                  <button class="link-action" type="button" id="find-clear">移除</button>
+                </div>
+              </div>
+            </div>
             <div id="find-image-progress" class="find-image-progress" hidden><span>正在理解画面…</span></div>
             <div id="find-image-error" class="find-image-error" hidden></div>
             <button class="album-run" type="button" id="find-image-run" hidden>分析这张图并找参考</button>
@@ -560,18 +575,59 @@ let lastRemote = null;
 
   let pendingFile = null;
 
+  const uploadCard = app.querySelector("#find-upload-card");
+  const fileNameEl = app.querySelector("#find-file-name");
+  const replaceBtn = app.querySelector("#find-file-replace");
+  const clearBtn = app.querySelector("#find-clear");
+
+  // 把字节数写成人能读的大小；只用于展示，不参与任何检索判断。
+  const humanSize = (bytes) => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "";
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
   const showFile = (file) => {
     if (!file) return;
     pendingFile = file;
     if (preview.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
     preview.src = URL.createObjectURL(file);
     preview.hidden = false;
+    // 上传后图片成为组件的一部分：文件名 + 尺寸，让用户知道这一张是哪一张。
+    if (uploadCard) uploadCard.hidden = false;
+    if (drop) drop.hidden = true;
+    if (fileNameEl) {
+      const size = humanSize(file.size);
+      fileNameEl.textContent = file.name + (size ? " · " + size : "");
+    }
     errorBox.hidden = true;
     errorBox.innerHTML = "";
     runBtn.hidden = false;
     toTextBtn.hidden = true;
   };
+
+  // 移除：清空文件与预览，回到未上传状态。不动 pendingFile 之外的任何状态。
+  const clearFile = () => {
+    pendingFile = null;
+    if (preview.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
+    preview.removeAttribute("src");
+    preview.hidden = true;
+    if (uploadCard) uploadCard.hidden = true;
+    if (drop) drop.hidden = false;
+    if (fileNameEl) fileNameEl.textContent = "";
+    if (fileInput) fileInput.value = "";
+    runBtn.hidden = true;
+    toTextBtn.hidden = true;
+    errorBox.hidden = true;
+    errorBox.innerHTML = "";
+    app.querySelector("#find-image-progress")?.setAttribute("hidden", "");
+    // 回到「未上传」的干净状态，避免上一次的错误提示残留。
+  };
   fileInput.addEventListener("change", () => showFile(fileInput.files[0]));
+  // 更换与移除都必须落在真实控件上，而不是只改样式。
+  replaceBtn?.addEventListener("click", () => fileInput.click());
+  clearBtn?.addEventListener("click", () => clearFile());
   drop.addEventListener("dragover", (event) => event.preventDefault());
   drop.addEventListener("drop", (event) => {
     event.preventDefault();
@@ -619,6 +675,10 @@ let lastRemote = null;
           renderImageFailure(app, outcome.error, errorBox, toTextBtn, outcome.reason);
           return;
         }
+        // P4.7 STEP 4 — 图片检索也必须让作品墙让位。旧版这里没调用 showResults，
+        // 20 件作品墙一直显示，把真实结果压到 2200px 之外，用户要穿过整面墙才看到。
+        // 文字检索早已调用 showResults，图片路径漏了。
+        if (outcome.results && outcome.results.length) showResults("");
         renderImageOutcome(app, pendingFile, outcome);
       })
       .catch(() => {
@@ -673,34 +733,53 @@ function renderImageFailure(app, error, errorBox, toTextBtn, reason) {
 
 // P4.6 — 单张参考卡：相似之处 / 重要差异 / 可展开的创作故事。
 // 故事只对有来源的作品显示；没有来源就完全不出现这一块，不留空壳。
+// P4.7 STEP 4 — 参考卡重排。
+//
+// 旧版每张卡直接摊开 3 条依据 + 2 条差异 + 色彩证据 + 故事，八张卡就是一面墙的文字，
+// 图片反而退到次要位置。现在：图片和标题优先，默认只留一条最核心的依据，
+// 其余（更多依据、重要差异、色彩证据、创作故事）全放在同一个可展开区。
+//
+// 关键约束：有故事与无故事的作品必须共用同一套骨架。故事只是可展开区里多一节，
+// 不额外增删 DOM 层级，所以两者的卡片高度与节奏一致。
 function cardHtml(item, app) {
   const story = safeStory(item.artwork.id);
   const ev = item.explanation || null;
-  const similar = ev ? ev.evidence.slice(0, 3) : (item.reasons || []).slice(0, 3);
-  const differs = ev ? ev.differences.slice(0, 2) : [];
+  const allSimilar = ev && ev.evidence.length ? ev.evidence : (item.reasons || []).map((r) => ({ text: r }));
+  const differs = ev ? ev.differences.slice(0, 3) : [];
+  const textOf = (r) => (typeof r === "string" ? r : r.text);
+
+  // 默认只露一条：优先取第一条，它来自匹配质量最高的那个字段。
+  const lead = allSimilar.length ? textOf(allSimilar[0]) : "";
+  const moreSimilar = allSimilar.slice(1, 5);
+
+  const hasDetails = moreSimilar.length > 0 || differs.length > 0 || Boolean(item.colorEvidence) || Boolean(story);
   const storyId = `story-${String(item.artwork.id).replace(/[^a-z0-9-]/gi, "")}`;
+
   return `
     <div class="find-ref-card">
       <a class="find-hit" data-hit-key="${escapeHtml(item.artwork.key)}" data-ref-key="${escapeHtml(item.artwork.key)}" href="${escapeHtml(hrefFor(item))}">
-        <span style="${aspectRatioCss(item.artwork)}">${renderImg(item.artwork)}</span>
-        <div>
+        <span class="find-ref-thumb" style="${aspectRatioCss(item.artwork)}">${renderImg(item.artwork)}</span>
+        <div class="find-ref-head">
           <strong>${escapeHtml(creatorLabel(item.artwork))}</strong>
           <em>${escapeHtml(item.artwork.titleZh || item.artwork.title)}</em>
-          ${creditLine(item)}
+          ${lead ? `<p class="find-ref-lead">${escapeHtml(lead)}</p>` : ""}
         </div>
       </a>
-      ${similar.length ? `<div class="find-ref-similar"><span class="find-ref-label">相似之处</span><ul>${similar.map((r) => `<li>${escapeHtml(typeof r === "string" ? r : r.text)}</li>`).join("")}</ul></div>` : ""}
-      ${differs.length ? `<div class="find-ref-differs"><span class="find-ref-label">重要差异</span><ul>${differs.map((r) => `<li>${escapeHtml(typeof r === "string" ? r : r.text)}</li>`).join("")}</ul></div>` : ""}
-      ${item.crossTradition ? `<p class="quiet-note find-cross-tradition">跨传统灵感：核心结构相近，光线/色彩组织不同，不是高相似。</p>` : ""}
-      ${item.colorEvidence ? `<p class="quiet-note find-color-evidence">色彩证据：距离 ${item.colorEvidence.distance}（明度 ${item.colorEvidence.components.lightness} / 饱和 ${item.colorEvidence.components.saturation} / 冷暖 ${item.colorEvidence.components.warmcool}）· 加分 ${item.colorEvidence.bonus}</p>` : ""}
-      ${story ? `<details class="find-story" id="${storyId}">
-        <summary>创作故事与可借鉴的方法</summary>
-        <div class="find-story-body">
-          <p class="find-story-fact">${escapeHtml(story.story.text)}</p>
-          <p class="quiet-note">来源：<a href="${escapeHtml(story.story.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(story.story.sourceName)}</a></p>
-          ${(story.structure || []).length ? `<div class="find-story-structure"><span class="find-ref-label">画面组织</span><ul>${story.structure.map((x) => `<li><em>${escapeHtml(x.aspect)}</em>：${escapeHtml(x.observation)}${x.kind === EVIDENCE_KIND.INTERPRET ? "（解释）" : ""}</li>`).join("")}</ul></div>` : ""}
-          ${story.materialNote ? `<div class="find-story-material"><span class="find-ref-label">视觉质感 vs 真实媒介</span><p>看到的是：${escapeHtml(story.materialNote.visualTexture)}</p><p>实际是：${escapeHtml(story.materialNote.actualMedium)}</p><p class="quiet-note">${escapeHtml(story.materialNote.distinction)}</p></div>` : ""}
-          ${(story.methods || []).length ? `<div class="find-story-methods"><span class="find-ref-label">可以借鉴的创作方法</span><ul>${story.methods.map((m) => `<li><strong>${escapeHtml(m.title)}</strong>：${escapeHtml(m.text)}</li>`).join("")}</ul><p class="quiet-note">以上为创作建议，不是原作的创作意图。</p></div>` : ""}
+      ${hasDetails ? `<details class="find-ref-more" id="${storyId}">
+        <summary>更多依据与差异${story ? "、创作故事" : ""}</summary>
+        <div class="find-ref-more-body">
+          ${moreSimilar.length ? `<div class="find-ref-similar"><span class="find-ref-label">其他相似之处</span><ul>${moreSimilar.map((r) => `<li>${escapeHtml(textOf(r))}</li>`).join("")}</ul></div>` : ""}
+          ${differs.length ? `<div class="find-ref-differs"><span class="find-ref-label">重要差异</span><ul>${differs.map((r) => `<li>${escapeHtml(textOf(r))}</li>`).join("")}</ul></div>` : ""}
+          ${item.crossTradition ? `<p class="quiet-note find-cross-tradition">跨传统灵感：核心结构相近，光线/色彩组织不同，不是高相似。</p>` : ""}
+          ${item.colorEvidence ? `<p class="quiet-note find-color-evidence">色彩证据：距离 ${item.colorEvidence.distance}（明度 ${item.colorEvidence.components.lightness} / 饱和 ${item.colorEvidence.components.saturation} / 冷暖 ${item.colorEvidence.components.warmcool}）· 加分 ${item.colorEvidence.bonus}</p>` : ""}
+          ${story ? `<div class="find-story-body">
+            <span class="find-ref-label">创作故事</span>
+            <p class="find-story-fact">${escapeHtml(story.story.text)}</p>
+            <p class="quiet-note">来源：<a href="${escapeHtml(story.story.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(story.story.sourceName)}</a></p>
+            ${(story.structure || []).length ? `<div class="find-story-structure"><span class="find-ref-label">画面组织</span><ul>${story.structure.map((x) => `<li><em>${escapeHtml(x.aspect)}</em>：${escapeHtml(x.observation)}${x.kind === EVIDENCE_KIND.INTERPRET ? "（解释）" : ""}</li>`).join("")}</ul></div>` : ""}
+            ${story.materialNote ? `<div class="find-story-material"><span class="find-ref-label">视觉质感 vs 真实媒介</span><p>看到的是：${escapeHtml(story.materialNote.visualTexture)}</p><p>实际是：${escapeHtml(story.materialNote.actualMedium)}</p><p class="quiet-note">${escapeHtml(story.materialNote.distinction)}</p></div>` : ""}
+            ${(story.methods || []).length ? `<div class="find-story-methods"><span class="find-ref-label">可以借鉴的创作方法</span><ul>${story.methods.map((m) => `<li><strong>${escapeHtml(m.title)}</strong>：${escapeHtml(m.text)}</li>`).join("")}</ul><p class="quiet-note">以上为创作建议，不是原作的创作意图。</p></div>` : ""}
+          </div>` : ""}
         </div>
       </details>` : ""}
     </div>`;
