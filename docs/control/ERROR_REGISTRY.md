@@ -1,5 +1,20 @@
 # ERROR_REGISTRY
 
+## P4.13-F 入口一致性补录（2026-10-20）
+
+本节只登记 P4.13-F 的修复与新增局限，不重写 P4.10 / P4.12 的历史状态。根因审计全文见 `.rc1-audit/P4.13-R-RELEVANCE-AUDIT.md`（该目录被 gitignore，属审计证据区）。
+
+| ID | 类别 / 状态 | 根因与处置 | 修复提交 / 验证 |
+|---|---|---|---|
+| BUG-P413F-01 | 入口一致性 / RESOLVED | 三个入口各自拼 `enhanced`：上传图传像素签名，作品页与 FIND 选画不传。同一作品因此给出互斥的第一名（作品页 birth-of-venus 31.4 / 上传 utamaro-three-beauties 26.5）。处置：新增 `ENHANCEMENT_EVIDENCE`（`uploaded-pixels` / `archive-signature` / `none`）与 `buildEnhancement()`，三个入口统一走它；证据不同时记录 `querySignatureOrigin` 与 `degradation`，不强行让结果相同。 | a4a9ce3fe4237ff2dff2eb82902f4a6e2e1df08f；`qa/find/p413f-entry-consistency.test.mjs` 28/28；真实 Edge 浏览器验证作品页与 FIND 选画前 4 名逐位一致（18/18），截图见 `.rc1-audit/p413f/shots/`。 |
+| BUG-P413F-02 | 缓存串门 / RESOLVED | `intentOf()` 的缓存键是 `` `${artwork.key}|${intentSource}` ``。调用方传 `{id}` 这类缺 key 的对象时，键退化为 `undefined|auto`，**所有作品共用同一缓存槽**：先查的作品把 intent 写给后来者（实测 `{id:"starry"}` 与 `{id:"wanderer"}` 返回完全相同的 Top5）。处置：身份改为「key，否则 id」，无身份时不缓存。 | 同上提交；回归用例「starry 与 wanderer 的 Top3 不相同」「重复查询同一作品结果稳定」。 |
+| BUG-P413F-03 | 静默回退 / RESOLVED | `retrieveByArtwork()` 对 null、空对象、未知 key/id 一律走 `intentOf → intentFromArtwork`，产出一份**看似正常但不相关**的榜单，且不报错。处置：新增 `resolveRetrievalArtwork()` 与 `retrieveByArtworkChecked()`，返回 `not-an-object` / `missing-key` / `unknown-artwork` 且 `results: []`；仅靠 id 兜住时 `resolution: "id"` 必须可见。页面改用 checked 并显式渲染错误。 | 同上提交；回归用例 9 类无效输入全部拒绝；浏览器验证 `#artwork/local:does-not-exist` 显示「未找到该作品」且无任何关系行。 |
+| LIMIT-P413F-01 | 判别力局限 / REGISTERED | American Gothic 与《维纳斯的诞生》在 19 个加权字段中 **18 个完全相同**（仅 `saturation` 不同），因此 31.4 分不是算错，是字段无法表达差异。离线对照三方案（A 现算法 / B 置零高频常量字段 / C 池内 IDF 频次修正）后，**三者下 birth-of-venus 仍为第一名**；两组向量完全碰撞（`fan-kuan-travelers ≡ shitao-album`、`guo-xi-early-spring ≡ fuchun-mountains`）在任何按字段加权的方案下**都无法解除**。结论：不是权重问题，缺的是画幅方向、构图骨架、人数主次、道具、场景类型等维度。**未上线任何新算法。** | a4a9ce3（仅记录，未改算法）；`.rc1-audit/p413f/step2-report.md`，脚本自证 2070 对比较、与生产偏差 0.000。待用户标注支持后再决定是否调整正式相关性算法。 |
+| RISK-P413F-01 | 入口覆盖 / REGISTERED | FIND 的作品选择器只暴露池内前 8 件（`find.js:182` 的 `slice(0, 8)`），American Gothic 在池内第 23 位，两个入口**无法对同一件作品做端到端对照**。浏览器验证因此改用两边都可到达的 `local:wanderer`。这是覆盖限制，不是一致性问题。 | 未修复（超出本轮范围）；一致性结论由单元测试覆盖 5 件作品（含 american-gothic）。 |
+| RISK-P413F-02 | 工作区状态 / REGISTERED | 工作区存在**上一轮 P4.13 彩色参考工作**的未提交改动（`src/services/retrieval/monochromePolicy.js`、`qa/find/remote-discovery-wiring-test.mjs`）。该改动使 `qa/find/monochrome-gate.test.mjs` 出现 4 项失败（20/24）。已实测确认：把该文件还原到 HEAD 后为 **24/24 全过**，故这 4 项**与本轮提交无关**，也没有被本轮修复掩盖。 | 本轮未纳入提交、未回退用户未完成的工作；`git status` 中可见。是否继续或回退该实验需用户决定。 |
+
+---
+
 ## P4.10 定向复验补录（2026-10-19）
 
 本节仅更新下列事项，不重写历史 E01–E15 的状态。完整复现与边界见 [P4.10 复验报告](../P4.10-FIX-REVALIDATION.md)。
