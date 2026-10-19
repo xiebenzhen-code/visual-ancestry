@@ -340,6 +340,143 @@ export async function findRemoteFilm(query, { media = "all", limit = REMOTE_FILM
 // 统一出口：按媒介筛选取远程参考。
 // media 语义与 FIND 现有的检索范围筛选完全一致——用户选「仅电影画面」
 // 就不该看到远程绘画，反之亦然。
+// P4.9 STEP 3 — 从 VisualIntent 出发的电影发现。
+//
+// 只允许有客观依据的受控概念进入检索（见 filmIntentConcepts）。
+// 返回两个**互相独立**的依据，界面上必须分开显示：
+//   metadataRecall : 通过哪个词、命中在什么字段被召回
+//   visualVerification : 是否真的对这一张候选图做过视觉核验（当前恒为未做）
+//
+// 当前没有视觉核验能力（未配 provider），所以 visualVerification 一律如实标注，
+// 不允许把「元数据召回」写成「画面相似」。
+export async function findRemoteFilmFromIntent(intent, { limit = 6 } = {}) {
+  const { searchTermsFromIntent } = await import("../source/filmIntentConcepts.js");
+  const mapped = searchTermsFromIntent(intent, { max: 2 });
+
+  if (!mapped.supported) {
+    return {
+      results: [],
+      degraded: false,
+      unsupported: true,
+      note: mapped.reason,
+      concepts: mapped.concepts,
+      unmapped: mapped.unmapped,
+      terms: [],
+    };
+  }
+
+  // 逐词检索后合并。每个词单独成条，保留「被哪个词召回」这一层依据。
+  const perTerm = [];
+  for (const term of mapped.terms) {
+    try {
+      const r = await findRemoteFilm(term, { media: "film", limit });
+      perTerm.push({ term, ...r });
+    } catch (e) {
+      perTerm.push({ term, results: [], degraded: true, note: String(e?.message || e).slice(0, 80) });
+    }
+    await new Promise((res) => setTimeout(res, 800));
+  }
+
+  const seen = new Set();
+  const merged = [];
+  for (const bucket of perTerm) {
+    for (const item of bucket.results || []) {
+      const key = item?.artwork?.key || item?.artwork?.id;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push({
+        ...item,
+        intentConcept: {
+          term: bucket.term,
+          // 该词来自 VisualIntent 的哪个字段
+          field: mapped.concepts.find((c) => c.term === bucket.term)?.field || null,
+          basis: mapped.concepts.find((c) => c.term === bucket.term)?.basis || null,
+        },
+      });
+    }
+  }
+
+  const anyDegraded = perTerm.some((b) => b.degraded);
+
+  // renderRemoteSection 读 remote.film 的一整套字段来画渠道摘要。
+  // 不补齐这些，摘要区会整片显示「未知」——那等于把「本次按什么概念查的」藏起来。
+  const termTally = {};
+  const locationTally = {};
+  const natureKinds = {};
+  let skippedCount = 0;
+  const termMeta = [];
+  for (const bucket of perTerm) {
+    termTally[bucket.term] = (bucket.results || []).length;
+    skippedCount += bucket.skippedCount || 0;
+    const concept = mapped.concepts.find((c) => c.term === bucket.term);
+    termMeta.push({ term: bucket.term, source: concept?.basis || "VisualIntent 受控映射" });
+    if (bucket.concepts?.locationTally) {
+      for (const [k, v] of Object.entries(bucket.concepts.locationTally)) {
+        locationTally[k] = (locationTally[k] || 0) + v;
+      }
+    }
+    if (bucket.natureKinds) {
+      for (const [k, v] of Object.entries(bucket.natureKinds)) {
+        natureKinds[k] = (natureKinds[k] || 0) + v;
+      }
+    }
+  }
+  const visionAnalyzed = perTerm.reduce((n, b) => n + (b.vision?.analyzed || 0), 0);
+  const visionAttempted = perTerm.reduce((n, b) => n + (b.vision?.attempted || 0), 0);
+  // 视觉未核验的**真实原因**来自 rerankWithVision（not-authorized /
+  // vision-unavailable / budget-capped …），不是我推测的一句话。
+  // 之前这里硬编码「本机未配置视觉 Provider」，那是在把猜测写成事实。
+  const visonReasons = [...new Set(perTerm.map((b) => b.vision?.reason).filter(Boolean))];
+  const visionProvenance = [...new Set(perTerm.map((b) => b.vision?.provenance).filter(Boolean))];
+  const visionNote = visionAnalyzed > 0
+    ? null
+    : visonReasons.length
+      ? `未做图像分析，原因：${visonReasons.join("、")}（来自视觉重排的实际返回，不是推测）`
+      : "未做图像分析（调用方未请求，未返回原因）";
+
+  return {
+    results: merged,
+    degraded: anyDegraded,
+    unsupported: false,
+    note: merged.length
+      ? `按视觉概念 ${mapped.terms.map((t) => `「${t}」`).join("、")} 检索到 ${merged.length} 件；画面相似性尚未验证。`
+      : `按视觉概念 ${mapped.terms.map((t) => `「${t}」`).join("、")} 未找到可展示的候选；画面相似性未验证。`,
+    concepts: mapped.concepts,
+    unmapped: mapped.unmapped,
+    terms: mapped.terms,
+    // 供 renderRemoteSection 使用的渠道摘要
+    film: {
+      skippedCount,
+      concepts: {
+        terms: termMeta,
+        termTally,
+        locationTally: Object.keys(locationTally).length ? locationTally : null,
+      },
+      natureKinds: Object.keys(natureKinds).length ? natureKinds : null,
+      queryMapping: { reason: `检索词来自 VisualIntent：${mapped.reason}` },
+      vision: {
+        analyzed: visionAnalyzed,
+        attempted: visionAttempted,
+        coverage: visionAttempted ? visionAnalyzed / visionAttempted : 0,
+        reason: visionAnalyzed ? "ok" : (visonReasons[0] || "unknown"),
+        provenance: visionProvenance[0] || null,
+        note: visionNote,
+        reranked: false,
+        failures: [],
+      },
+      corrections: { excluded: [], excludedCount: 0, total: 0 },
+    },
+    // 两种独立依据，界面必须分开显示
+    metadataRecall: { terms: mapped.terms, concepts: mapped.concepts },
+    visualVerification: {
+      performed: visionAnalyzed > 0,
+      analyzed: visionAnalyzed,
+      attempted: visionAttempted,
+      reason: visionAnalyzed > 0 ? "ok" : (visonReasons[0] || "unknown"),
+      statement: "根据元数据发现，画面相似性尚未验证",
+    },
+  };
+}
 export async function findRemoteReferences(query, { media = "all" } = {}) {
   const [paintings, films] = await Promise.all([
     media === "film" ? Promise.resolve({ results: [], degraded: false, note: "" }) : findRemotePaintings(query, { media }),

@@ -13,6 +13,7 @@ import {
 } from "../services/retrieval/retrievalService.js";
 import { probeVisionStatus } from "../services/vision/visionService.js";
 import { findRemoteReferences } from "../services/retrieval/remoteReferences.js";
+import { findRemoteFilmFromIntent } from "../services/retrieval/remoteReferences.js";
 import { allSignatures } from "../services/retrieval/colorIndex.js";
 import { analyzeImageSignatureInBrowser, colorComparability } from "../services/retrieval/colorSignatureBrowser.js";
 import { safeStory, EVIDENCE_KIND } from "../data/art-stories.js";
@@ -364,7 +365,12 @@ export function renderFind(app, { asHome = false } = {}) {
 // display:none 或只写一条记录 —— 必须拿这份数据重新渲染。
 let lastRemote = null;
   const paintRemote = (html) => {
-    if (!instanceAlive() || activeMode !== "text") return;
+    // P4.9 STEP 3 — 原先只允许文字模式写远程区（activeMode !== "text" 直接 return），
+    // 于是「上传图片 + 选电影」虽然真的发出了 Commons 请求，结果却永远写不进页面，
+    // 用户看到的是空白。现在放开图片模式：它有自己的远程电影发现（受控概念检索），
+    // 与文字检索共用同一个远程区，但依据来源不同（见 renderRemoteSection 的 fromImage）。
+    if (!instanceAlive()) return;
+    if (activeMode !== "text" && activeMode !== "image") return;
     const host = app.querySelector("#find-remote");
     if (!host) return;
     host.innerHTML = html;
@@ -636,6 +642,21 @@ let lastRemote = null;
   drop.addEventListener("click", () => fileInput.click());
 
   const findImage = async () => {
+    // P4.9 STEP 2 — 图片路径此前没有「动画」拦截。curatedPool("animation") 现在
+    // 如实返回空池，若不拦就会走到「没有足够重叠的视觉关系」——把「这一档没有素材」
+    // 说成「视觉不匹配」，是错误归因。文字路径早有同类拦截，这里保持一致。
+    if (activeMedia === "animation") {
+      progress.hidden = true;
+      runBtn.hidden = false;
+      const results = app.querySelector("#find-results");
+      const intentHost = app.querySelector("#find-intent");
+      if (intentHost) intentHost.innerHTML = "";
+      if (results) {
+        results.innerHTML = `<p class="quiet-note">动画这一档还没有素材。本地档案里动画作品 0 件；远程渠道目前只接了绘画与电影画面检索，没有接动画检索。</p>`;
+      }
+      paintRemote("");
+      return;
+    }
     if (!pendingFile) return;
     runBtn.hidden = true;
     toTextBtn.hidden = true;
@@ -667,6 +688,10 @@ let lastRemote = null;
       // P4.6 — 展示上限从 6 提到 8：有创作故事的作品（whistlers-mother 实测评第 7）
       // 此前落在可见范围之外，用户看不到故事功能。只调展示条数，不动任何分数与排序逻辑。
       limit: 8,
+      // P4.9 STEP 2 — 图片检索此前没有传 media，curatedPool() 走默认 "all"，
+      // 于是选了「电影」仍返回绘画，而且页面不说明筛选没生效。
+      // 这里把当前媒介原样传下去，三种选择的语义与文字检索保持一致。
+      media: activeMedia,
       enhanced: { signatures: allSignatures(), querySig: sigForSearch },
     })
       .then((outcome) => {
@@ -680,6 +705,26 @@ let lastRemote = null;
         // 文字检索早已调用 showResults，图片路径漏了。
         if (outcome.results && outcome.results.length) showResults("");
         renderImageOutcome(app, pendingFile, outcome);
+
+        // P4.9 STEP 3 — 选了「电影」时，再用 VisualIntent 里有客观依据的受控概念
+        // 去 Commons 动态发现一次。只发有依据的词，画面相似性一律标注未验证。
+        // 「全部 / 绘画」不触发：那是用户没要求只看电影。
+        if (activeMedia === "film" && outcome.intent) {
+          paintRemote(`<section class="find-remote"><p class="quiet-note">正在按视觉概念检索 Commons 电影影像…</p></section>`);
+          findRemoteFilmFromIntent(outcome.intent, { limit: 6 })
+            .then((remote) => {
+              // 迟到的结果不能覆盖用户已经切换到的另一种媒介/方式。
+              if (!instanceAlive() || activeMedia !== "film" || activeMode !== "image") return;
+              paintRemote(renderRemoteSection(remote, { fromImage: true }));
+            })
+            .catch((e) => {
+              if (!instanceAlive() || activeMedia !== "film" || activeMode !== "image") return;
+              paintRemote(`<section class="find-remote"><p class="quiet-note">电影动态检索出错：${escapeHtml(String(e?.message || e).slice(0, 80))}。本地电影参考不受影响。</p></section>`);
+            });
+        } else if (activeMedia === "film") {
+          // 选了电影但没有可用 intent：如实说明，不留空白。
+          paintRemote(`<section class="find-remote"><p class="quiet-note">本次上传没有可用于电影检索的视觉信息，未发起在线电影检索。</p></section>`);
+        }
       })
       .catch(() => {
         progress.hidden = true;
@@ -856,7 +901,7 @@ function bindReferencePicks(app) {
 //   · 依据不同。本地件走VisualIntent 评分，远程件只有馆方分类字段的文本匹配。
 //     混在一张列表里、贴同样的「依据」标签，等于宣称「模型看过这张画」。
 //   · 可点性不同。本地件有站内详情页，远程件只能跳到馆方页面。
-function renderRemoteSection(remote) {
+function renderRemoteSection(remote, { fromImage = false } = {}) {
   if (!remote) return "";
   const { results = [], degraded = false, note = "", metadataOnlyCount = 0, unsupported = false, unrelatedCount = 0 } = remote;
   const film = remote.film || {};
@@ -931,22 +976,31 @@ function renderRemoteSection(remote) {
   if (!results.length) {
     return `
       <section class="find-remote">
-        <h2 class="find-remote-title">远程渠道参考</h2>
-        <p class="quiet-note">博物馆与 Commons 渠道已检索，但没有找到与「这次查询」相关的可展示参考。${
-          unrelatedCount ? `另有 ${unrelatedCount} 件馆藏与查询无关联，未列入。` : ""
-        }${metadataOnlyCount ? `另有 ${metadataOnlyCount} 件无可展示图片或版权状态未确认，未列入。` : ""}本地检索结果不受影响。</p>
+        <h2 class="find-remote-title">${fromImage ? "按视觉关键词检索到的电影参考" : "远程渠道参考"}</h2>
+        <p class="quiet-note">${
+          fromImage
+            ? `<strong>根据元数据发现，画面相似性尚未验证。</strong>已按本次上传图的视觉概念检索 Commons 电影影像，没有找到可展示的候选。${
+                unrelatedCount ? `另有 ${unrelatedCount} 件与查询无关联，未列入。` : ""
+              }本次没有检索博物馆绘画渠道（图片路径只接 Commons 电影）。`
+            : `博物馆与 Commons 渠道已检索，但没有找到与「这次查询」相关的可展示参考。${
+                unrelatedCount ? `另有 ${unrelatedCount} 件馆藏与查询无关联，未列入。` : ""
+              }${metadataOnlyCount ? `另有 ${metadataOnlyCount} 件无可展示图片或版权状态未确认，未列入。` : ""}本地检索结果不受影响。`
+        }</p>
         ${filmSummary}
       </section>`;
   }
 
   return `
     <section class="find-remote">
-      <h2 class="find-remote-title">远程渠道参考</h2>
-      <p class="quiet-note">以下来自博物馆与Commons 渠道，<strong>依据仅为馆方分类字段的文本匹配</strong>，不是模型对图像的视觉分析。${
+      <h2 class="find-remote-title">${fromImage ? "按视觉关键词检索到的电影参考" : "远程渠道参考"}</h2>
+      <p class="quiet-note">${fromImage
+         ? "<strong>根据元数据发现，画面相似性尚未验证。</strong>检索词来自本次上传图的 VisualIntent（例如「画面有多人」→ crowd），但 Commons 上这个词同时是<strong>片名</strong>，因此结果里既有「描述提到人群」的，也有<strong>只是片名含该词</strong>的 —— 每张卡都单独标明属于哪一种。"
+         : "以下来自博物馆与Commons 渠道，<strong>依据仅为馆方分类字段的文本匹配</strong>，不是模型对图像的视觉分析。"}${
         metadataOnlyCount ? `另有 ${metadataOnlyCount} 件无可展示图片或版权状态未确认，未列入。` : ""
       }${unrelatedCount ? `另有 ${unrelatedCount} 件与本次查询无关联，未列入。` : ""}</p>
       ${note ? `<p class="quiet-note">${escapeHtml(note)}</p>` : ""}
       ${filmSummary}
+      <div class="find-remote-results">
       ${results.map((item) =>
         item.medium === "film" ? renderRemoteFilmCard(item, remote.film) : `
         <a class="find-hit find-hit-remote" href="${escapeHtml(item.artwork.remote?.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">
@@ -960,6 +1014,8 @@ function renderRemoteSection(remote) {
           </div>
         </a>`
       ).join("")}
+      </div>
+
     </section>`;
 }
 

@@ -159,12 +159,20 @@ export function filmStillPool() {
   return FILM_POOL.slice();
 }
 
-// media: "all" (default) | "artwork" | "film" — theFIND medium filter.
+// media: "all" (default) | "artwork" | "film" — the FIND medium filter.
+//
+// P4.9 STEP 2 — 未知值（例如 "animation"）以前会静默回落到「全部」。
+// 那会让「选了动画却返回绘画」这种错误无声通过。本地档案里动画 0 件，
+// 所以未知/未支持的媒介应当返回**空池**，由调用方如实说明，
+// 而不是拿全池充数。
 function curatedPool(media = "all") {
   const paintings = artworks.filter((artwork) => artwork.image && !artwork.imageUnavailable);
   if (media === MEDIA.ARTWORK) return paintings;
   if (media === MEDIA.FILM) return FILM_POOL;
-  return paintings.concat(FILM_POOL);
+  if (media === "all" || media === undefined || media === null || media === "") {
+    return paintings.concat(FILM_POOL);
+  }
+  return [];
 }
 
 // intentSource "auto": vision-intent cache first, rule fallback (default).

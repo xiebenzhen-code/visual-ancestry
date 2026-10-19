@@ -302,6 +302,25 @@ for (const [tag, w, h] of [["desktop", 1440, 900], ["mobile", 390, 844]]) {
     })()
   `);
 
+  // 先滚动逐张等解码，再统计（否则视口外的图未请求，会误判为解码失败）
+  await evaluate(`
+    (async () => {
+      const cards = [...document.querySelectorAll("#find-remote img")];
+      for (const im of cards) {
+        im.scrollIntoView({ block: "center" });
+        await new Promise(r => setTimeout(r, 260));
+        if (!(im.complete && im.naturalWidth > 0)) {
+          await new Promise(res => {
+            im.addEventListener("load", res, { once: true });
+            im.addEventListener("error", res, { once: true });
+            setTimeout(res, 3000);
+          });
+        }
+      }
+      window.scrollTo(0, 0);
+      return 1;
+    })()
+  `);
   const dom = await evaluate(`
     (() => {
       const host = document.querySelector("#find-remote");
@@ -376,7 +395,13 @@ for (const [tag, w, h] of [["desktop", 1440, 900], ["mobile", 390, 844]]) {
       input.dispatchEvent(new Event("change", { bubbles: true }));
       await new Promise(r => setTimeout(r, 700));
       document.querySelector("#find-image-run")?.click();
-      await new Promise(r => setTimeout(r, 8000));
+      // 轮询到远程区给出结论（不再是「正在…」），最多 30s。
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        const t = document.querySelector("#find-remote")?.innerText || "";
+        if (t && !/正在按视觉概念检索/.test(t)) break;
+      }
+      await new Promise(r => setTimeout(r, 1500));
       const remoteHost = document.querySelector("#find-remote");
       return {
         ok: true,
@@ -393,8 +418,27 @@ for (const [tag, w, h] of [["desktop", 1440, 900], ["mobile", 390, 844]]) {
   console.log(`  远程区文本: ${(c1?.remoteText||"(空)").slice(0, 200)}`);
 
   // 能力边界断言：图片路径不应产生任何远程电影候选
-  check(`C/${tag}: 图片路径没有发出 Commons 请求`, reqs.length === 0, `${reqs.length} 条（0 = 图片路径不触发远程）`);
-  check(`C/${tag}: 图片路径不产出远程电影候选`, (c1?.remoteImgCount || 0) === 0, `${c1?.remoteImgCount} 张`);
+  // P4.8 时这条路径完全不发远程请求，那是当时记录的能力缺失。
+  // P4.9 已按任务书补上「图片 + 电影 → 受控概念检索」，因此断言方向反转：
+  // 现在应当**发出**请求并产出候选，且必须标注画面相似性未验证。
+  // 0 条请求不一定是没检索：remoteDiscovery 有 localStorage 缓存，
+  // 同一概念第二次查询会直接命中缓存（产品行为，不是缺陷）。
+  // 所以判据是「有网络请求 或 有候选从缓存产出」。
+  const cacheInfo = await evaluate(`
+    (() => {
+      try {
+        const idx = JSON.parse(localStorage.getItem("va-channel-discovery-v1:index") || "[]");
+        return { cacheEntries: Array.isArray(idx) ? idx.length : 0 };
+      } catch { return { cacheEntries: -1 }; }
+    })()
+  `);
+  check(`C/${tag}: 图片+电影路径发起检索（网络或缓存）`,
+    reqs.length > 0 || (cacheInfo?.cacheEntries || 0) > 0,
+    `请求 ${reqs.length} 条 / 缓存条目 ${cacheInfo?.cacheEntries}`);
+  check(`C/${tag}: 图片+电影路径产出远程电影候选`, (c1?.remoteImgCount || 0) > 0, `${c1?.remoteImgCount} 张`);
+  check(`C/${tag}: 远程区标注画面相似性未验证`,
+    /画面相似性尚未验证|待视觉核验/.test(c1?.remoteText || ""),
+    (c1?.remoteText || "").slice(0, 80));
 
   const segC = await shotSegmented(`C-${tag}`);
   console.log(`  C/${tag} 分段截图 ${segC.length} 张`);

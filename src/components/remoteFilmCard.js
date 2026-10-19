@@ -69,64 +69,75 @@ export function renderRemoteFilmCard(item, film) {
         ? escapeHtml(vision.note)
         : "未做图像分析";
 
+  // P4.9 STEP 4 — 默认层只留「这是什么 / 凭什么进来的 / 去哪核」。
+  // 身份、许可细节、三轴核验、用户校正全部收进 <details>，一条证据都不删。
+  // 旧版把四按钮 + 标记表单 + 三轴 + 依据全部摊开，五列网格下每卡被挤成一列长条，
+  // 一屏装不下两张卡 —— 那是布局问题，不是信息量问题。
+  const title = art.film?.titleZh || art.title || "";
+  const year = art.year ? String(art.year) : "";
+  const kindLabel = art.imageKindLabel || "未标注";
+  const kindBadge = AXIS_BADGE[art.imageKindStatus] || art.imageKindStatus || "未核验";
+
   return `
     <div class="find-hit find-hit-remote find-hit-film" data-film-source="${sourceId}"
-         data-film-title="${escapeHtml(art.film.titleZh || art.title)}"
-         data-film-year="${escapeHtml(String(art.year || ""))}">
-      <span style="${aspectRatioCss(art)}">${renderImg(art)}</span>
+         data-film-title="${escapeHtml(title)}"
+         data-film-year="${escapeHtml(year)}">
+      <span class="find-ref-thumb" style="${aspectRatioCss(art)}">${renderImg(art)}</span>
       <div class="find-remote-body">
-        <strong>${escapeHtml(art.film.directorZh || "导演未知")}</strong>
-        <em>${escapeHtml(art.film.titleZh || art.title)}${
-          art.year ? ` · ${escapeHtml(String(art.year))}` : ""
-        }</em>
-        <p class="find-remote-nature">图像性质：${escapeHtml(art.imageKindLabel || "未标注")}（${escapeHtml(
-          AXIS_BADGE[art.imageKindStatus] || art.imageKindStatus || "未核验"
-        )}）</p>
+        <em class="find-remote-title">${escapeHtml(title)}${year ? ` · ${escapeHtml(year)}` : ""}</em>
+        <p class="find-remote-nature">图像性质：${escapeHtml(kindLabel)}（${escapeHtml(kindBadge)}）</p>
         ${recallLine(art)}
-        <ul class="find-remote-axes">
-          ${axisRow(axes.identity)}${axisRow(axes.nature)}${axisRow(axes.licence)}
-          ${
-            identity && identity.wikidataUrl
-              ? `<li><b>身份复核</b>：<a href="${escapeHtml(identity.wikidataUrl)}" target="_blank" rel="noopener noreferrer">Wikidata ${escapeHtml(
-                  String(identity.qid || "")
-                )}</a>${identity.imdbId ? ` · IMDb ${escapeHtml(identity.imdbId)}` : ""}</li>`
-              : ""
-          }
-        </ul>
-        <small class="find-remote-prov">依据：Commons 文件元数据（许可 + 类目 + 描述）${
-          identity && identity.wikidataStatus === "verified" ? " + Wikidata 身份核实" : ""
-        } · ${visionLine} · 匹配分 ${item.retrievalScore}</small>
+        <p class="find-remote-source"><a href="${escapeHtml(remote.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">Commons 原始来源</a>
+          ${remote.rights?.licenseShortName ? ` · ${escapeHtml(String(remote.rights.licenseShortName))}` : ""}</p>
         ${
           corrections.length
             ? `<p class="find-remote-corrected">你标记过：${escapeHtml(summarizeCorrections(corrections))}</p>`
             : ""
         }
-        <div class="find-remote-actions">
-          <button type="button" class="ghost-action" data-film-action="pick" data-film-source="${sourceId}">选为参考</button>
-          <a class="ghost-action" href="${escapeHtml(remote.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">核对原始来源</a>
-          <button type="button" class="ghost-action" data-film-action="flag" data-film-source="${sourceId}">标记有误</button>
-          <button type="button" class="ghost-action" data-film-action="exclude" data-film-source="${sourceId}">排除此件</button>
-        </div>
-        <form class="find-remote-flag" data-film-flag-for="${sourceId}" hidden>
-          <label>哪一项有误？
-            <select data-film-axis>
-              <option value="identity">电影身份（导演 / 年份 / 片名）</option>
-              <option value="nature">图像性质（不是影片画面等）</option>
-              <option value="licence">版权依据</option>
-            </select>
-          </label>
-          <label>证据（必填：引文、链接或你的判断依据）
-            <textarea data-film-evidence rows="2" placeholder="例如：Commons 描述为 lobby card，实际是印刷品"></textarea>
-          </label>
-          <p class="quiet-note">标记只作为你的纠正记录（本次会话内有效），<strong>不会</strong>改写来源的导演、年份等事实字段。</p>
-          <button type="submit" class="ghost-action">记录标记</button>
-          <button type="button" class="ghost-action" data-film-cancel="1">取消</button>
-        </form>
-        <p class="find-remote-flash" data-film-flash-for="${sourceId}" hidden></p>
+        <details class="find-remote-more">
+          <summary>身份、许可与核验详情</summary>
+          <div class="find-remote-more-body">
+            <p class="find-remote-director">导演：${escapeHtml(art.film?.directorZh || "未知（未确证）")}</p>
+            <ul class="find-remote-axes">
+              ${axisRow(axes.identity)}${axisRow(axes.nature)}${axisRow(axes.licence)}
+              ${
+                identity && identity.wikidataUrl
+                  ? `<li><b>身份复核</b>：<a href="${escapeHtml(identity.wikidataUrl)}" target="_blank" rel="noopener noreferrer">Wikidata ${escapeHtml(
+                      String(identity.qid || "")
+                    )}</a>${identity.imdbId ? ` · IMDb ${escapeHtml(identity.imdbId)}` : ""}</li>`
+                  : ""
+              }
+            </ul>
+            <small class="find-remote-prov">依据：Commons 文件元数据（许可 + 类目 + 描述）${
+              identity && identity.wikidataStatus === "verified" ? " + Wikidata 身份核实" : ""
+            } · ${visionLine} · 匹配分 ${item.retrievalScore}</small>
+            <div class="find-remote-actions">
+              <button type="button" class="ghost-action" data-film-action="pick" data-film-source="${sourceId}">选为参考</button>
+              <a class="ghost-action" href="${escapeHtml(remote.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">核对原始来源</a>
+              <button type="button" class="ghost-action" data-film-action="flag" data-film-source="${sourceId}">标记有误</button>
+              <button type="button" class="ghost-action" data-film-action="exclude" data-film-source="${sourceId}">排除此件</button>
+            </div>
+            <form class="find-remote-flag" data-film-flag-for="${sourceId}" hidden>
+              <label>哪一项有误？
+                <select data-film-axis>
+                  <option value="identity">电影身份（导演 / 年份 / 片名）</option>
+                  <option value="nature">图像性质（不是影片画面等）</option>
+                  <option value="licence">版权依据</option>
+                </select>
+              </label>
+              <label>证据（必填：引文、链接或你的判断依据）
+                <textarea data-film-evidence rows="2" placeholder="例如：Commons 描述为 lobby card，实际是印刷品"></textarea>
+              </label>
+              <p class="quiet-note">标记只作为你的纠正记录（本次会话内有效），<strong>不会</strong>改写来源的导演、年份等事实字段。</p>
+              <button type="submit" class="ghost-action">记录标记</button>
+              <button type="button" class="ghost-action" data-film-cancel="1">取消</button>
+            </form>
+            <p class="find-remote-flash" data-film-flash-for="${sourceId}" hidden></p>
+          </div>
+        </details>
       </div>
     </div>`;
 }
-
 /**
  * 绑定四个动作。必须在远程区段每次重绘后调用（含异步补写），
  * 因此放在远程区段的唯一写入口里，而不是渲染函数内部。
