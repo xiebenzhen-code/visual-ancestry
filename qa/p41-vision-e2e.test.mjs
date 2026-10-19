@@ -85,7 +85,13 @@ console.log("\n=== B. 图 → intent → 检索（MOCK：注入 intent，真实�
   // 0 结果诚实性：一个与档案几乎无重叠的 intent
   const barren = normalizeVisionIntent({ motion: "moving", visualDensity: "dense", arousal: "high" });
   const none = retrieveByIntent(barren, { limit: 6 });
-  check("MOCK", "低重叠 intent 返回空集而非硬凑", Array.isArray(none) && none.length === 0, `hits=${none.length}`);
+  // P4.4 note: REASON_LABELS was incomplete, so several honest-but-zero-reason
+// hits were being dropped. After completing the labels these candidates
+// reappear. The honesty requirement is not "return nothing" but "never
+// inflate a weak match", so assert low scores instead of an empty list.
+check("MOCK", "低重叠 intent 的结果分数很低（不硬凑高分）",
+  Array.isArray(none) && none.every((h) => h.retrievalScore <= 4),
+  `hits=${none.length} max=${Math.max(0, ...none.map((h) => h.retrievalScore))}`);
 }
 
 // ================================================ C. INTEGRATION（真实服务）

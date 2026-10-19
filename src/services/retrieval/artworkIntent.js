@@ -73,19 +73,31 @@ export function intentFromArtwork(artwork) {
 }
 
 const REASON_LABELS = [
+  // P4.4 — 补齐此前缺失的标签。缺标签会让 sharedReasons() 返回空数组，
+  // 而 retrieveByIntent 要求 reasons.length > 0，于是「分数够但没文案」的
+  // 候选被整体丢弃（实测：人群/城市等查询因此返回 0 条）。
+  ["subject", {
+    "single-figure": "单个主体",
+    figure: "有人物",
+    portrait: "肖像式构图",
+    group: "多人同框",
+    place: "以场所为主体",
+    none: "无明确主体",
+  }],
+  ["humanRelation", { isolated: "人物彼此孤立", together: "人物相互陪伴", crowd: "人群密集" }],
   ["subjectScale", { small: "人物尺度很小", medium: "人物尺度中等", large: "人物占画面很大" }],
-  ["environmentDominance", { high: "环境压过人物" }],
+  ["environmentDominance", { high: "环境压过人物", low: "人物压过环境" }],
   ["spatialDepth", { deep: "纵深很深", shallow: "空间偏平面" }],
-  ["negativeSpace", { high: "留白很大" }],
-  ["lightDirection", { side: "单方向侧光", back: "逆光轮廓" }],
+  ["negativeSpace", { high: "留白很大", low: "几乎不留白" }],
+  ["lightDirection", { side: "单方向侧光", back: "逆光轮廓", front: "正面光", top: "顶光" }],
   ["lightQuality", { diffuse: "光是散的", directional: "光有明确方向" }],
-  ["saturation", { low: "饱和度偏低" }],
-  ["contrast", { high: "明暗对比强" }],
-  ["cameraRelation", { observational: "观看距离偏远，像旁观" }],
-  ["cameraDistance", { far: "机位离主体很远", near: "机位离主体很近" }],
-  ["socialDistance", { high: "人和环境之间距离很远" }],
-  ["motion", { still: "画面几乎静止" }],
-  ["visualDensity", { sparse: "信息密度低" }],
+  ["saturation", { low: "饱和度偏低", medium: "饱和度适中", high: "饱和度高" }],
+  ["contrast", { high: "明暗对比强", medium: "明暗对比适中", low: "明暗对比柔和" }],
+  ["cameraRelation", { observational: "观看距离偏远，像旁观", immersive: "视角贴近，有沉浸感", confrontational: "正面直视观者" }],
+  ["cameraDistance", { far: "机位离主体很远", medium: "机位距离中等", near: "机位离主体很近" }],
+  ["socialDistance", { high: "人和环境之间距离很远", medium: "人际距离中等", low: "人际距离很近" }],
+  ["motion", { still: "画面几乎静止", moving: "画面有运动感" }],
+  ["visualDensity", { sparse: "信息密度低", dense: "信息密度高" }],
 ];
 
 export function sharedReasons(queryIntent, candidateIntent, limit = 4) {

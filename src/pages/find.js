@@ -13,6 +13,8 @@ import {
 } from "../services/retrieval/retrievalService.js";
 import { probeVisionStatus } from "../services/vision/visionService.js";
 import { findRemoteReferences } from "../services/retrieval/remoteReferences.js";
+import { allSignatures } from "../services/retrieval/colorIndex.js";
+import { analyzeImageSignatureInBrowser, colorComparability } from "../services/retrieval/colorSignatureBrowser.js";
 import { renderRemoteFilmCard, bindFilmRemoteActions } from "../components/remoteFilmCard.js";
 import { beginTask, recordReference } from "../utils/taskContext.js";
 import { renderImg, bindImgFallback, aspectRatioCss, PICK_SIZES } from "../utils/image.js";
@@ -400,9 +402,18 @@ let lastRemote = null;
   const runSearch = async (query, media, extraNote = "") => {
     if (!query) return;
     const token = ++searchToken;
-    const { intent, results } = retrieveByText(query, { limit: 6, media });
+    // P4.4 — 启用缺失值感知排序 + 色彩/多样性重排。
+    // querySig 为 null（文本查询没有自己的像素），色彩项不参与，其余增强生效。
+    const { intent, results, resultBasis, emptyReason, queryAnalysis } = retrieveByText(query, {
+      limit: 6,
+      media,
+      enhanced: { signatures: allSignatures(), querySig: null },
+    });
     // 本地先出结果：这一步是新任务，必须 beginTask。
-    renderOutcome(app, intent, results, extraNote);
+    // P4.4 — 结果依据与空结果原因一并交给渲染，避免「空且无解释」。
+    const basisNote = !results.length && emptyReason ? emptyReason
+      : resultBasis === "text-metadata" ? "以下为馆藏元数据的文本匹配，不是视觉相似" : extraNote;
+    renderOutcome(app, intent, results, basisNote);
     // 名称命中与视觉结果同时上屏（都来自本地数据，没有额外网络等待），
     // 但依据完全不同，所以分区展示。远程区段不受影响，照旧异步补写。
     paintNameHits(query, media, results);
@@ -587,7 +598,18 @@ let lastRemote = null;
     app.querySelector("#find-results").innerHTML = "";
     // 图片检索是另一条路径（真实识图），文字输入没有参与，名称区一并清空。
     paintNameHits("", activeMedia, []);
-    retrieveByImage(pendingFile, { limit: 6 })
+    // P4.4 — 先从**上传图自己的像素**算色彩签名（浏览器 canvas，非本地资产索引），
+    // 再把它作为 querySig 传入检索，使色彩证据真正来自这张新图。
+    // 计算失败时 querySig 为 null：色彩项不参与，但检索仍继续，不伪造颜色。
+    const querySig = await analyzeImageSignatureInBrowser(pendingFile).catch(() => ({ ok: false }));
+    const sigForSearch = querySig && querySig.ok
+      ? { ...querySig, origin: "computed-from-uploaded-pixels" }
+      : null;
+
+    retrieveByImage(pendingFile, {
+      limit: 6,
+      enhanced: { signatures: allSignatures(), querySig: sigForSearch },
+    })
       .then((outcome) => {
         progress.hidden = true;
         if (!outcome.ok) {
@@ -657,6 +679,7 @@ function renderImageOutcome(app, file, outcome) {
       <h2>看到的画面</h2>
       ${summaryLabel ? `<p class="vision-summary">${escapeHtml(summaryLabel)}</p>` : `<p class="quiet-note">仅识别出少量结构信息。</p>`}
       <p class="quiet-note">这一段来自${escapeHtml(provenanceLabel(outcome.queryProvenance))}：本次上传的图片刚刚经真实识图服务解析，不是历史缓存，也不是规则推测。</p>
+      ${outcome.querySignature ? `<p class="quiet-note find-query-color">本次上传图的色彩：明度 ${outcome.querySignature.colorSignature.meanLightness} · 饱和 ${outcome.querySignature.colorSignature.meanSaturation} · 暖 ${(outcome.querySignature.colorSignature.warmShare * 100).toFixed(0)}% / 冷 ${(outcome.querySignature.colorSignature.coolShare * 100).toFixed(0)}%（来源：${escapeHtml(outcome.querySignatureOrigin)}）</p>` : `<p class="quiet-note">本次上传图未能计算色彩特征，色彩证据不参与本次排序。</p>`}
       <details class="finder-why">
         <summary>为什么推荐这些？</summary>
         <div class="finder-why-body"></div>
@@ -688,6 +711,8 @@ function renderImageOutcome(app, file, outcome) {
             <em>${escapeHtml(item.artwork.titleZh || item.artwork.title)}</em>
             ${creditLine(item)}
             <small>Retrieval score ${item.retrievalScore} · 依据${escapeHtml(provenanceLabel(item.intentProvenance))}</small>
+            ${item.colorEvidence ? `<small class="find-color-evidence">色彩距离 ${item.colorEvidence.distance}（明度 ${item.colorEvidence.components.lightness} / 饱和 ${item.colorEvidence.components.saturation} / 冷暖 ${item.colorEvidence.components.warmcool}）· 加分 ${item.colorEvidence.bonus}</small>` : ""}
+            ${item.crossTradition ? `<small class="find-cross-tradition">跨传统灵感：核心结构相近，光线/色彩组织不同，非高相似</small>` : ""}
           </div>
         </a>`
         )

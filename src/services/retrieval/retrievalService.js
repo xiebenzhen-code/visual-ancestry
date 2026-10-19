@@ -8,6 +8,12 @@ import { cinemaRelations } from "./relationBuilder.js";
 import { filmStills, FILM_STILL_RIGHTS } from "../../data/filmStills.js";
 import { emptyVisualIntent } from "./visualIntent.js";
 import { analyzeImage as runVision } from "../vision/visionService.js";
+// P4.4 — 缺失值感知排序 + 色彩证据 + 艺术语境（全部为可选增强，不替换 baseline）
+import { rankWithMissingAwareness } from "./missingAwareRanking.js";
+import { rerank as rerankWithColorAndDiversity, explain as explainRerank } from "./rerank.js";
+import { buildArtContext, matchableObservations } from "./artContext.js";
+import { allSignatures, signatureIndexMeta, assertUploadSignatureOrigin } from "./colorIndex.js";
+import { applyVisualLexicon, searchByLexicon, analyzeQuery } from "./queryLexicon.js";
 
 // P3.1 alignment: artworks with a validated REAL vision intent (frozen P2.8
 // calibration) are retrieved in the same VisualIntent space as vision
@@ -188,8 +194,10 @@ function filmStillIntent(candidate) {
 // "calibration-cache" would be a false claim about where it came from.
 export const INTENT_PROVENANCE_FILM = "film-still-record";
 
-export function retrieveByIntent(intent, { limit = 8, excludeKey = "", intentSource = "auto", media = "all" } = {}) {
-  return curatedPool(media)
+// P4.4 — `enhanced` 为可选参数。不传时行为与 P4.3 及之前逐字节一致（baseline 排序）。
+// 传 enhanced 时：缺失值感知排序 → 色彩/多样性二阶段重排；baseline 分数仍保留在返回值里。
+export function retrieveByIntent(intent, { limit = 8, excludeKey = "", intentSource = "auto", media = "all", enhanced = null } = {}) {
+  const items = curatedPool(media)
     .filter((artwork) => artwork.key !== excludeKey)
     .map((artwork) => {
       const candidateIntent = intentOf(artwork, intentSource);
@@ -204,14 +212,119 @@ export function retrieveByIntent(intent, { limit = 8, excludeKey = "", intentSou
           artwork.medium === MEDIA.FILM ? INTENT_PROVENANCE_FILM : provenanceOf(artwork, intentSource),
       };
     })
-    .filter((item) => item.retrievalScore > 0 && item.reasons.length)
-    .sort((a, b) => b.retrievalScore - a.retrievalScore)
-    .slice(0, limit);
+    .filter((item) => item.retrievalScore > 0 && item.reasons.length);
+
+  if (!enhanced) {
+    // 原始路径，一字未改
+    return items.sort((a, b) => b.retrievalScore - a.retrievalScore).slice(0, limit);
+  }
+
+  // ---- 增强路径 ----
+  const sigs = enhanced.signatures || {};
+  const querySig = enhanced.querySig || null;
+
+  // 阶段 1：缺失值感知排序
+  const aware = rankWithMissingAwareness(intent, items);
+
+  // 阶段 2：色彩 + 多样性重排（颜色只在结构达标时参与）
+  const reranked = rerankWithColorAndDiversity(
+    intent,
+    aware.map((x) => ({
+      artwork: x.artwork,
+      intent: x.intent,
+      medium: x.medium,
+      baseScore: x.comparison.baselineScore,
+      qualityScore: x.qualityScore,
+      comparison: x.comparison,
+    })),
+    sigs,
+    { querySig, limit }
+  );
+
+  // 映射回页面既有契约（artwork / retrievalScore / reasons / intent / intentProvenance）
+  return reranked.map((r) => {
+    const explanation = explainRerank(r, intent);
+    const ctx = buildArtContext({ artwork: r.artwork, signature: sigs[r.artwork?.id] });
+    return {
+      artwork: r.artwork,
+      medium: r.medium,
+      retrievalScore: r.finalScore,
+      baselineScore: r.baseScore,
+      reasons: r.item.reasons && r.item.reasons.length ? r.item.reasons : explanation.evidence.map((e) => e.text),
+      intent: r.item.intent,
+      intentProvenance: r.item.intentProvenance,
+      // P4.4 新增可追溯信息
+      comparison: r.item.comparison || null,
+      colorEvidence: r.colorDelta ? { distance: r.colorDelta.distance, components: r.colorDelta.components, bonus: r.colorBonus } : null,
+      diversityPenalty: r.diversityPenalty,
+      nearDuplicateOf: r.nearDuplicateOf || null,
+      crossTradition: r.crossTradition,
+      explanation,
+      artContext: ctx,
+      artContextMatchable: matchableObservations(ctx).map((c) => c.text),
+    };
+  });
 }
 
-export function retrieveByText(text, options) {
-  const intent = parseVisualIntent(text);
-  return { intent, results: retrieveByIntent(intent, options), queryProvenance: INTENT_PROVENANCE.TEXT };
+// P4.4 — 文本检索增加两件事，且都不伪造视觉判断：
+//   1. 视觉词补充：queryLexicon 里 kind==="visual" 的条目补进 intent（合法枚举内）
+//   2. 文本回退：题材/文化词（战争/日本/宗教…）不产生视觉字段，
+//      改走 searchByLexicon 的元数据匹配，并明确标注 basis="text-metadata"
+// 两者都没有命中时，诚实返回空结果 + 原因。
+export function retrieveByText(text, options = {}) {
+  const parsed = parseVisualIntent(text);
+  const { intent, visualHits } = applyVisualLexicon(parsed, text);
+  const queryAnalysis = analyzeQuery(text);
+
+  const opts = options || {};
+  const enhanced = opts.enhanced
+    ? { ...opts.enhanced, signatures: opts.enhanced.signatures || allSignatures() }
+    : null;
+
+  const visualResults = retrieveByIntent(intent, { ...opts, enhanced });
+
+  // 文本回退：只有当视觉通道确实没有可用结果时才启用，
+  // 避免把文本匹配混进视觉相似结果里冒充。
+  let textFallback = null;
+  if (!visualResults.length && queryAnalysis.canProduceTextMatch) {
+    const pool = curatedPool(opts.media || "all");
+    textFallback = searchByLexicon(pool, text);
+  }
+
+  // 文本回退结果必须映射成与视觉结果**同形的对象**，否则页面渲染会拿到 undefined。
+  // 同时明确标注：这是元数据文本匹配，不是视觉相似 —— 不给它伪造的分数。
+  const fallbackMapped = textFallback
+    ? textFallback.results.map((r) => ({
+        artwork: r.artwork,
+        medium: r.artwork.medium || "artwork",
+        retrievalScore: 0, // 文本匹配不产生视觉相似度；0 表示「不适用」
+        reasons: [`${r.lexiconKind === "culture" ? "文化/地区" : "题材"}匹配「${r.lexeme}」（字段：${r.matchedFields.join("、")}）`],
+        intent: null,
+        intentProvenance: "text-metadata",
+        basis: "text-metadata",
+        matchedFields: r.matchedFields,
+        lexeme: r.lexeme,
+        note: r.note,
+      }))
+    : [];
+
+  const results = visualResults.length ? visualResults : fallbackMapped;
+
+  return {
+    intent,
+    results,
+    queryProvenance: INTENT_PROVENANCE.TEXT,
+    // P4.4 可追溯信息
+    queryAnalysis,
+    visualHits,
+    resultBasis: visualResults.length ? "visual-intent" : textFallback ? "text-metadata" : "empty",
+    emptyReason: results.length
+      ? null
+      : queryAnalysis.canProduceTextMatch
+        ? "查询被识别为题材/文化词，但档案中没有匹配的作品"
+        : "查询未能识别为视觉描述、题材或文化词，因此不返回结果",
+    textFallback: textFallback ? { matchedTerms: textFallback.matchedTerms, perEntry: textFallback.perEntry } : null,
+  };
 }
 
 // Image FIND funnels through the exact same pipeline: file → vision → intent
@@ -237,12 +350,24 @@ return {
   return {
     ok: true,
     intent: vision.intent,
-    results: retrieveByIntent(vision.intent, options),
+    // P4.4 — 上传图必须从**它自己的像素**算颜色，不得查本地资产索引。
+    // querySig 由调用方（find.js）在浏览器里用 colorSignatureBrowser 算好后传入；
+    // 这里只做透传与来源断言，绝不回退到 signatureFor(artworkId)。
+    results: retrieveByIntent(vision.intent, {
+      ...options,
+      enhanced: options && options.enhanced ? { ...options.enhanced, signatures: options.enhanced.signatures || allSignatures() } : null,
+    }),
     title: shortTitle(vision.intent),
     summary: shortSummary(vision.intent),
     // A successful image outcome means THIS run really called the provider.
     // No calibration cache and no rule fallback can reach this line.
     queryProvenance: INTENT_PROVENANCE.LIVE,
+    // P4.4 — 回传本次上传图的签名（由调用方从上传像素算得），
+    // 并断言它不是本地资产索引的查询结果。没有就是 null，不伪造。
+    querySignature: (options && options.enhanced && options.enhanced.querySig) || null,
+    querySignatureOrigin: (options && options.enhanced && options.enhanced.querySig)
+      ? assertUploadSignatureOrigin(options.enhanced.querySig).reason
+      : "unavailable",
   };
 }
 

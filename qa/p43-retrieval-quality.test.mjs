@@ -142,11 +142,15 @@ console.log("\n=== D. 二阶段重排（INTEGRATION）===");
   check("INTEGRATION", "baseline 分数被保留（未被替换）", ranked.every((r) => typeof r.baseScore === "number" && r.baseScore > 0));
   const moved = ranked.filter((r) => baseRank.get(r.artwork.id) !== r.rank).length;
   check("INTEGRATION", "重排确实改变了顺序（非恒等）", moved > 0, `位移 ${moved}/8`);
-  // A WORSE rank means a LARGER number. city-lights is the farthest-colour
-// candidate among the structurally-eligible set, so it must move DOWN.
-const clBase = baseRank.get("film-city-lights");
-const clNew = ranked.find((r) => r.artwork.id === "film-city-lights").rank;
-check("INTEGRATION", "city-lights 因色彩距离被下调（排名数字变大）", clNew > clBase, `#${clBase} -> #${clNew}`);
+  // P4.4 supersedes the P4.3 expectation here: city-lights is a MONOCHROME frame,
+// so P4.4 rates its colour evidence as incomparable and gives it zero colour
+// bonus. The old assertion ("must be demoted by colour distance") was asserting
+// P4.3 behaviour that P4.4 deliberately corrected.
+const clEntry = ranked.find((r) => r.artwork.id === "film-city-lights");
+check("INTEGRATION", "city-lights 为黑白帧，不获得色彩加分（P4.4 修正 P4.3）",
+  clEntry.colorBonus === 0, `colorBonus=${clEntry.colorBonus}`);
+check("INTEGRATION", "其最终分等于 baseline（色彩不参与）",
+  clEntry.finalScore === clEntry.baseScore, `final=${clEntry.finalScore} base=${clEntry.baseScore}`);
 
   const allExplained = ranked.every((r) => explain(r, intent).evidence.length >= 2);
   check("INTEGRATION", "每条推荐至少 2 个具体依据", allExplained);

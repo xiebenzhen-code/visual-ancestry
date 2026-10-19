@@ -13,6 +13,7 @@
 
 import { scoreIntent } from "./scoring.js";
 import { sharedReasons } from "./artworkIntent.js";
+import { colorComparability } from "./colorSignatureBrowser.js";
 
 /** 核心视觉字段：决定「画面结构是否相近」 */
 export const CORE_FIELDS = [
@@ -111,7 +112,10 @@ function sameWarmth(a, b) {
  */
 export function rerank(query, items, sigs = {}, { querySig = null, limit = 8 } = {}) {
   const scored = items.map((it) => {
-    const base = it.baseScore ?? scoreIntent(query, it.intent).score;
+    // P4.4 — 优先使用缺失值感知排序分（qualityScore）；未提供时退回冻结 baseline。
+    // 两者都保留在返回结构里，便于对照与解释。
+    const frozenBaseline = it.baseScore ?? scoreIntent(query, it.intent).score;
+    const base = typeof it.qualityScore === "number" ? it.qualityScore : frozenBaseline;
     const core = coreAgreement(query, it.intent);
     const sig = sigs[it.artwork?.id] || null;
 
@@ -143,6 +147,8 @@ export function rerank(query, items, sigs = {}, { querySig = null, limit = 8 } =
       artwork: it.artwork,
       medium: it.medium || "artwork",
       baseScore: base,
+    frozenBaselineScore: frozenBaseline,
+    usedMissingAwareScore: typeof it.qualityScore === "number",
       core,
       colorBonus,
       colorNote,
@@ -168,6 +174,23 @@ export function rerank(query, items, sigs = {}, { querySig = null, limit = 8 } =
         // 0 = 池内最近，1 = 池内最远；上限 2.5，仍小于最强核心字段(3.0)
         const rel = span > 1e-6 ? (x.colorDelta.distance - dmin) / span : 0;
         let bonus = (1 - rel) * 2.5;
+        // P4.4 — 色彩可比性分级。黑白画面的「色温/饱和」不是有效证据：
+        // 拿它与彩色查询比距离，会把噪声当成相似度（实测 diary-lost-girl
+        // 是黑白帧却拿到 1.8 分）。因此按 mode 打折，并记录原因供解释使用。
+        const candSig = sigs[x.artwork?.id];
+        const cmpCand = colorComparability(candSig);
+        const cmpQuery = colorComparability(querySig);
+        let comparability = 1;
+        let comparabilityNote = null;
+        if (cmpCand.mode === "monochrome" || cmpQuery.mode === "monochrome") {
+          comparability = 0; // 黑白 vs 彩色：色彩证据完全不可比，不给加分
+          comparabilityNote = "黑白影像与彩色查询的色彩证据不可比，本项不计加分";
+        } else if (cmpCand.mode === "low-saturation" || cmpQuery.mode === "low-saturation") {
+          comparability = 0.4;
+          comparabilityNote = "低饱和画面，色彩证据权重下调";
+        }
+        bonus = bonus * comparability;
+        x.comparability = { mode: cmpCand.mode, queryMode: cmpQuery.mode, factor: comparability, note: comparabilityNote };
         x.colorBonus = Math.round(bonus * 10) / 10;
         x.rerankScore = Math.round((x.baseScore + x.colorBonus) * 10) / 10;
       }
