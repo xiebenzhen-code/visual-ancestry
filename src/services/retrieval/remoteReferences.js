@@ -311,6 +311,10 @@ export async function findRemoteFilm(query, { media = "all", limit = REMOTE_FILM
       natureKinds: outcome.natureKinds || null,
       concepts: outcome.concepts || null,
       queryMapping: outcome.queryMapping || null,
+      // scanned 是真实扫描页数（remoteDiscovery 的 outcome.scanned）。
+      // 之前只透传 skipped.length，页面于是拿同一个数字同时填「扫描」与「排除」，
+      // 写出「本次扫描 65 条、排除 65 条」这种自相矛盾的话。
+      scannedCount: outcome.scanned || 0,
       skippedCount: (outcome.skipped || []).length,
       vision: {
         analyzed: visionOutcome.analyzed,
@@ -366,16 +370,28 @@ export async function findRemoteFilmFromIntent(intent, { limit = 6 } = {}) {
   }
 
   // 逐词检索后合并。每个词单独成条，保留「被哪个词召回」这一层依据。
-  const perTerm = [];
-  for (const term of mapped.terms) {
-    try {
-      const r = await findRemoteFilm(term, { media: "film", limit });
-      perTerm.push({ term, ...r });
-    } catch (e) {
-      perTerm.push({ term, results: [], degraded: true, note: String(e?.message || e).slice(0, 80) });
+  // 实测（冷启动，单次 findRemoteFilm）：crowd 8.0s、street 14.1s、night 3.9s。
+  // 原来这里是「串行 + 每词 800ms 延迟」：2 个词最坏可到 30s 以上，
+  // 用户会以为卡死。改成**有限并发**（最多 2 个词同时跑）。
+  // 上限 2 的依据：discoverCommonsFilmStills 内部已有 maxSearches=3、
+  // identityBudget=3 的双重限流，外层再限制并发数就不会把渠道打爆。
+  const CONCURRENCY = 2;
+  const perTerm = new Array(mapped.terms.length);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < mapped.terms.length) {
+      const idx = cursor++;
+      const term = mapped.terms[idx];
+      try {
+        const r = await findRemoteFilm(term, { media: "film", limit });
+        perTerm[idx] = { term, ...r };
+      } catch (e) {
+        perTerm[idx] = { term, results: [], degraded: true, note: String(e?.message || e).slice(0, 80) };
+      }
     }
-    await new Promise((res) => setTimeout(res, 800));
-  }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, mapped.terms.length) }, worker));
+  // 结果顺序仍按 terms 顺序，避免并发导致卡片顺序每次不同。
 
   const seen = new Set();
   const merged = [];
@@ -404,10 +420,12 @@ export async function findRemoteFilmFromIntent(intent, { limit = 6 } = {}) {
   const locationTally = {};
   const natureKinds = {};
   let skippedCount = 0;
+  let scannedCount = 0;
   const termMeta = [];
   for (const bucket of perTerm) {
     termTally[bucket.term] = (bucket.results || []).length;
     skippedCount += bucket.skippedCount || 0;
+    scannedCount += bucket.scannedCount || 0;
     const concept = mapped.concepts.find((c) => c.term === bucket.term);
     termMeta.push({ term: bucket.term, source: concept?.basis || "VisualIntent 受控映射" });
     if (bucket.concepts?.locationTally) {
@@ -426,26 +444,33 @@ export async function findRemoteFilmFromIntent(intent, { limit = 6 } = {}) {
   // 视觉未核验的**真实原因**来自 rerankWithVision（not-authorized /
   // vision-unavailable / budget-capped …），不是我推测的一句话。
   // 之前这里硬编码「本机未配置视觉 Provider」，那是在把猜测写成事实。
-  const visonReasons = [...new Set(perTerm.map((b) => b.vision?.reason).filter(Boolean))];
+  // 原先拼成 visionReasons（少一个 i），一并修正。
+  const visionReasons = [...new Set(perTerm.map((b) => b.vision?.reason).filter(Boolean))];
   const visionProvenance = [...new Set(perTerm.map((b) => b.vision?.provenance).filter(Boolean))];
+  // rerankWithVision 同时给了人能读的 note。优先显示它，reason 代码只作兜底：
+  // 「原因 not-authorized」对用户是没有意义的内部术语。
+  const visionNotes = [...new Set(perTerm.map((b) => b.vision?.note).filter(Boolean))];
   const visionNote = visionAnalyzed > 0
     ? null
-    : visonReasons.length
-      ? `未做图像分析，原因：${visonReasons.join("、")}（来自视觉重排的实际返回，不是推测）`
-      : "未做图像分析（调用方未请求，未返回原因）";
+    : visionNotes.length
+      ? visionNotes.join(" ")
+      : visionReasons.length
+        ? `未做图像分析（${visionReasons.join("、")}）。`
+        : "未做图像分析（调用方未请求，未返回原因）。";
 
   return {
     results: merged,
     degraded: anyDegraded,
     unsupported: false,
     note: merged.length
-      ? `按视觉概念 ${mapped.terms.map((t) => `「${t}」`).join("、")} 检索到 ${merged.length} 件；画面相似性尚未验证。`
-      : `按视觉概念 ${mapped.terms.map((t) => `「${t}」`).join("、")} 未找到可展示的候选；画面相似性未验证。`,
+      ? `按视觉关键词 ${mapped.terms.map((t) => `「${t}」`).join("、")} 检索到 ${merged.length} 件；画面相似性尚未验证。`
+      : `按视觉关键词 ${mapped.terms.map((t) => `「${t}」`).join("、")} 未找到可展示的候选；画面相似性未验证。`,
     concepts: mapped.concepts,
     unmapped: mapped.unmapped,
     terms: mapped.terms,
     // 供 renderRemoteSection 使用的渠道摘要
     film: {
+      scannedCount,
       skippedCount,
       concepts: {
         terms: termMeta,
@@ -458,7 +483,7 @@ export async function findRemoteFilmFromIntent(intent, { limit = 6 } = {}) {
         analyzed: visionAnalyzed,
         attempted: visionAttempted,
         coverage: visionAttempted ? visionAnalyzed / visionAttempted : 0,
-        reason: visionAnalyzed ? "ok" : (visonReasons[0] || "unknown"),
+        reason: visionAnalyzed ? "ok" : (visionReasons[0] || "unknown"),
         provenance: visionProvenance[0] || null,
         note: visionNote,
         reranked: false,
@@ -472,7 +497,7 @@ export async function findRemoteFilmFromIntent(intent, { limit = 6 } = {}) {
       performed: visionAnalyzed > 0,
       analyzed: visionAnalyzed,
       attempted: visionAttempted,
-      reason: visionAnalyzed > 0 ? "ok" : (visonReasons[0] || "unknown"),
+      reason: visionAnalyzed > 0 ? "ok" : (visionReasons[0] || "unknown"),
       statement: "根据元数据发现，画面相似性尚未验证",
     },
   };

@@ -396,11 +396,15 @@ for (const [tag, w, h] of [["desktop", 1440, 900], ["mobile", 390, 844]]) {
       await new Promise(r => setTimeout(r, 700));
       document.querySelector("#find-image-run")?.click();
       // 轮询到远程区给出结论（不再是「正在…」），最多 30s。
-      for (let i = 0; i < 30; i++) {
+      const t0 = Date.now();
+      let waited = 0;
+      for (let i = 0; i < 60; i++) {
         await new Promise(r => setTimeout(r, 1000));
+        waited = Date.now() - t0;
         const t = document.querySelector("#find-remote")?.innerText || "";
-        if (t && !/正在按视觉概念检索/.test(t)) break;
+        if (t && !/正在按视觉关键词检索|正在按视觉概念检索/.test(t)) break;
       }
+      window.__p48Waited = waited;
       await new Promise(r => setTimeout(r, 1500));
       const remoteHost = document.querySelector("#find-remote");
       return {
@@ -413,7 +417,8 @@ for (const [tag, w, h] of [["desktop", 1440, 900], ["mobile", 390, 844]]) {
     })()
   `);
   const reqs = commonsReqs.slice(before);
-  console.log(`  remoteHost=${c1?.remoteHostExists} 图片=${c1?.remoteImgCount} Commons请求=${reqs.length}`);
+  const waited = await evaluate("(() => window.__p48Waited || 0)()");
+  console.log(`  remoteHost=${c1?.remoteHostExists} 图片=${c1?.remoteImgCount} Commons请求=${reqs.length} 等待=${waited}ms`);
   console.log(`  媒介选中: ${JSON.stringify(c1?.activeMedia)}`);
   console.log(`  远程区文本: ${(c1?.remoteText||"(空)").slice(0, 200)}`);
 

@@ -274,8 +274,9 @@ export function renderFind(app, { asHome = false } = {}) {
   const bridged = sessionStorage.getItem("fa-vision-summary");
   if (bridged) {
     sessionStorage.removeItem("fa-vision-summary");
-    const imageMode = [...app.querySelectorAll("[data-find-mode]")].find((b) => b.dataset.findMode === "image");
-    if (imageMode) imageMode.click();
+    // 这里**不**直接 click：此刻 [data-find-mode] 的监听器还没绑定，
+    // click() 不会改 activeMode、也不会展开 image panel，等于什么都没做
+    // （UI 与状态会互相矛盾）。真正的切换放到监听器绑定之后（见下方 bridgedSwitch）。
     app.querySelector("#find-intent").innerHTML = `
       <section class="intent-card intent-card-image">
         <h2>看到的画面</h2>
@@ -299,6 +300,12 @@ export function renderFind(app, { asHome = false } = {}) {
       clearRemote();
     });
   });
+
+  // 监听器就绪后再执行 SHOOT 交过来的模式切换，这次 click() 才真正生效。
+  if (bridged) {
+    const imageMode = [...app.querySelectorAll("[data-find-mode]")].find((b) => b.dataset.findMode === "image");
+    if (imageMode) imageMode.click();
+  }
 
   // R5 STEP 3 — medium filter. Films are few (3) and paintings many (46), so a
   // pure score sort can leave every film out of a top-6. The filter is the
@@ -710,7 +717,7 @@ let lastRemote = null;
         // 去 Commons 动态发现一次。只发有依据的词，画面相似性一律标注未验证。
         // 「全部 / 绘画」不触发：那是用户没要求只看电影。
         if (activeMedia === "film" && outcome.intent) {
-          paintRemote(`<section class="find-remote"><p class="quiet-note">正在按视觉概念检索 Commons 电影影像…</p></section>`);
+          paintRemote(`<section class="find-remote"><p class="quiet-note">正在按视觉关键词检索 Commons 电影影像…</p></section>`);
           findRemoteFilmFromIntent(outcome.intent, { limit: 6 })
             .then((remote) => {
               // 迟到的结果不能覆盖用户已经切换到的另一种媒介/方式。
@@ -907,9 +914,16 @@ function renderRemoteSection(remote, { fromImage = false } = {}) {
   const film = remote.film || {};
   const vision = film.vision || null;
   // STEP 2/3/4 的可解释摘要。缺失的量一律显示「未知」而不是省略。
+  // 「图像分析：0/0 件（原因 vision-unavailable）」对用户没有意义：
+  // 0/0 数学上不成立，reason 是内部代码。改成一句人能读的话。
+  const visionAnalysisLine = !vision
+    ? ""
+    : vision.attempted > 0
+      ? `图像分析：已分析 ${vision.analyzed}/${vision.attempted} 件（${escapeHtml(vision.reason || "原因未知")}）。`
+      : `图像分析：本次一件都没有分析（${escapeHtml(vision.reason || "原因未知")}）。`;
   const filmSummary = `
     <p class="quiet-note find-remote-summary">
-      电影渠道：本次扫描 ${film.skippedCount ?? "未知"} 条、排除 ${film.skippedCount ?? "未知"} 条未通过判据${
+      电影渠道：本次扫描 ${film.scannedCount ?? "未知"} 条、排除 ${film.skippedCount ?? "未知"} 条未通过判据${
         film.queryMapping && film.queryMapping.reason ? `；${film.queryMapping.reason}` : ""
       }。${
         film.concepts && film.concepts.terms && film.concepts.terms.length
@@ -931,12 +945,10 @@ function renderRemoteSection(remote, { fromImage = false } = {}) {
           : ""
       }${
         film.verificationTally && film.verificationTally.identityTransportFailed
-          ? `身份传输失败 ${film.verificationTally.identityTransportFailed} 次（Wikidata 限流/超时，本次「未核实」是**查不成**的结果，不是「查过没有」）。`
+          ? `身份传输失败 ${film.verificationTally.identityTransportFailed} 次（Wikidata 限流/超时，本次「未核实」是<strong>查不成</strong>的结果，不是「查过没有」）。`
           : ""
       }${
-        vision
-          ? `图像分析：${vision.analyzed}/${vision.attempted} 件（原因 ${escapeHtml(vision.reason || "未知")}）。`
-          : ""
+        visionAnalysisLine
       }${film.corrections && film.corrections.excludedCount ? `你已排除 ${film.corrections.excludedCount} 件。` : ""}
     </p>`;
 
