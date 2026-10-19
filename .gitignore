@@ -18,3 +18,8 @@ qa/**/ui-shots/
 # P4.1 — 每次运行都会重写的测试产物（证据随报告，不进仓库）
 qa/p41-vision-e2e.json
 work/
+
+# Local-only audit / provider evidence; also protect fresh clones
+.rc1-audit/
+.p42-evidence/
+.p43-evidence/

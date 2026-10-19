@@ -140,3 +140,7 @@ node qa/licence-audit/rc1-film-licence-audit.mjs      # 逐件核验 15 件电�
 - **署名非强制**。公有领域与 CC0 不要求署名；本文件提供署名清单是出于可追溯性，不构成附加限制。
 
 ---
+
+## 7. 测试图来源补录（2026-10-19）
+
+`qa/fixtures/vision-probe.jpg` 是已有 American Gothic 图像的裁切/缩放测试输入（640×480 JPEG），并非新增来源素材。已目视核对与本地 American Gothic 画作一致，历史 P4.8 报告亦明确标注。其许可依据沿用 §1 的 `american-gothic` 文件页及 `qa/licence-audit/rc1-artwork-licence-audit.json` 对应 Public domain 记录。该测试图只用于上传流程验证，不代表真实拍摄照片样本或模型泛化能力。此次未重新在线核验许可；没有添加或替换任何图像字节。

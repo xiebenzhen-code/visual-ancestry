@@ -1,5 +1,7 @@
 # 验收报告 · Release Candidate 1
 
+> 历史报告范围保持不变。2026-10-19 feature 分支的单张 REAL-PROVIDER 存档、MOCK 回放、两项缺陷复验及未通过的像素判别实验，另见 [P4.10 复验报告](P4.10-FIX-REVALIDATION.md)。本文件中的 BLOCKED 描述对应当时 RC1 环境，不是后来单张实测的否定，也不能据后来的回放扩大此处验收结论。
+
 日期：2026-10-18
 候选 commit：`5e329ab`（分支 `master`，仓库根即候选源码）
 运行环境：Windows / Node v24.21.0 / Edge（CDP 无头）

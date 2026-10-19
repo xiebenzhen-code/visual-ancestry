@@ -1,5 +1,7 @@
 # ERROR_REGISTRY
 
+> 2026-10-19 索引：本文件保留历史；P4.10 两项缺陷复验、算法局限及测试风险见 [控制层错误日志](control/ERROR_REGISTRY.md) 和 [复验报告](P4.10-FIX-REVALIDATION.md)。
+
 **生成日期**：2026-10-08
 **阶段**：P6.3.1D
 **用途**：单一错误事实源。标记 RESOLVED/FROZEN 者**不再重新调查**，除非出现新证据。
