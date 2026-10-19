@@ -76,9 +76,16 @@ console.log("\n=== STEP 2 常见查询修复（INTEGRATION）===");
 
   // 空结果必须带原因
   const rs = await imp("src/services/retrieval/retrievalService.js");
-  const warRes = rs.retrieveByText("战争", { enhanced: { signatures: {} } });
-  check("INTEGRATION", "无匹配时返回空并给出原因", warRes.results.length === 0 && typeof warRes.emptyReason === "string" && warRes.emptyReason.length > 0, warRes.emptyReason);
-  check("INTEGRATION", "空结果不被填充无关作品", warRes.results.length === 0);
+  // P4.5 修正了「战争」的召回（语义层 themes 命中 third-of-may）。
+  // 所以这里不能再断言它为空 —— 改用档案里确实不存在的题材做空结果检验。
+  const emptyRes = rs.retrieveByText("静物", { enhanced: { signatures: {} } });
+  check("INTEGRATION", "无匹配时返回空并给出原因",
+    emptyRes.results.length === 0 && typeof emptyRes.emptyReason === "string" && emptyRes.emptyReason.length > 0,
+    emptyRes.emptyReason);
+  check("INTEGRATION", "空结果不被填充无关作品", emptyRes.results.length === 0);
+  // 而「战争」现在应当有结果（P4.5 修复项）
+  const warRes2 = rs.retrieveByText("战争", { enhanced: { signatures: {} } });
+  check("INTEGRATION", "P4.5 后「战争」能召回历史战争题材", warRes2.results.length > 0, `n=${warRes2.results.length}`);
 }
 
 // ============================================ STEP 3 缺失值感知

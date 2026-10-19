@@ -16,6 +16,7 @@
 // 本模块是**纯函数**，不读网络、不读磁盘。
 
 import { emptyVisualIntent, mergeIntent } from "./visualIntent.js";
+import { ART_SEMANTICS } from "../../data/art-semantics.js";
 
 /**
  * 词汇分类表。每条必须是四类之一，并标明依据。
@@ -200,6 +201,22 @@ export function searchByLexicon(artworks, text) {
           }
         }
       }
+      // P4.5 — 语义层主题匹配。这不是「给某几件作品写死排名」，而是：
+      //   · 语义数据里带了可追溯的主题词（themes，来源 Wikidata genre/depicts）
+      //   · 任何作品只要主题词集合包含该检索词就会被命中
+      //   · 匹配依据写入 matchedFields（"semantics:themes"），与视觉依据严格分开
+      const sem = ART_SEMANTICS[a.id];
+      if (sem && Array.isArray(sem.themes)) {
+        const termLc = String(term).toLowerCase();
+        const hitTheme = sem.themes.find((t) => String(t).toLowerCase().includes(termLc));
+        if (hitTheme) matchedFields.push(`semantics:themes(${hitTheme})`);
+      }
+      // 中文别名同样参与（「1808年5月3日」「惠斯勒的母亲」这类）
+      if (sem && Array.isArray(sem.aliasesZh)) {
+        const termLc = String(term).toLowerCase();
+        if (sem.aliasesZh.some((x) => String(x).toLowerCase().includes(termLc))) matchedFields.push("semantics:aliasesZh");
+      }
+
       if (matchedFields.length) {
         results.push({
           artwork: a,
