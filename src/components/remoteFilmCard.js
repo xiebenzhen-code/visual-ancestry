@@ -87,6 +87,24 @@ export function renderRemoteFilmCard(item, film) {
         <em class="find-remote-title">${escapeHtml(title)}${year ? ` · ${escapeHtml(year)}` : ""}</em>
         <p class="find-remote-nature">图像性质：${escapeHtml(kindLabel)}（${escapeHtml(kindBadge)}）</p>
         ${item.display?.reason ? `<p class="find-remote-tier">${escapeHtml(item.display.reason)}</p>` : ""}
+        ${(() => {
+          // P4.10 — 像素比较证据。只有真的比较过才显示；没有就是没有，不留空壳。
+          const px = item.pixelCompare;
+          if (!px) return "";
+          const sim = (px.explanation?.similar || []).slice(0, 2);
+          const dif = (px.explanation?.different || []).slice(0, 2);
+          const inc = px.explanation?.incomparable || [];
+          return `
+            <div class="find-remote-pixel">
+              <p class="find-remote-pixel-head"><strong>像素分布：${escapeHtml(px.levelLabel)}</strong>
+                <span class="find-remote-pixel-dist">距离 ${escapeHtml(String(px.distance))}</span></p>
+              ${sim.length ? `<ul class="find-remote-pixel-sim">${sim.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` : ""}
+              ${dif.length ? `<ul class="find-remote-pixel-dif">${dif.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` : ""}
+              ${inc.length ? `<p class="quiet-note">${escapeHtml(inc.join("；"))}</p>` : ""}
+              <p class="quiet-note">${escapeHtml(px.explanation?.disclaimer || "")}</p>
+              <p class="quiet-note find-remote-pixel-limit">实测它分辨不出「同一张图重新裁切」与「换了另一幅画」，<strong>所以不能当作画面相似的证据，也不参与排序。</strong></p>
+            </div>`;
+        })()}
         ${recallLine(art)}
         <p class="find-remote-source"><a href="${escapeHtml(remote.sourceUrl || "#")}" target="_blank" rel="noopener noreferrer">Commons 原始来源</a>
           ${remote.rights?.licenseShortName ? ` · ${escapeHtml(String(remote.rights.licenseShortName))}` : ""}</p>

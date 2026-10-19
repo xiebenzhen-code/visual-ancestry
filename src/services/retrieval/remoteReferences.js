@@ -212,6 +212,9 @@ function filmItem(ref, query) {
       channelName: ref.channelName,
       sourceId: ref.sourceId,
       sourceUrl: ref.sourceUrl,
+      // P4.10 — 内容哈希随候选下发，作为像素特征缓存键（图像变则失效）。
+      sha1: ref.sha1 || null,
+      byteSize: ref.byteSize || null,
       rights: ref.rights,
       showable: ref.showable,
       verification: ref.verification || null,

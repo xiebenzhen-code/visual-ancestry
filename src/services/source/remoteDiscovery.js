@@ -490,7 +490,7 @@ export async function discoverCommonsFilmStills(
     // "Category:Triangle Film Corporation publicity photos" 与
     // "Category:Fall of Babylon (Intolerance)" 下——只看标题与描述会漏掉这两条。
     cllimit: "200",
-    iiprop: "url|extmetadata|size|mime",
+    iiprop: "url|extmetadata|size|mime|sha1",
     iiurlwidth: "960",
     // MEASURED：`origin=*` 让 Commons 返回 Access-Control-Allow-Origin: *，
     // 浏览器直连才可能成功。实测不带此参数时浏览器 fetch 直接
@@ -551,7 +551,7 @@ export async function discoverCommonsFilmStills(
         cllimit: "200",
         // iiurlwidth 请求服务端真实缩略图。实测 Commons 会返回真实 thumburl
         //（w=320→330px），不是拼 URL 猜测——这避免了 FIND 直接加载原始大图。
-        iiprop: "url|extmetadata|size|mime",
+        iiprop: "url|extmetadata|size|mime|sha1",
         iiurlwidth: "960",
         origin: "*",
       });
@@ -711,6 +711,11 @@ for (const page of pages) {
           : null,
       },
       sourceUrl: ii.descriptionurl || `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title)}`,
+      // P4.10 — sha1 是 Commons 提供的内容哈希，作为像素特征缓存的键：
+      // 图像被替换（同一文件名、不同内容）时 sha1 变化，缓存自动失效，
+      // 不需要自建版本号。没有 sha1 时下游标 nohash，缓存不命中，不冒险复用旧特征。
+      sha1: ii.sha1 || null,
+      byteSize: ii.size || null,
     };
     references.push(rights.showable ? { ...base, showable: true } : { ...base, showable: false });
     pageOf.push(page);

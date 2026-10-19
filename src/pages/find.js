@@ -16,6 +16,8 @@ import { findRemoteReferences } from "../services/retrieval/remoteReferences.js"
 import { findRemoteFilmFromIntent } from "../services/retrieval/remoteReferences.js";
 import { allSignatures } from "../services/retrieval/colorIndex.js";
 import { analyzeImageSignatureInBrowser, colorComparability } from "../services/retrieval/colorSignatureBrowser.js";
+import { spatialFromImageData } from "../services/retrieval/spatialSignature.js";
+import { spatialFromFile, compareFilmCandidatesWithQuery, reorderByPixels } from "../services/retrieval/filmPixelCompare.js";
 import { safeStory, EVIDENCE_KIND } from "../data/art-stories.js";
 import { renderRemoteFilmCard, bindFilmRemoteActions } from "../components/remoteFilmCard.js";
 import { beginTask, recordReference } from "../utils/taskContext.js";
@@ -604,9 +606,11 @@ let lastRemote = null;
   const showFile = (file) => {
     if (!file) return;
     pendingFile = file;
-    if (preview.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
-    preview.src = URL.createObjectURL(file);
-    preview.hidden = false;
+    if (preview?.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
+    if (preview) {
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+    }
     // 上传后图片成为组件的一部分：文件名 + 尺寸，让用户知道这一张是哪一张。
     if (uploadCard) uploadCard.hidden = false;
     if (drop) drop.hidden = true;
@@ -614,39 +618,48 @@ let lastRemote = null;
       const size = humanSize(file.size);
       fileNameEl.textContent = file.name + (size ? " · " + size : "");
     }
-    errorBox.hidden = true;
-    errorBox.innerHTML = "";
-    runBtn.hidden = false;
-    toTextBtn.hidden = true;
+    if (errorBox) {
+      errorBox.hidden = true;
+      errorBox.innerHTML = "";
+    }
+    if (runBtn) runBtn.hidden = false;
+    if (toTextBtn) toTextBtn.hidden = true;
   };
 
   // 移除：清空文件与预览，回到未上传状态。不动 pendingFile 之外的任何状态。
   const clearFile = () => {
     pendingFile = null;
-    if (preview.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
-    preview.removeAttribute("src");
-    preview.hidden = true;
+    if (preview?.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
+    preview?.removeAttribute("src");
+    if (preview) preview.hidden = true;
     if (uploadCard) uploadCard.hidden = true;
     if (drop) drop.hidden = false;
     if (fileNameEl) fileNameEl.textContent = "";
     if (fileInput) fileInput.value = "";
-    runBtn.hidden = true;
-    toTextBtn.hidden = true;
-    errorBox.hidden = true;
-    errorBox.innerHTML = "";
+    if (runBtn) runBtn.hidden = true;
+    if (toTextBtn) toTextBtn.hidden = true;
+    if (errorBox) {
+      errorBox.hidden = true;
+      errorBox.innerHTML = "";
+    }
     app.querySelector("#find-image-progress")?.setAttribute("hidden", "");
     // 回到「未上传」的干净状态，避免上一次的错误提示残留。
   };
-  fileInput.addEventListener("change", () => showFile(fileInput.files[0]));
+  // MEASURED 缺陷（P4.10 实测）：上传面板只在上首页（asHome）分支渲染，
+  // 但 `#find` 路由（asHome:false）也执行到这里。`fileInput` 为 null 时
+  // 第 642 行无条件 addEventListener 抛 TypeError，把 renderFind 后半段整个中断：
+  // 页面只剩标题（实测 bodyLen 30），搜索、结果区、远程区全都不挂载。
+  // 这里改成有界绑定：控件存在才绑，不存在就什么都不做，让其余接线照常完成。
+  fileInput?.addEventListener("change", () => showFile(fileInput.files[0]));
   // 更换与移除都必须落在真实控件上，而不是只改样式。
-  replaceBtn?.addEventListener("click", () => fileInput.click());
+  replaceBtn?.addEventListener("click", () => fileInput?.click());
   clearBtn?.addEventListener("click", () => clearFile());
-  drop.addEventListener("dragover", (event) => event.preventDefault());
-  drop.addEventListener("drop", (event) => {
+  drop?.addEventListener("dragover", (event) => event.preventDefault());
+  drop?.addEventListener("drop", (event) => {
     event.preventDefault();
     showFile(event.dataTransfer.files[0]);
   });
-  drop.addEventListener("click", () => fileInput.click());
+  drop?.addEventListener("click", () => fileInput?.click());
 
   const findImage = async () => {
     // P4.9 STEP 2 — 图片路径此前没有「动画」拦截。curatedPool("animation") 现在
@@ -687,6 +700,10 @@ let lastRemote = null;
     // 再把它作为 querySig 传入检索，使色彩证据真正来自这张新图。
     // 计算失败时 querySig 为 null：色彩项不参与，但检索仍继续，不伪造颜色。
     const querySig = await analyzeImageSignatureInBrowser(pendingFile).catch(() => ({ ok: false }));
+    // P4.10 — 查询图的空间签名。与色彩签名分开计算（不同采样宽度），
+    // 但都来自**这张上传图自己的像素**，不查任何本地资产索引。
+    // 失败时为 null：像素比较整段跳过，不影响原有排序。
+    const querySpatial = await spatialFromFile(pendingFile).catch(() => ({ ok: false }));
     const sigForSearch = querySig && querySig.ok
       ? { ...querySig, origin: "computed-from-uploaded-pixels" }
       : null;
@@ -719,10 +736,39 @@ let lastRemote = null;
         if (activeMedia === "film" && outcome.intent) {
           paintRemote(`<section class="find-remote"><p class="quiet-note">正在按视觉关键词检索 Commons 电影影像…</p></section>`);
           findRemoteFilmFromIntent(outcome.intent, { limit: 6 })
-            .then((remote) => {
+            .then(async (remote) => {
               // 迟到的结果不能覆盖用户已经切换到的另一种媒介/方式。
               if (!instanceAlive() || activeMedia !== "film" || activeMode !== "image") return;
-              paintRemote(renderRemoteSection(remote, { fromImage: true }));
+
+              // P4.10 STEP 4 — 真实像素比较（阶段 B）。
+              // 只重排**远程电影候选之间**，不与本地 VisualIntent 分数相加。
+              // 读不到像素的候选标 metadata-only，如实降级，不猜特征。
+              let pixelOutcome = null;
+              if (querySpatial && querySpatial.ok) {
+                paintRemote(`<section class="find-remote"><p class="quiet-note">正在比较候选画面结构…</p></section>`);
+                pixelOutcome = await compareFilmCandidatesWithQuery(querySpatial, remote.results || []).catch(() => null);
+                if (!instanceAlive() || activeMedia !== "film" || activeMode !== "image") return;
+              }
+              // 把比较结果挂回每个候选（按 sourceId 对齐），卡片才能显示自己的证据。
+              let finalRemote = remote;
+              if (pixelOutcome) {
+                const byId = new Map(pixelOutcome.compared.map((c) => [c.sourceId, c]));
+                const unreadableIds = new Set(pixelOutcome.unreadable.map((u) => u.sourceId));
+                const merged = (remote.results || []).map((r) => {
+                  const id = r.artwork?.remote?.sourceId || r.artwork?.id;
+                  const c = byId.get(id);
+                  if (c) return { ...r, pixelCompare: c, pixelStatus: "pixel-compared" };
+                  if (unreadableIds.has(id)) return { ...r, pixelStatus: "metadata-only" };
+                  return { ...r, pixelStatus: "not-attempted" };
+                });
+                finalRemote = {
+                  ...remote,
+                  results: merged,
+                  pixelCompare: pixelOutcome,
+                  pixelRanked: reorderByPixels(merged, pixelOutcome.compared),
+                };
+              }
+              paintRemote(renderRemoteSection(finalRemote, { fromImage: true }));
             })
             .catch((e) => {
               if (!instanceAlive() || activeMedia !== "film" || activeMode !== "image") return;
@@ -738,12 +784,14 @@ let lastRemote = null;
         renderImageFailure(app, "vision-failed", errorBox, toTextBtn, "network");
       });
   };
-  runBtn.addEventListener("click", findImage);
-  toTextBtn.addEventListener("click", () => {
+  // 同上：`#find` 路由没有上传面板，runBtn/toTextBtn 都是 null。
+  // 实测崩溃点在 785/786 —— 只有把这两处也改成有界绑定，`#find` 才真正不中断。
+  runBtn?.addEventListener("click", findImage);
+  toTextBtn?.addEventListener("click", () => {
     const modeButtons = [...app.querySelectorAll("[data-find-mode]")];
     const textMode = modeButtons.find((b) => b.dataset.findMode === "text");
     if (textMode) textMode.click();
-    app.querySelector("#find-text").focus();
+    app.querySelector("#find-text")?.focus();
   });
 }
 
@@ -911,6 +959,8 @@ function bindReferencePicks(app) {
 function renderRemoteSection(remote, { fromImage = false } = {}) {
   if (!remote) return "";
   const { results = [], degraded = false, note = "", metadataOnlyCount = 0, unsupported = false, unrelatedCount = 0 } = remote;
+  // P4.10 — 像素比较结果。没做过就没有，不显示空壳说明。
+  const pixelCompare = remote.pixelCompare || null;
   const film = remote.film || {};
   const vision = film.vision || null;
   // STEP 2/3/4 的可解释摘要。缺失的量一律显示「未知」而不是省略。
@@ -950,6 +1000,20 @@ function renderRemoteSection(remote, { fromImage = false } = {}) {
       }${
         visionAnalysisLine
       }${film.corrections && film.corrections.excludedCount ? `你已排除 ${film.corrections.excludedCount} 件。` : ""}
+      ${(() => {
+        // P4.10 — 如实报告本次真的比较了几条、几条读不到像素。
+        if (!pixelCompare) return "";
+        const st = pixelCompare.stats || {};
+        const un = pixelCompare.unreadable || [];
+        const parts = [`画面结构比较：尝试 ${st.attempted ?? 0} 条，成功读取像素 ${st.succeeded ?? 0} 条`];
+        if (st.cached) parts.push(`其中 ${st.cached} 条命中特征缓存`);
+        if (un.length) {
+          const why = {};
+          for (const u of un) why[u.reason] = (why[u.reason] || 0) + 1;
+          parts.push(`读取失败 ${un.length} 条（${Object.entries(why).map(([k, v]) => `${k}×${v}`).join("、")}，这些候选只能按元数据呈现）`);
+        }
+        return `<span class="find-remote-pixel-summary">${escapeHtml(parts.join("；"))}。<strong>只基于像素分布，未做语义分析</strong>；本轮的实测表明它分辨不出「同图重新裁切」与「不同画面」，<strong>因此不参与排序</strong>，仅作旁证。</span>`;
+      })()}
     </p>`;
 
   if (degraded && !results.length) {

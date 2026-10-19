@@ -152,11 +152,21 @@ export async function rerankWithVision(references, opts = {}) {
       r,
       s: r.intent ? scoreIntent(queryIntent, { ...r.intent, visualIntent: r.intent, artwork: { visualIntent: r.intent } }) : null,
     }));
+    // MEASURED 缺陷（P4.10 核实）：原比较器写的是 `b.s - s.s` ——
+    // `s` 从未声明，一旦执行到这一行就抛 ReferenceError，整段重排失败。
+     // 而且 scoreIntent() 返回的是 { score, possible } 对象，不是数字，
+    // 即使拼成 `b.s - a.s` 也会是 NaN，排序退化成「保持不变」。
+    // 两处都修：取 .score 再比，并保留 possible 用于并列时的可比性判断。
+    const val = (x) => (x && typeof x.score === "number" ? x.score : null);
     scored.sort((a, b) => {
-      if (a.s == null && b.s == null) return 0;
-      if (a.s == null) return 1;
-      if (b.s == null) return -1;
-      return b.s - s.s;
+      const av = val(a.s), bv = val(b.s);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (bv !== av) return bv - av;
+      // 同分时用 possible 作次级键：证据维度更多的那个更可靠，排在前面。
+      const ap = (a.s && a.s.possible) || 0, bp = (b.s && b.s.possible) || 0;
+      return bp - ap;
     });
     base.results = scored.map((x) => x.r);
     base.reranked = true;
