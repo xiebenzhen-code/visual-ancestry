@@ -211,6 +211,13 @@ export function searchByLexicon(artworks, text) {
         const hitTheme = sem.themes.find((t) => String(t).toLowerCase().includes(termLc));
         if (hitTheme) matchedFields.push(`semantics:themes(${hitTheme})`);
       }
+      // P4.6 — depicts 的中文措辞单独一条路径，与 genre 派生的 themes 分开。
+      // 依据强弱不同：themes 来自 genre 本体，depictsZh 来自画面所绘对象的记录。
+      if (sem && Array.isArray(sem.depictsZh)) {
+        const termLc = String(term).toLowerCase();
+        const hitDepict = sem.depictsZh.find((d) => String(d.zh).toLowerCase().includes(termLc));
+        if (hitDepict) matchedFields.push(`semantics:depicts(${hitDepict.zh}←${hitDepict.en})`);
+      }
       // 中文别名同样参与（「1808年5月3日」「惠斯勒的母亲」这类）
       if (sem && Array.isArray(sem.aliasesZh)) {
         const termLc = String(term).toLowerCase();

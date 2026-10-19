@@ -36,8 +36,30 @@ export const ART_SEMANTICS = {
     material: ["oil paint", "canvas"],
     collection: ["Museo del Prado", "Royal Palace of Madrid"],
     depicts: ["execution by firing squad", "Dos de Mayo Uprising", "rifle", "Death", "oil lamp", "soldier", "rebel"],
-    themes: ["战争", "历史画", "行刑", "暴力", "军事"],
-    aliasesZh: ["1808年5月3日", "马德里五月三日", "枪决"],
+    // P4.6 修正：history painting 是「以历史题材为主」的画种（Wikidata Q742333：
+    // "genre in painting defined by historical matter"），涵盖历史、神话、宗教、
+    // 文学事件，绝不等于「战争」。之前 themes 写「战争/暴力/军事」是把 genre
+    // 过度具体化，属于用艺术解释冒充题材事实。
+    // 现在只保留：① genre 本体 ② 来自 depicts 的可观察事实。
+    genderNeutralGenre: "history painting",
+    themes: ["历史画", "行刑", "人群对峙"],
+    themeBasis: {
+      "历史画": "Wikidata P136 = history painting (Q742333)",
+      "行刑": "Wikidata P180 depicts = execution by firing squad",
+      "人群对峙": "Wikidata P180 depicts = soldier + rebel（画面可观察的阵营关系）",
+    },
+    // depicts 的中文检索词：每个词都对应一个已验证的 Wikidata P180 英文原词。
+    // 这是「事实的本地化措辞」，不是「对作品的解释」。
+    depictsZh: [
+      { zh: "行刑", en: "execution by firing squad" },
+      { zh: "枪决", en: "execution by firing squad" },
+      { zh: "士兵", en: "soldier" },
+      { zh: "反抗者", en: "rebel" },
+      { zh: "步枪", en: "rifle" },
+      { zh: "死亡", en: "Death" },
+      { zh: "起义", en: "Dos de Mayo Uprising" },
+      { zh: "战争", en: "Dos de Mayo Uprising (armed conflict)", note: "仅当 depicts 明确记录了武装冲突事件时才映射" },
+    ],
     historicalNote: null, // 未取得可靠的、可逐句溯源的中文创作背景，按要求保持 null
     evidence: {
       genre: { source: "wikidata", id: "Q1091086", property: "P136" },
@@ -56,7 +78,11 @@ export const ART_SEMANTICS = {
     material: ["oil paint", "canvas"],
     collection: ["Musée d'Orsay"],
     depicts: ["Anna McNeill Whistler", "woman", "curtain", "seat", "old age"],
-    themes: ["肖像", "母亲", "坐姿肖像"],
+    themes: ["肖像", "坐姿肖像"],
+    themeBasis: {
+      "肖像": "Wikidata P136 = portrait (Q1400853)",
+      "坐姿肖像": "Wikidata P180 depicts = seat（画面中人物为坐姿）",
+    },
     aliasesZh: ["惠斯勒的母亲", "灰与黑的协奏曲"],
     historicalNote: null,
     evidence: {
@@ -76,7 +102,13 @@ export const ART_SEMANTICS = {
     material: ["oil paint", "canvas"],
     collection: ["San Luigi dei Francesi"],
     depicts: ["Matthew the Apostle"],
-    themes: ["宗教", "圣像", "圣经题材"],
+    // P4.6 修正：「圣像」(icon) 是特定宗教图像类型，需要图像学证据；
+    // depicts 只记录了 Matthew the Apostle，不足以支持「圣像」。
+    themes: ["宗教", "圣经题材"],
+    themeBasis: {
+      "宗教": "Wikidata P136 = religious art (Q2864737)",
+      "圣经题材": "Wikidata P180 depicts = Matthew the Apostle（新约人物）",
+    },
     aliasesZh: ["圣马太蒙召", "圣马太的召唤"],
     historicalNote: null,
     evidence: {
@@ -96,7 +128,14 @@ export const ART_SEMANTICS = {
     material: ["canvas", "oil paint"],
     collection: ["Rijksmuseum"],
     depicts: ["coif", "pitcher", "platter", "bread", "basket", "table", "tablecloth", "wall", "window", "milk", "apron", "maid"],
-    themes: ["室内", "风俗画", "家务", "厨房"],
+    // P4.6 修正：depicts 有 wall / window / table / tablecloth，可支持「室内」；
+    // 但没有 kitchen 或任何厨房器具的明确记录，「厨房」属过度具体化，移除。
+    themes: ["室内", "风俗画", "家务"],
+    themeBasis: {
+      "室内": "Wikidata P180 depicts = wall / window / table",
+      "风俗画": "Wikidata P136 = genre art (Q1047337)",
+      "家务": "Wikidata P180 depicts = maid / milk / apron",
+    },
     aliasesZh: ["倒牛奶的女仆", "厨娘", "挤奶女工"],
     historicalNote: null,
     evidence: {
@@ -116,7 +155,12 @@ export const ART_SEMANTICS = {
     material: ["oil paint", "canvas"],
     collection: ["Museo del Prado"],
     depicts: ["Philip IV of Spain", "Margaret Theresa of Spain", "Diego Velázquez", "Mariana of Austria", "dwarf", "dog", "mirror", "door", "painting", "room"],
-    themes: ["室内", "群像", "宫廷", "肖像"],
+    themes: ["室内", "群像", "宫廷"],
+    themeBasis: {
+      "室内": "Wikidata P180 depicts = room / door / mirror",
+      "群像": "Wikidata P136 = group portrait",
+      "宫廷": "Wikidata P180 depicts = Philip IV of Spain / Mariana of Austria（王室成员）",
+    },
     aliasesZh: ["宫娥", "宫女图", "拉斯梅尼纳斯"],
     historicalNote: null,
     evidence: {
@@ -136,7 +180,14 @@ export const ART_SEMANTICS = {
     material: ["oil paint", "canvas"],
     collection: ["Courtauld Gallery", "Courtauld Institute of Art"],
     depicts: ["gaze towards the viewer", "woman", "beer", "Folies Bergère"],
-    themes: ["室内", "酒吧", "肖像", "夜生活"],
+    // P4.6 移除「夜生活」：depicts 只记录了 gaze towards the viewer / woman /
+    // beer / Folies Bergère，没有任何夜间证据。
+    themes: ["酒吧", "肖像", "吧台"],
+    themeBasis: {
+      "酒吧": "Wikidata P180 depicts = beer / Folies Bergère",
+      "肖像": "Wikidata P136 = portrait",
+      "吧台": "depicts 记录了啤酒与吧台场景",
+    },
     aliasesZh: ["女神游乐厅的吧台", "福利-贝热尔酒吧", "酒吧一角"],
     historicalNote: null,
     evidence: {

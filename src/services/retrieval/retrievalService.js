@@ -12,6 +12,7 @@ import { analyzeImage as runVision } from "../vision/visionService.js";
 import { rankWithMissingAwareness } from "./missingAwareRanking.js";
 import { rerank as rerankWithColorAndDiversity, explain as explainRerank } from "./rerank.js";
 import { buildArtContext, matchableObservations } from "./artContext.js";
+import { colorDistance as colorDistanceForOriginal } from "./rerank.js";
 import { allSignatures, signatureIndexMeta, assertUploadSignatureOrigin } from "./colorIndex.js";
 import { applyVisualLexicon, searchByLexicon, analyzeQuery } from "./queryLexicon.js";
 
@@ -236,6 +237,9 @@ export function retrieveByIntent(intent, { limit = 8, excludeKey = "", intentSou
       baseScore: x.comparison.baselineScore,
       qualityScore: x.qualityScore,
       comparison: x.comparison,
+      // P4.6 修复：baseline 路径有 intentProvenance，enhanced 路径曾丢失它，
+      // 导致 isOriginalMatch 判定拿不到 provenance 而永远为 false。
+      intentProvenance: x.intentProvenance,
     })),
     sigs,
     { querySig, limit }
@@ -245,14 +249,42 @@ export function retrieveByIntent(intent, { limit = 8, excludeKey = "", intentSou
   return reranked.map((r) => {
     const explanation = explainRerank(r, intent);
     const ctx = buildArtContext({ artwork: r.artwork, signature: sigs[r.artwork?.id] });
+    // P4.6 — 「是否可称为原作识别」必须同时满足三个条件，缺一不可：
+    //   1. 该作品自身有真实 Vision intent（calibration-cache 或 live）
+    //   2. 查询图与它的色彩签名距离极小（同一张图应≈0）
+    //   3. 核心结构字段几乎全中
+    // 任一不满足就只是「参考」，不得宣称识别成功。
+    const candSig = sigs[r.artwork?.id];
+    const selfDistance = querySig && candSig && querySig.ok && candSig.ok
+      ? colorDistanceForOriginal(querySig, candSig)
+      : null;
+    // 实测：同一张图两次独立识别会有字段分歧（本轮实测 9 个核心字段中 6 个一致，
+    // 3 个不同：spatialDepth / cameraDistance / cameraRelation）。Vision 本身有不确定性，
+    // 要求 ratio === 1 会让「原作识别」永远无法出现。改为分级，并把依据全部暴露：
+    //   certain  核心全中 + 色彩距离极小  → 可以称「这张图就是」
+    //   likely   核心 ≥2/3 一致 + 色彩距离很小 → 只能说「很可能是同一构图」
+    //   none     其余 → 只作为参考，不宣称识别
+    // intentProvenance 在 rerank 返回对象顶层（由 P4.6 透传），不在 r.item 上。
+    const prov = r.intentProvenance ?? r.item?.intentProvenance;
+    const hasRealIntent = prov === INTENT_PROVENANCE.CACHE || prov === INTENT_PROVENANCE.LIVE;
+    // colorDistance() 返回 { distance, components }，不是数字 —— 之前直接比较对象
+    // 导致 colourClose 恒为 false（实测发现）。这里显式取 .distance。
+    const selfDistValue = selfDistance && typeof selfDistance === "object" ? selfDistance.distance : selfDistance;
+    const colourClose = typeof selfDistValue === "number" && selfDistValue < 0.02;
+    let originalMatch = "none";
+    if (hasRealIntent && colourClose) {
+      if (r.core.defined >= 3 && r.core.ratio === 1) originalMatch = "certain";
+      else if (r.core.defined >= 3 && r.core.ratio >= 0.66) originalMatch = "likely";
+    }
+    const isOriginalMatch = originalMatch === "certain";
     return {
       artwork: r.artwork,
       medium: r.medium,
       retrievalScore: r.finalScore,
       baselineScore: r.baseScore,
-      reasons: r.item.reasons && r.item.reasons.length ? r.item.reasons : explanation.evidence.map((e) => e.text),
-      intent: r.item.intent,
-      intentProvenance: r.item.intentProvenance,
+      reasons: (r.reasons && r.reasons.length) ? r.reasons : (r.item?.reasons?.length ? r.item.reasons : explanation.evidence.map((e) => e.text)),
+      intent: r.item?.intent ?? r.intent,
+      intentProvenance: r.intentProvenance ?? r.item?.intentProvenance,
       // P4.4 新增可追溯信息
       comparison: r.item.comparison || null,
       colorEvidence: r.colorDelta ? { distance: r.colorDelta.distance, components: r.colorDelta.components, bonus: r.colorBonus } : null,
@@ -262,6 +294,16 @@ export function retrieveByIntent(intent, { limit = 8, excludeKey = "", intentSou
       explanation,
       artContext: ctx,
       artContextMatchable: matchableObservations(ctx).map((c) => c.text),
+      isOriginalMatch,
+      originalMatch,
+      originalMatchEvidence: originalMatch === "none" ? null : {
+        selfColourDistance: selfDistValue,
+        coreRatio: Math.round(r.core.ratio * 100) / 100,
+        coreAgree: r.core.agree,
+        coreDefined: r.core.defined,
+        intentProvenance: r.intentProvenance ?? r.item?.intentProvenance,
+        disagreements: r.core.differFields.map((x) => `${x.field}: 本次=${x.query} / 存档=${x.candidate}`),
+      },
     };
   });
 }

@@ -15,6 +15,7 @@ import { probeVisionStatus } from "../services/vision/visionService.js";
 import { findRemoteReferences } from "../services/retrieval/remoteReferences.js";
 import { allSignatures } from "../services/retrieval/colorIndex.js";
 import { analyzeImageSignatureInBrowser, colorComparability } from "../services/retrieval/colorSignatureBrowser.js";
+import { safeStory, EVIDENCE_KIND } from "../data/art-stories.js";
 import { renderRemoteFilmCard, bindFilmRemoteActions } from "../components/remoteFilmCard.js";
 import { beginTask, recordReference } from "../utils/taskContext.js";
 import { renderImg, bindImgFallback, aspectRatioCss, PICK_SIZES } from "../utils/image.js";
@@ -607,7 +608,9 @@ let lastRemote = null;
       : null;
 
     retrieveByImage(pendingFile, {
-      limit: 6,
+      // P4.6 — 展示上限从 6 提到 8：有创作故事的作品（whistlers-mother 实测评第 7）
+      // 此前落在可见范围之外，用户看不到故事功能。只调展示条数，不动任何分数与排序逻辑。
+      limit: 8,
       enhanced: { signatures: allSignatures(), querySig: sigForSearch },
     })
       .then((outcome) => {
@@ -668,6 +671,40 @@ function renderImageFailure(app, error, errorBox, toTextBtn, reason) {
   app.querySelector("#find-results").innerHTML = "";
 }
 
+// P4.6 — 单张参考卡：相似之处 / 重要差异 / 可展开的创作故事。
+// 故事只对有来源的作品显示；没有来源就完全不出现这一块，不留空壳。
+function cardHtml(item, app) {
+  const story = safeStory(item.artwork.id);
+  const ev = item.explanation || null;
+  const similar = ev ? ev.evidence.slice(0, 3) : (item.reasons || []).slice(0, 3);
+  const differs = ev ? ev.differences.slice(0, 2) : [];
+  const storyId = `story-${String(item.artwork.id).replace(/[^a-z0-9-]/gi, "")}`;
+  return `
+    <div class="find-ref-card">
+      <a class="find-hit" data-hit-key="${escapeHtml(item.artwork.key)}" data-ref-key="${escapeHtml(item.artwork.key)}" href="${escapeHtml(hrefFor(item))}">
+        <span style="${aspectRatioCss(item.artwork)}">${renderImg(item.artwork)}</span>
+        <div>
+          <strong>${escapeHtml(creatorLabel(item.artwork))}</strong>
+          <em>${escapeHtml(item.artwork.titleZh || item.artwork.title)}</em>
+          ${creditLine(item)}
+        </div>
+      </a>
+      ${similar.length ? `<div class="find-ref-similar"><span class="find-ref-label">相似之处</span><ul>${similar.map((r) => `<li>${escapeHtml(typeof r === "string" ? r : r.text)}</li>`).join("")}</ul></div>` : ""}
+      ${differs.length ? `<div class="find-ref-differs"><span class="find-ref-label">重要差异</span><ul>${differs.map((r) => `<li>${escapeHtml(typeof r === "string" ? r : r.text)}</li>`).join("")}</ul></div>` : ""}
+      ${item.crossTradition ? `<p class="quiet-note find-cross-tradition">跨传统灵感：核心结构相近，光线/色彩组织不同，不是高相似。</p>` : ""}
+      ${item.colorEvidence ? `<p class="quiet-note find-color-evidence">色彩证据：距离 ${item.colorEvidence.distance}（明度 ${item.colorEvidence.components.lightness} / 饱和 ${item.colorEvidence.components.saturation} / 冷暖 ${item.colorEvidence.components.warmcool}）· 加分 ${item.colorEvidence.bonus}</p>` : ""}
+      ${story ? `<details class="find-story" id="${storyId}">
+        <summary>创作故事与可借鉴的方法</summary>
+        <div class="find-story-body">
+          <p class="find-story-fact">${escapeHtml(story.story.text)}</p>
+          <p class="quiet-note">来源：<a href="${escapeHtml(story.story.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(story.story.sourceName)}</a></p>
+          ${(story.structure || []).length ? `<div class="find-story-structure"><span class="find-ref-label">画面组织</span><ul>${story.structure.map((x) => `<li><em>${escapeHtml(x.aspect)}</em>：${escapeHtml(x.observation)}${x.kind === EVIDENCE_KIND.INTERPRET ? "（解释）" : ""}</li>`).join("")}</ul></div>` : ""}
+          ${story.materialNote ? `<div class="find-story-material"><span class="find-ref-label">视觉质感 vs 真实媒介</span><p>看到的是：${escapeHtml(story.materialNote.visualTexture)}</p><p>实际是：${escapeHtml(story.materialNote.actualMedium)}</p><p class="quiet-note">${escapeHtml(story.materialNote.distinction)}</p></div>` : ""}
+          ${(story.methods || []).length ? `<div class="find-story-methods"><span class="find-ref-label">可以借鉴的创作方法</span><ul>${story.methods.map((m) => `<li><strong>${escapeHtml(m.title)}</strong>：${escapeHtml(m.text)}</li>`).join("")}</ul><p class="quiet-note">以上为创作建议，不是原作的创作意图。</p></div>` : ""}
+        </div>
+      </details>` : ""}
+    </div>`;
+}
 function renderImageOutcome(app, file, outcome) {
   // R1.0-R1: a completed search is a new task — record the intent when the
   // search actually produced results, reset (intent-less) otherwise.
@@ -700,23 +737,25 @@ function renderImageOutcome(app, file, outcome) {
         .join("")
     : `<p class="quiet-note">没有足够重叠的视觉关系。</p>`;
 
-  app.querySelector("#find-results").innerHTML = outcome.results.length
-    ? outcome.results
-        .map(
-          (item) => `
-        <a class="find-hit" data-hit-key="${escapeHtml(item.artwork.key)}" data-ref-key="${escapeHtml(item.artwork.key)}" href="${escapeHtml(hrefFor(item))}">
-          <span style="${aspectRatioCss(item.artwork)}">${renderImg(item.artwork)}</span>
-          <div>
-            <strong>${escapeHtml(creatorLabel(item.artwork))}</strong>
-            <em>${escapeHtml(item.artwork.titleZh || item.artwork.title)}</em>
-            ${creditLine(item)}
-            <small>Retrieval score ${item.retrievalScore} · 依据${escapeHtml(provenanceLabel(item.intentProvenance))}</small>
-            ${item.colorEvidence ? `<small class="find-color-evidence">色彩距离 ${item.colorEvidence.distance}（明度 ${item.colorEvidence.components.lightness} / 饱和 ${item.colorEvidence.components.saturation} / 冷暖 ${item.colorEvidence.components.warmcool}）· 加分 ${item.colorEvidence.bonus}</small>` : ""}
-            ${item.crossTradition ? `<small class="find-cross-tradition">跨传统灵感：核心结构相近，光线/色彩组织不同，非高相似</small>` : ""}
-          </div>
-        </a>`
-        )
-        .join("")
+  // P4.6 — 区分「原作精确识别」与「跨作品创作参考」。
+  // 只有该作品本身有真实 Vision intent 且相似度高时才称为识别；
+  // 否则一律称为参考，不宣称识别成功。
+  const ranked = outcome.results;
+  const original = ranked.find((r) => r.isOriginalMatch) || null;
+  const others = ranked.filter((r) => r !== original);
+
+  app.querySelector("#find-results").innerHTML = ranked.length
+    ? `
+      ${original ? `<section class="find-original-match">
+        <h3 class="find-section-title">这张图就是</h3>
+        <p class="quiet-note">以下依据来自该作品已保存的视觉分析记录，与本次上传图的判断高度一致。</p>
+        ${cardHtml(original, app)}
+      </section>` : `<p class="quiet-note find-no-original">没有足够可信的原作证据，以下全部作为跨作品参考展示，不宣称识别成功。</p>`}
+      ${others.length ? `<section class="find-references">
+        <h3 class="find-section-title">可以借鉴的参考</h3>
+        ${others.map((item) => cardHtml(item, app)).join("")}
+      </section>` : ""}
+    `
     : `<p class="quiet-note">没有足够重叠的视觉关系。</p>`;
   bindImgFallback(app);
   bindReferencePicks(app);

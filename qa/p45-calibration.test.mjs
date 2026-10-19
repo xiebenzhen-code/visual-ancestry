@@ -32,7 +32,9 @@ console.log("=== STEP 1 五类查询修复（INTEGRATION）===");
     ["战争", ["third-of-may"]],
     ["肖像", ["whistlers-mother"]],
     ["宗教", ["calling"]],
-    ["室内", ["milkmaid", "meninas", "bar-folies"]],
+    // P4.6 收紧：bar-folies 的 Wikidata depicts 无 room/interior 直接证据，
+    // 「室内」已从它的 themes 移除。这里同步为 2 件。
+    ["室内", ["milkmaid", "meninas"]],
     ["静物", []],
   ];
   for (const [q, expect] of CASES) {

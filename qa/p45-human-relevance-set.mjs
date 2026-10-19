@@ -112,9 +112,9 @@ export const HUMAN_RELEVANCE_SET = [
     id: "subject-04",
     type: "subject",
     query: "室内",
-    expectAny: ["milkmaid", "meninas", "bar-folies"],
+    expectAny: ["milkmaid", "meninas"],
     mustNotRank1: [],
-    rationale: "三件室内场景。检验是否会漏召回（P4.4 只命中 1 件）。",
+    rationale: "两件有 room/wall/window 直接记录的室内场景。bar-folies 因 depicts 无室内证据已在 P4.6 移除，不再计入。",
   },
 
   // ---------- 5. 文化与艺术传统 ----------

@@ -146,6 +146,8 @@ export function rerank(query, items, sigs = {}, { querySig = null, limit = 8 } =
       item: it,
       artwork: it.artwork,
       medium: it.medium || "artwork",
+      intentProvenance: it.intentProvenance,
+      reasons: it.baseReasons || it.reasons || [],
       baseScore: base,
     frozenBaselineScore: frozenBaseline,
     usedMissingAwareScore: typeof it.qualityScore === "number",
