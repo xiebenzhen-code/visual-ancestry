@@ -64,11 +64,28 @@ export function cosine(a, b) {
   return s;
 }
 
+/**
+ * 合并候选池：基础 47 条 + 用户个人参考。
+ *
+ * 个人条目由服务端反序列化而来，形状必须与基础条目一致（vector/media/kind/title…）。
+ * 这里只做合并与去重（同 id 优先个人），不做任何评分。
+ */
+export function pool(extraEntries = []) {
+  const base = library();
+  if (!Array.isArray(extraEntries) || !extraEntries.length) return base;
+  const seen = new Set(extraEntries.map((e) => e.id));
+  return [...extraEntries, ...base.filter((e) => !seen.has(e.id))];
+}
+
 /** 媒介过滤。动画目前没有数据，选了就是 0 条——这是事实，不是 bug。 */
 function passMedia(entry, media) {
   if (!media || media === "all") return true;
   if (media === MEDIA.ARTWORK) return entry.kind === MEDIA.ARTWORK;
-  if (media === MEDIA.FILM) return entry.kind === MEDIA.FILM;
+  // 「彩色电影」指真人实拍。动画的 medium 也是 film，若只看 kind，
+  // 动画会被算进电影里——两类就混了。必须同时看 visualForm。
+  if (media === MEDIA.FILM) {
+    return entry.kind === MEDIA.FILM && entry.media.visualForm !== VISUAL_FORM.ANIMATION;
+  }
   if (media === VISUAL_FORM.ANIMATION || media === "anime") {
     return entry.media.visualForm === VISUAL_FORM.ANIMATION;
   }
@@ -82,12 +99,12 @@ function passMedia(entry, media) {
  * @param {{media?:string, limit?:number, excludeId?:string, minSim?:number}} opts
  */
 export function searchByEmbedding(queryVector, opts = {}) {
-  const { media = "all", limit = 8, excludeId = "", minSim = 0 } = opts;
+  const { media = "all", limit = 8, excludeId = "", minSim = 0, extraEntries = [] } = opts;
   if (!Array.isArray(queryVector) || !queryVector.length) {
     return { results: [], note: "没有可用的查询向量" };
   }
   const scored = [];
-  for (const e of library()) {
+  for (const e of pool(extraEntries)) {
     if (excludeId && e.id === excludeId) continue;
     if (!passMedia(e, media)) continue;
     const sim = cosine(queryVector, e.vector);
@@ -106,8 +123,8 @@ export function searchByEmbedding(queryVector, opts = {}) {
  * 结构只做「同分附近的重排」。
  */
 export function searchCombined(queryVector, queryStructure, opts = {}) {
-  const { media = "all", limit = 8, excludeId = "", minSim = 0.05 } = opts;
-  const base = searchByEmbedding(queryVector, { media, limit: 40, excludeId, minSim });
+  const { media = "all", limit = 8, excludeId = "", minSim = 0.05, extraEntries = [] } = opts;
+  const base = searchByEmbedding(queryVector, { media, limit: 40, excludeId, minSim, extraEntries });
   if (!base.results.length) return { results: [], note: base.note };
 
   const out = [];
@@ -134,10 +151,10 @@ export function searchCombined(queryVector, queryStructure, opts = {}) {
 
 /** 纯结构排序（对照用）。 */
 export function searchByStructure(queryStructure, opts = {}) {
-  const { media = "all", limit = 8, excludeId = "" } = opts;
+  const { media = "all", limit = 8, excludeId = "", extraEntries = [] } = opts;
   if (!queryStructure) return { results: [], note: "没有结构特征" };
   const out = [];
-  for (const e of library()) {
+  for (const e of pool(extraEntries)) {
     if (excludeId && e.id === excludeId) continue;
     if (!passMedia(e, media)) continue;
     const cmp = compareStructure(queryStructure, e.structure);

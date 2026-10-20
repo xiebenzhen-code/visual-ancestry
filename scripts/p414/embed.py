@@ -53,6 +53,20 @@ def ensure_model():
     return MODEL_PATH
 
 
+MAX_PIXELS = 40_000_000  # 4000 万像素上限：解码后约 160 MB RGB，超过它就有 OOM 风险
+
+
+def safe_size(path):
+    """只读文件头拿尺寸，不解码像素。超限直接拒绝，避免先撑爆内存再报错。"""
+    with Image.open(path) as im:
+        w, h = im.size
+    if w <= 0 or h <= 0:
+        raise ValueError("empty image")
+    if w * h > MAX_PIXELS:
+        raise ValueError(f"image too large: {w}x{h} = {w*h} px > {MAX_PIXELS}")
+    return w, h
+
+
 def preprocess(path, fit="crop"):
     """RGB → 256×256 → CHW float32（do_rescale=true，do_normalize=false）。
 
@@ -125,10 +139,11 @@ def main():
         print("no input", file=sys.stderr)
         return 2
 
-    vectors, hashes, errors = {}, {}, {}
+    vectors, hashes, errors, sizes = {}, {}, {}, {}
     dim = None
     for it in items:
         try:
+            w, h = safe_size(it["path"])
             x = preprocess(it["path"], fit=args.fit)
             y = sess.run([out_name], {input_name: x})[0]
             v = np.asarray(y, dtype=np.float32).reshape(-1)
@@ -138,6 +153,7 @@ def main():
             v = v / n  # L2 归一化：下游点积即余弦
             dim = int(v.shape[0])
             vectors[it["id"]] = [round(float(t), 6) for t in v]
+            sizes[it["id"]] = {"width": w, "height": h}
             hashes[it["id"]] = sha256_file(it["path"])
         except Exception as e:  # 单张失败不影响整批，但要如实记录
             errors[it["id"]] = str(e)[:200]
@@ -149,6 +165,7 @@ def main():
         "dim": dim,
         "count": len(vectors),
         "vectors": vectors,
+        "sizes": sizes,
         "hashes": hashes,
         "errors": errors,
     }
