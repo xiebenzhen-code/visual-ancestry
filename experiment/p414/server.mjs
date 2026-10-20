@@ -60,6 +60,52 @@ const MIME = {
 const PAGE = path.join(__dirname, "../p415/index.html");       // 默认页面：多模态实验
 const PAGE_ABC = path.join(__dirname, "index.html");            // 旧 A/B/C 对照入口
 const VISION_CACHE_DIR = path.join(ROOT, ".rc1-audit/p415/cache");
+const FAILURE_LOG = path.join(ROOT, ".rc1-audit/p415/failures.ndjson");
+
+/** 错误码 → 服务端分类。分类是为了定位责任层，不是为了归因猜测。 */
+function failureCategory(code) {
+  switch (String(code)) {
+    case "provider-not-configured": return "config";
+    case "budget-exhausted": return "budget";
+    case "timeout": case "network": return "transport";
+    case "http-error": return "upstream";
+    case "invalid-json": case "bad-shape": case "incomplete-analysis": return "parse";
+    case "no-query-vector": case "query-image-missing": case "no-candidate-images":
+    case "unknown-query": case "missing-query": case "bad-json": return "input";
+    default: return "unknown";
+  }
+}
+
+/** 脱敏：不落密钥、不落完整鉴权头。 */
+function redact(value) {
+  return String(value == null ? "" : value)
+    .replace(/sk-[A-Za-z0-9_\-]{6,}/g, "[redacted-key]")
+    .replace(/Bearer\s+[^\s"]+/gi, "Bearer [redacted]")
+    .replace(/"?(api[-_]?key|authorization)"?\s*[:=]\s*"?[^\s",}]{6,}/gi, "$1=[redacted]")
+    .slice(0, 800);
+}
+
+function logFailure(entry) {
+  try {
+    fs.mkdirSync(path.dirname(FAILURE_LOG), { recursive: true });
+    fs.appendFileSync(FAILURE_LOG, JSON.stringify({
+      at: new Date().toISOString(),
+      requestId: entry.requestId || null,
+      category: failureCategory(entry.error),
+      error: entry.error || null,
+      status: entry.status || null,
+      detail: redact(entry.detail),
+      context: entry.context || null,
+    }) + "\n", "utf8");
+  } catch { /* 日志失败不能影响主流程 */ }
+}
+
+function recentFailures(n = 5) {
+  try {
+    const lines = fs.readFileSync(FAILURE_LOG, "utf8").trim().split("\n").filter(Boolean);
+    return lines.slice(-n).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  } catch { return []; }
+}
 
 function send(res, code, body, type = "text/plain; charset=utf-8") {
   res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store" });
@@ -202,6 +248,7 @@ const server = http.createServer(async (req, res) => {
         },
         cache: cacheStats,
         personal: STORE.stats(),
+        recentFailures: recentFailures(5),
       });
     }
 
@@ -247,8 +294,17 @@ const server = http.createServer(async (req, res) => {
 
       const out = await visionSearch({
         queryEntry, queryBytes, extraEntries: personal, media, judgeCount,
+        recallMode: body.recallMode === "legacy" ? "legacy" : "multipath",
+        recallCount: Math.min(20, Math.max(6, Number(body.recallCount) || 12)),
         root: ROOT, cacheDir: VISION_CACHE_DIR,
+        requestId: body.requestId || undefined,
       });
+      if (!out.ok) {
+        logFailure({
+          requestId: out.requestId, error: out.error, status: 422, detail: out.detail,
+          context: out.context || { queryId: body.queryId || "(upload)", media },
+        });
+      }
       return sendJson(res, out.ok ? 200 : 422, out);
     }
     if (p === "/app.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "app.js")), MIME[".js"]);

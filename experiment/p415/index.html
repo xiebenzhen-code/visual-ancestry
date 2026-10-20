@@ -96,6 +96,10 @@
   .rel.high { background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .rel.partial { background: transparent; }
   .rel.review { border-color: #a4593a; color: #8a4a2e; }
+  .rel.scope-overall { border-color: var(--ink); color: var(--ink); }
+  .rel.scope-specific { border-style: dashed; }
+  .prov { font-size: 11px; color: var(--ink-3); margin-top: 6px; overflow-wrap: anywhere; }
+  .prov b { font-weight: 500; color: var(--ink-2); }
 
   .notice { border: 1px solid var(--rule); background: var(--card); padding: 22px 20px; font-size: 13.5px; color: var(--ink-2); }
   .notice strong { color: var(--ink); font-weight: 600; }
@@ -197,6 +201,15 @@
         <button type="button" data-media="animation" aria-pressed="false">动画</button>
       </div>
     </div>
+    <div class="results-head" style="padding-top:0">
+      <span class="count">按创作目的查看</span>
+      <div class="seg" id="purposeFilter" role="group" aria-label="按创作目的查看">
+        <button type="button" data-purpose="all" aria-pressed="true">全部</button>
+        <button type="button" data-purpose="composition" aria-pressed="false">构图</button>
+        <button type="button" data-purpose="subject" aria-pressed="false">人物关系</button>
+        <button type="button" data-purpose="colorLight" aria-pressed="false">色彩光线</button>
+      </div>
+    </div>
     <div id="verdicts"></div>
     <details class="rejected" id="rejectedBox" hidden>
       <summary id="rejectedSummary">被剔除的候选</summary>
@@ -238,6 +251,8 @@ let state = null;
 let queryId = null;
 let queryLabel = null;
 let activeMedia = "all";
+let activePurpose = "all";
+let lastData = null;
 let busy = false;
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -361,6 +376,9 @@ function handleError(data, status) {
 
 // ---------------- 结果 ----------------
 const REL_LABEL = { high: "高度相关", partial: "部分可借鉴", unrelated: "无关" };
+const SCOPE_LABEL = { overall: "整体参考", specific: "局部方法参考", partial: "部分维度", none: "证据不足" };
+const SCOPE_CLS = { overall: "scope-overall", specific: "scope-specific", partial: "", none: "review" };
+const PURPOSE_DIM = { composition: "composition", subject: "subject", colorLight: "colorLight" };
 
 // 模型习惯按「全局图片序号」指代（查询图是第 1 张，候选从 2 开始），
 // 放进单张卡片里读着莫名其妙。这里只改显示，原始文本保留在 JSON 里供复核。
@@ -369,6 +387,9 @@ const cleanRef = (s) => (s == null ? s : String(s).replace(/候选\s*\d+/g, "该
 function cardHTML(c) {
   const relCls = c.needsReview ? "review" : c.relation;
   const relTxt = c.needsReview ? "待核实" : (REL_LABEL[c.relation] || c.relation);
+  const scopeTxt = SCOPE_LABEL[c.referenceScope] || c.referenceScope || "";
+  const scopeCls = SCOPE_CLS[c.referenceScope] || "";
+  const prov = (c.recall?.sources || []).map((s) => `${s.path === "vector" ? "向量" : s.path === "structure" ? "结构" : "可观测"} #${s.rank}`).join(" · ");
   const rows = [
     ["构图证据", cleanRef(c.compositionEvidence)],
     ["主体关系", cleanRef(c.subjectRelationEvidence)],
@@ -377,8 +398,9 @@ function cardHTML(c) {
   return `<article class="card" data-id="${esc(c.id)}">
     <div class="frame">${frameImg(c.image, c.title, "zoom")}</div>
     <div class="body">
-      <p class="t">${esc(c.title)} <span class="rel ${relCls}">${esc(relTxt)}</span></p>
+      <p class="t">${esc(c.title)} <span class="rel ${relCls}">${esc(relTxt)}</span> ${scopeTxt ? `<span class="rel ${scopeCls}">${esc(scopeTxt)}</span>` : ""}</p>
       <p class="s">${esc(c.creator || "")}${c.year ? " · " + esc(c.year) : ""} · ${esc(c.media)}</p>
+      ${prov ? `<p class="prov">召回：<b>${esc(prov)}</b>${c.recall?.vectorTwinOf?.length ? ` · 向量与 ${esc(c.recall.vectorTwinOf.join("、"))} 完全相同` : ""}</p>` : ""}
       <dl>
         ${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}
         ${c.importantDifferences?.length ? `<dt>重要差异</dt><dd class="diffs">${c.importantDifferences.map((x) => esc(cleanRef(x))).join("；")}</dd>` : ""}
@@ -390,30 +412,42 @@ function cardHTML(c) {
 }
 
 function renderResults(data) {
-  const accepted = data.accepted || [];
+  lastData = data;
+  const allAccepted = data.accepted || [];
+  const accepted = activePurpose === "all"
+    ? allAccepted
+    : allAccepted.filter((c) => (c.scopeDimensions || []).includes(PURPOSE_DIM[activePurpose]));
   const rejected = data.rejected || [];
   show($("results"), true);
 
   const acc = data.accounting || {};
-  const parts = [`接受 ${accepted.length} 张`, `剔除 ${rejected.length} 张`];
-  if (acc.cacheHit) parts.push("命中缓存（0 次上游请求）");
+  const parts = [`接受 ${accepted.length} 张`];
+  if (activePurpose !== "all") parts[0] += `（全量 ${allAccepted.length}）`;
+  parts.push(`剔除 ${rejected.length} 张`);
+  if (acc.cacheHit) parts.push(acc.stalePrompt ? `命中旧版本缓存（${acc.promptVersion} 回放）` : "命中缓存（0 次上游请求）");
   else parts.push(`本次上游请求 ${acc.upstreamCalls} 次`);
   if (acc.latencyMs) parts.push(`${acc.latencyMs}ms`);
   if (acc.usage?.total_tokens) parts.push(`${acc.usage.total_tokens} tokens`);
+  if (data.recall?.mode === "multipath") parts.push(`多路召回 ${data.recall.returned} 张`);
   if (data.mock) parts.unshift("MOCK 数据");
   $("resultCount").textContent = parts.join(" · ");
 
   if (!accepted.length) {
     $("verdicts").innerHTML = "";
-    setNotice("empty", "这次没有合格的视觉参考。",
-      data.reason || "所有候选都被判为无关，或存在证据矛盾需要人工复核。没有为了凑数保留结果。",
-      [{ label: "换一幅查询", run: () => { $("curatedSection").scrollIntoView({ behavior: "smooth" }); } }]);
+    setNotice("empty", activePurpose === "all" ? "这次没有合格的视觉参考。" : "这个创作目的下没有匹配的参考。",
+      activePurpose === "all"
+        ? (data.reason || "所有候选都被判为无关，或存在证据矛盾需要人工复核。没有为了凑数保留结果。")
+        : `当前 ${allAccepted.length} 张接受项都不包含「${PURPOSE_LABEL[activePurpose]}」维度的证据。`,
+      activePurpose === "all"
+        ? [{ label: "换一幅查询", run: () => { $("curatedSection").scrollIntoView({ behavior: "smooth" }); } }]
+        : [{ label: "看全部目的", run: () => { activePurpose = "all"; syncPurpose(); renderResults(lastData); } }]);
   } else {
     setNotice(null);
     const group = (title, list) => list.length ? `<section class="verdict-group"><h2 class="group-head">${title} · ${list.length}</h2><div class="cards">${list.map(cardHTML).join("")}</div></section>` : "";
     $("verdicts").innerHTML =
-      group("高度相关", accepted.filter((c) => c.relation === "high" && !c.needsReview)) +
-      group("部分可借鉴", accepted.filter((c) => c.relation === "partial" && !c.needsReview)) +
+      group("整体视觉参考", accepted.filter((c) => c.referenceScope === "overall")) +
+      group("部分维度可参考", accepted.filter((c) => c.referenceScope === "partial")) +
+      group("局部方法参考（色彩 / 光线）", accepted.filter((c) => c.referenceScope === "specific")) +
       group("待核实（证据与结论矛盾）", accepted.filter((c) => c.needsReview));
   }
 
@@ -478,6 +512,18 @@ $("mediaFilter").addEventListener("click", (ev) => {
     search({ queryImageBase64: $("queryThumb").querySelector("img").src });
   }
 });
+const PURPOSE_LABEL = { all: "全部", composition: "构图", subject: "人物关系", colorLight: "色彩光线" };
+function syncPurpose() {
+  $("purposeFilter").querySelectorAll("[data-purpose]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.purpose === activePurpose)));
+}
+$("purposeFilter").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-purpose]");
+  if (!b) return;
+  activePurpose = b.dataset.purpose;
+  syncPurpose();
+  if (lastData) renderResults(lastData);
+});
+
 $("lightboxClose").addEventListener("click", closeLightbox);
 $("lightbox").addEventListener("click", (ev) => { if (ev.target === $("lightbox")) closeLightbox(); });
 document.addEventListener("keydown", (ev) => {

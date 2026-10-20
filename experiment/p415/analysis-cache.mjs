@@ -45,7 +45,7 @@ export class AnalysisCache {
     }
   }
 
-  put(key, { kind, model, promptVersion, payload, imageHash, meta, rawText, callId }) {
+  put(key, { kind, model, promptVersion, payload, imageHash, meta, rawText, callId, contentKey }) {
     const p = this._path(key);
     const rec = {
       format: CACHE_FORMAT,
@@ -53,6 +53,8 @@ export class AnalysisCache {
       kind,
       model,
       promptVersion,
+      // contentKey 不含模型/提示版本：升级提示词后仍能按内容找回旧结果做回放
+      contentKey: contentKey || null,
       imageHash: imageHash || key.split("|")[0],
       callId: callId || `${Date.now().toString(36)}-${crypto.randomBytes(4).toString("hex")}`,
       createdAt: new Date().toISOString(),
@@ -65,6 +67,29 @@ export class AnalysisCache {
     fs.writeFileSync(tmp, JSON.stringify(rec), "utf8");
     fs.renameSync(tmp, p);
     return rec;
+  }
+
+  /**
+   * 按内容找旧版本结果（不覆盖、不删除）。
+   * 典型场景：提示词从 v2.2 升到 v2.3 后，旧条目仍在磁盘上；
+   * 这里把它们找出来做「回放」，并明确标记用了哪个旧版本，不冒充本次输出。
+   */
+  findByContent(contentKey, { model, excludePromptVersion } = {}) {
+    if (!contentKey) return null;
+    let files = [];
+    try { files = fs.readdirSync(this.dir).filter((f) => f.endsWith(".json")); } catch { return null; }
+    const hits = [];
+    for (const f of files) {
+      let rec;
+      try { rec = JSON.parse(fs.readFileSync(path.join(this.dir, f), "utf8")); } catch { continue; }
+      if (rec.contentKey !== contentKey) continue;
+      if (model && rec.model !== model) continue;
+      if (excludePromptVersion && rec.promptVersion === excludePromptVersion) continue;
+      hits.push(rec);
+    }
+    if (!hits.length) return null;
+    hits.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    return hits[0];
   }
 
   stats() {

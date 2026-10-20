@@ -17,7 +17,7 @@ import { serverVisionConfig, visionConfigured } from "./openaiProvider.mjs";
 import { budgetConfig, reserveCall, budgetStatus } from "../security/budget.mjs";
 
 /** Bump when the prompt text changes. Part of every cache key. */
-export const PROMPT_VERSION = "p415-v2.2";
+export const PROMPT_VERSION = "p415-v2.3";
 
 export const VERDICTS = Object.freeze({
   HIGH: "high",
@@ -102,7 +102,9 @@ export function buildCompareMessages({ queryImage, candidates, question = "" }) 
     {
       type: "text",
       text:
-        `查询画面在第 1 张图。候选共 ${candidates.length} 张，依次为第 2 到第 ${candidates.length + 1} 张。` +
+        `查询画面是第 1 张图。候选共 ${candidates.length} 张，编号为「候选1」到「候选${candidates.length}」，` +
+        `按顺序对应第 2 到第 ${candidates.length + 1} 张图片。` +
+        `指代某张候选时请用候选编号（候选1、候选2…），不要用图片位置编号。` +
         (question ? `\n用户的补充说明：${question}\n` : "") +
         `\n请对每个候选各给一份分析，按候选出现顺序输出 JSON：{"candidates": [ ... ]}，` +
         `每个元素的结构如下（字段值只用中文，verdict 用英文枚举）：\n${CANDIDATE_SCHEMA}`,
@@ -236,6 +238,7 @@ export async function compareImages({
     usage: payload.usage || null,
     model: payload.model || config.model,
     promptVersion: PROMPT_VERSION,
+    finishReason: payload?.choices?.[0]?.finish_reason || null,
     raw: content,          // 原始模型文本：只为本地复核，不上浏览器
     latencyMs: Date.now() - started,
   };
