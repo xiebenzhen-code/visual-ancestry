@@ -17,6 +17,7 @@ import os from "node:os";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { LibraryStore, sniffImage, isSafeName, VECTOR_FINGERPRINT } from "./library-store.mjs";
+import { deriveMedia, baseHashIndex } from "./media-guard.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
@@ -25,6 +26,10 @@ const HOST = "127.0.0.1";
 
 const USER_DIR = path.join(ROOT, ".rc1-user-library");
 const STORE = new LibraryStore(USER_DIR);
+
+// 基础图库哈希索引：导入时用来判定「这张图其实是什么」。
+// 建一次就够，失败不阻断服务（最多是少一道交验）。
+try { baseHashIndex(ROOT); } catch { /* 索引不可用时 deriveMedia 会跳过哈希分支 */ }
 
 const LIMITS = {
   maxFileBytes: 8 * 1024 * 1024,
@@ -227,6 +232,14 @@ const server = http.createServer(async (req, res) => {
       const meta = body.meta && typeof body.meta === "object" ? body.meta : {};
       const clip = (v) => (typeof v === "string" ? v.slice(0, LIMITS.maxTitleLen) : null);
 
+      // P4.15 STEP 1：分类以图片为准，不以用户下拉框为准。
+      // 实测事故：与原作 preview 逐字节相同的绘画被标成 film/animation，
+      // 于是「动画」筛选里出现了《维纳斯的诞生》。
+      const guard = await deriveMedia({ buffer: buf, declared: meta, root: ROOT });
+      if (!guard.ok) {
+        return sendJson(res, 422, { ok: false, error: guard.error, detail: guard.detail });
+      }
+
       try {
         const result = await withTempFile(buf, ext, (tmp) =>
           STORE.import({
@@ -236,10 +249,10 @@ const server = http.createServer(async (req, res) => {
               title: clip(meta.title),
               creator: clip(meta.creator),
               year: clip(meta.year),
-              medium: meta.medium === "film" ? "film" : "artwork",
-              visualForm: meta.visualForm || null,
-              tradition: meta.tradition || null,
-              imageKind: meta.imageKind || null,
+              medium: guard.media.medium,
+              visualForm: guard.media.visualForm,
+              tradition: guard.media.tradition,
+              imageKind: guard.media.imageKind,
               sourcePageURL: clip(meta.sourcePageURL),
               sourceNote: clip(meta.sourceNote),
             },
@@ -251,6 +264,8 @@ const server = http.createServer(async (req, res) => {
           deduped: result.deduped,
           item: publicItem(result.record),
           stats: STORE.stats(),
+          mediaEvidence: guard.evidence,
+          mediaNote: guard.note,
         });
       } catch (e) {
         const code = e.code === "EMBED_FAILED" ? 422 : 400;

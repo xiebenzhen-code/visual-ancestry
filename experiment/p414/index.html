@@ -401,7 +401,7 @@
 </div>
 
 <script type="module">
-import { library, searchByEmbedding, searchCombined, mediaLabel, LIBRARY_META } from "/src/services/features/visualSearch.js";
+import { library, searchByEmbedding, searchCombined, mediaLabel, LIBRARY_META, passMedia } from "/src/services/features/visualSearch.js";
 import { retrieveByArtworkChecked } from "/src/services/retrieval/retrievalService.js";
 
 const $ = (id) => document.getElementById(id);
@@ -673,14 +673,8 @@ function measureTone(img) {
 }
 
 // ---------------------------------------------------------------- 检索
-function passMedia(e, media) {
-  if (media === "all") return true;
-  const m = e.media || {};
-  if (media === "artwork") return (m.medium || "artwork") === "artwork";
-  if (media === "film") return m.medium === "film" && m.visualForm !== "animation";
-  if (media === "animation") return m.visualForm === "animation";
-  return true;
-}
+// 媒介过滤只有一份，就在 visualSearch.js 里：页面自己再写一份，两边一旦分叉
+// 就会出现「一边筛、一边不筛」。
 
 function candidateCount(media) {
   return LIB.filter((e) => passMedia(e, media)).length + personal.filter((e) => passMedia(e, media)).length;
@@ -747,8 +741,8 @@ function wireResults(data) {
 
   bindZoom();
   $("resultCount").textContent = BLIND
-    ? `候选 ${candidateCount(activeMedia)} 张（基础 ${LIBRARY_META.count} + 我的 ${personal.length}）`
-    : `候选 ${candidateCount(activeMedia)} 张（基础 ${LIBRARY_META.count} + 我的 ${personal.length}） · A 旧算法 / B 图像向量 / C 向量＋结构`;
+    ? `池内候选 ${candidateCount(activeMedia)} 张（基础 ${LIBRARY_META.count} + 我的 ${personal.length}） · 三列各显示前 5`
+    : `池内候选 ${candidateCount(activeMedia)} 张（基础 ${LIBRARY_META.count} + 我的 ${personal.length}） · A 旧算法 / B 图像向量 / C 向量＋结构`;
 }
 
 function syncTabs() {
@@ -769,13 +763,15 @@ function run() {
 
   let A = [], aNote = "没有可信候选";
   if (queryEntry && !queryEntry.personal) {
-    const out = retrieveByArtworkChecked(queryEntry.record, { limit: 5 });
+    const out = retrieveByArtworkChecked(queryEntry.record, { limit: 40 });
     A = (out.results || []).map((r) => {
       const e = byId.get(r.artwork?.id);
       return e ? { ...e, samePoints: (r.reasons || []).slice(0, 3), differences: [] } : null;
     }).filter(Boolean)
-      // A 列也要跟着媒介筛选，否则「候选 1 张」旁边会摆着 5 张绘画
-      .filter((e) => passMedia(e, activeMedia));
+      // 先筛后取：反过来的话，前 5 名全是绘画时这一列会白白空掉，
+      // 而池里明明有合格候选。
+      .filter((e) => passMedia(e, activeMedia))
+      .slice(0, 5);
     if (!out.ok) aNote = `该作品不能作为检索起点（${out.error}）`;
   } else if (BLIND) {
     // 盲评时不说「哪一列是旧算法」，只说这列需要什么信息。
@@ -791,7 +787,14 @@ function run() {
 
   const allEmpty = A.length === 0 && B.length === 0 && C.length === 0;
   if (allEmpty) {
+    // 空态也要清干净：只 hidden 的话，旧卡片还留在 DOM 里，
+    // 计数文案也会停在上一档，看上去像「筛选没生效」。
+    $("abc").innerHTML = "";
+    $("abcMobile").innerHTML = "";
+    $("resultCount").textContent = `池内候选 ${candidateCount(activeMedia)} 张`;
+    lastData = null;
     show($("results"), false);
+    show($("abcTabs"), false);
     const name = activeMedia === "animation" ? "动画" : activeMedia === "film" ? "彩色电影" : activeMedia === "artwork" ? "绘画" : "全部媒介";
     setNotice("empty", `「${name}」下没有可用候选。`,
       activeMedia === "animation" ? "本地图库还没有动画画面。可以在下方「运行信息与我的参考」里导入。" : "换一个媒介，或先导入参考图。",
@@ -875,7 +878,7 @@ function renderRunInfo(stats) {
     ["向量维度", `${LIBRARY_META.dim}`],
     ["取景方式", `${LIBRARY_META.fit}`],
     ["模型许可", `${LIBRARY_META.license}`],
-    ["本次候选", `${candidateCount(activeMedia)} 张`],
+    ["本次候选", `${candidateCount(activeMedia)} 张（池内）`],
   ];
   $("runInfo").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
   $("colophon").textContent = `视觉参考仅表示「看起来像」，不等于艺术价值判断。${BLIND ? "" : ""}`;
@@ -892,6 +895,7 @@ async function importFiles(files) {
   const base = map[kind] || map.artwork;
   let ok = 0, dup = 0, bad = 0;
   const errs = [];
+  const notes = [];
   $("btnImport").disabled = true;
   $("importKind").disabled = true;
   for (const f of files) {
@@ -905,13 +909,18 @@ async function importFiles(files) {
         body: JSON.stringify({ fileName: f.name, imageBase64: b64, meta: { ...base, title: f.name.replace(/\.[^.]+$/, "") } }),
       });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && j.ok) { j.deduped ? dup++ : ok++; } else { bad++; errs.push(`${f.name}: ${j.error || r.status}`); }
+      if (r.ok && j.ok) {
+        j.deduped ? dup++ : ok++;
+        if (j.mediaNote) notes.push(j.mediaNote);
+      } else { bad++; errs.push(`${f.name}: ${j.error || r.status}`); }
     } catch (e) { bad++; errs.push(`${f.name}: ${e.message}`); }
   }
   await loadPersonal();
   $("btnImport").disabled = false;
   $("importKind").disabled = false;
-  $("importHint").textContent = `导入完成：新增 ${ok}，已存在 ${dup}，失败 ${bad}。` + (errs.length ? ` ${errs.slice(0, 2).join("；")}` : "");
+  $("importHint").textContent = `导入完成：新增 ${ok}，已存在 ${dup}，失败 ${bad}。`
+    + (notes.length ? ` ${[...new Set(notes)].slice(0, 2).join("；")}。` : "")
+    + (errs.length ? ` ${errs.slice(0, 2).join("；")}` : "");
   run();
 }
 

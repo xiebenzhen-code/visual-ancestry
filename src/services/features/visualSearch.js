@@ -77,8 +77,9 @@ export function pool(extraEntries = []) {
   return [...extraEntries, ...base.filter((e) => !seen.has(e.id))];
 }
 
-/** 媒介过滤。动画目前没有数据，选了就是 0 条——这是事实，不是 bug。 */
-function passMedia(entry, media) {
+/** 媒介过滤。动画目前没有数据，选了就是 0 条——这是事实，不是 bug。
+ *  页面不再自己写一份：两份同名实现一旦分叉，就会一边筛一边不筛。 */
+export function passMedia(entry, media) {
   if (!media || media === "all") return true;
   if (media === MEDIA.ARTWORK) return entry.kind === MEDIA.ARTWORK;
   // 「彩色电影」指真人实拍。动画的 medium 也是 film，若只看 kind，
@@ -86,9 +87,14 @@ function passMedia(entry, media) {
   if (media === MEDIA.FILM) {
     return entry.kind === MEDIA.FILM && entry.media.visualForm !== VISUAL_FORM.ANIMATION;
   }
-  if (media === VISUAL_FORM.ANIMATION || media === "anime") {
-    return entry.media.visualForm === VISUAL_FORM.ANIMATION;
+  // anime 是 animation 的子集，不能等同于 animation：
+  // 只声明 visualForm=animation 但没有 anime 传统的，不算日本动漫。
+  // 这里直接看已经算好的 entry.media：isAnime() 会从原始字段重新推导，
+  // 而库条目身上只有 media，重推会把 tradition 推丢。
+  if (media === "anime") {
+    return entry.media?.visualForm === VISUAL_FORM.ANIMATION && entry.media?.tradition === "anime";
   }
+  if (media === VISUAL_FORM.ANIMATION) return entry.media.visualForm === VISUAL_FORM.ANIMATION;
   return true;
 }
 
