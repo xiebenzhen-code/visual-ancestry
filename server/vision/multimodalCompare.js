@@ -486,6 +486,7 @@ export async function analyzeImage({ image, config, fetchImpl = globalThis.fetch
     usage: payload.usage || null,
     model: payload.model || config.model,
     promptVersion: PROMPT_VERSION,
+    finishReason: payload?.choices?.[0]?.finish_reason || null,
     raw: content,          // 原始模型文本：只为本地复核，不上浏览器
     latencyMs: Date.now() - started,
   };

@@ -42,6 +42,7 @@ function semanticTable(root) {
       cacheDir: path.join(root, ".rc1-audit/p415/cache"),
       statePath: path.join(root, ".rc1-audit/p415/preflight-state.json"),
       fixturesPath: path.join(root, "experiment/p415/fixtures/pinned-cases.json"),
+      analysesDir: path.join(root, ".rc1-audit/p415/v2-analyses"),
     });
   } catch {
     semanticTableCache = { profiles: new Map(), derivedQueries: new Map(), stats: {} };
@@ -230,31 +231,60 @@ export async function visionSearch(opts) {
 
   const semanticInfo = {
     queryProfile: queryProfile
-      ? { available: true, kind: queryProfile.kind, source: queryProfile.source, tokens: queryProfile.tokens }
+      ? {
+          available: true, kind: queryProfile.kind, source: queryProfile.source, tokens: queryProfile.tokens,
+          // A=独立单图分析；C=从差异文本反推（不得当成看图结论）
+          evidenceTier: queryProfile.evidenceTier || null, tierNote: queryProfile.tierNote || null,
+        }
       : { available: false, reason: "查询未做过单图 V2 分析，也没有可归因的历史比较" },
     tableStats: table.stats,
     hits: disc.hits || [],
     skipped: disc.skipped || null,
+    skippedTierC: disc.skippedTierC || 0,
+    // 候选侧证据等级：只有 A 才算「这张图自己的属性」，B 只是关系描述
+    tierSummary: (disc.hits || []).reduce((acc, h) => {
+      const k = h.candidateEvidenceTier || "B";
+      acc[k] = (acc[k] || 0) + 1;
+      return acc;
+    }, {}),
     unanalyzed: allPool.filter((e) => !table.profiles.has(e.id)).map((e) => e.id),
   };
 
-  // 语义发现到的、且不在融合列表里的候选，标记后并入池尾（不参与 RRF 权重）
+  // 语义发现到的候选：标记后并入池尾（不参与 RRF 权重）
+  // 两种情形都要处理：
+  //   a) 完全没被召回 → 作为发现项补入
+  //   b) 被召回了但排在 top-N 之外 → 作为「提升项」补入，否则永远比不到
+  const judgeN = Math.max(1, judgeCount);
   const fusedIds = new Set(recalled.map((e) => e.id));
+  const topIds = new Set(recalled.slice(0, judgeN).map((e) => e.id));
   const semanticOnly = [];
+  const promoted = [];
   for (const h of semanticInfo.hits) {
     if (fusedIds.has(h.id)) {
       const r = recalled.find((e) => e.id === h.id);
-      r.semanticDiscovery = { matchedDimensions: h.matchedDimensions, evidence: h.evidence };
+      r.semanticDiscovery = {
+        matchedDimensions: h.matchedDimensions, evidence: h.evidence,
+        candidateEvidenceTier: h.candidateEvidenceTier || "B",
+        candidateAnalysisUnavailable: !!h.candidateAnalysisUnavailable,
+        limitation: h.limitation || null,
+      };
+      if (!topIds.has(h.id)) promoted.push(r);   // 召回内低位：凭语义证据进比较集
       continue;
     }
     const e = allPool.find((x) => x.id === h.id);
     if (!e) continue;
     semanticOnly.push({
       ...e, fused: null, fromPaths: ["semantic"], sources: [{ path: "semantic", rank: semanticOnly.length + 1, score: h.matchedDimensions.length, reason: h.evidence.map((x) => `${x.dim}:${x.tokens.join("/")}`).join("；") }],
-      semanticDiscovery: { matchedDimensions: h.matchedDimensions, evidence: h.evidence },
+      semanticDiscovery: {
+        matchedDimensions: h.matchedDimensions, evidence: h.evidence,
+        candidateEvidenceTier: h.candidateEvidenceTier || "B",
+        candidateAnalysisUnavailable: !!h.candidateAnalysisUnavailable,
+        limitation: h.limitation || null,
+      },
     });
   }
   semanticInfo.broughtIn = semanticOnly.map((s) => s.id);
+  semanticInfo.promotedFromRecall = promoted.map((s) => s.id);
 
   if (!recalled.length) {
     return {
@@ -265,10 +295,9 @@ export async function visionSearch(opts) {
     };
   }
 
-  const judgeN = Math.max(1, judgeCount);
   const candidates = recallMode === "legacy"
     ? recalled.slice(0, judgeN)
-    : selectForComparison(recalled, judgeN, semanticOnly);
+    : selectForComparison(recalled, judgeN, [...promoted, ...semanticOnly]);
 
   recallInfo.compared = candidates.map((c) => c.id);
   recallInfo.selection = recallMode === "legacy"
@@ -296,7 +325,7 @@ export async function visionSearch(opts) {
   const hit = cache.get(key);
   if (hit && hit.payload?.ok) {
     return finish(hit.payload, usable, droppedNoBytes, {
-      ...base, queryEntry, cacheHit: true, callId: hit.callId, upstreamCalls: 0, cfg, recallInfo,
+      ...base, queryEntry, cacheHit: true, callId: hit.callId, upstreamCalls: 0, cfg, recallInfo, semanticInfo,
       promptVersionUsed: hit.promptVersion,
     });
   }
@@ -305,7 +334,7 @@ export async function visionSearch(opts) {
   const fallback = cache.findByContent(contentKey, { model: modelKey, excludePromptVersion: PROMPT_VERSION });
   if (fallback && fallback.payload?.ok) {
     return finish(fallback.payload, usable, droppedNoBytes, {
-      ...base, queryEntry, cacheHit: true, callId: fallback.callId, upstreamCalls: 0, cfg, recallInfo,
+      ...base, queryEntry, cacheHit: true, callId: fallback.callId, upstreamCalls: 0, cfg, recallInfo, semanticInfo,
       promptVersionUsed: fallback.promptVersion, stalePrompt: true,
     });
   }
@@ -367,7 +396,7 @@ export async function visionSearch(opts) {
   });
 
   return finish(payload, usable, droppedNoBytes, {
-    ...base, queryEntry, cacheHit: false, callId: rec.callId, upstreamCalls: forceMock ? 0 : 1, cfg, recallInfo,
+    ...base, queryEntry, cacheHit: false, callId: rec.callId, upstreamCalls: forceMock ? 0 : 1, cfg, recallInfo, semanticInfo,
     promptVersionUsed: PROMPT_VERSION,
   });
 }

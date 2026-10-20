@@ -252,8 +252,23 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    if (p === "/api/p415/search" && req.method === "POST") {
-      const raw = await readBody(req);
+    // ---- P4.15.3 冻结案例回放（只读：已付费结果，绝不发起上游请求）----
+    if (p === "/api/p415/case" && req.method === "GET") {
+      const CASES = ["paris-rainy-day", "fan-kuan-travelers", "guo-xi-early-spring", "american-gothic"];
+      const id = url.searchParams.get("id") || "";
+      if (!CASES.includes(id)) return sendJson(res, 400, { ok: false, error: "unknown-case" });
+      const file = path.join(__dirname, "../../.rc1-audit/p415/cases", `${id}.json`);
+      if (!fs.existsSync(file)) return sendJson(res, 404, { ok: false, error: "case-not-run" });
+      return sendJson(res, 200, { ok: true, frozen: true, case: JSON.parse(fs.readFileSync(file, "utf8")) });
+    }
+
+    if (p === "/frozen" || p === "/frozen.html") {
+      const FPAGE = path.join(__dirname, "../p415/frozen.html");
+      if (!fs.existsSync(FPAGE)) return send(res, 404, "frozen page missing");
+      return send(res, 200, fs.readFileSync(FPAGE), MIME[".html"]);
+    }
+
+    if (p === "/api/p415/search" && req.method === "POST") {      const raw = await readBody(req);
       let body;
       try { body = JSON.parse(raw.toString("utf8") || "{}"); }
       catch { return sendJson(res, 400, { ok: false, error: "bad-json" }); }

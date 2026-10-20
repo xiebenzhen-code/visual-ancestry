@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>P4.15.3 冻结真实结果</title>
+<style>
+  :root { --ink:#1b1b1b; --sub:#6b6b6b; --line:#e2e0d9; --bg:#faf9f6;
+          --high:#1a8250; --highbg:#eef7f1; --part:#c08a24; --partbg:#fdf6e7; --un:#8c8c8c; --unbg:#f3f3f3; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif; }
+  header { padding:22px 40px 10px; }
+  h1 { margin:0 0 6px; font-size:21px; letter-spacing:.2px; }
+  .meta { font-size:12px; color:var(--sub); }
+  .badge { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:99px;
+           font-size:11px; color:#555; margin-left:8px; }
+  .tabs { display:flex; gap:8px; padding:10px 40px 0; flex-wrap:wrap; }
+  .tab { padding:6px 14px; border:1px solid var(--line); border-radius:99px; background:#fff;
+         font-size:12px; cursor:pointer; color:#444; }
+  .tab.on { border-color:var(--ink); color:var(--ink); font-weight:600; }
+  main { padding:16px 40px 60px; }
+  .qrow { display:flex; gap:16px; align-items:flex-start; margin-bottom:14px; }
+  .qimg { width:150px; height:150px; border-radius:8px; object-fit:cover; border:1px solid var(--line); background:#fff; }
+  .qtext { font-size:13px; line-height:1.7; color:#333; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px; }
+  .card.high { border-color:var(--high); background:var(--highbg); }
+  .card.partial { border-color:var(--part); background:var(--partbg); }
+  .card.unrelated { border-color:#dcdcdc; background:var(--unbg); }
+  .chead { display:flex; gap:10px; align-items:center; margin-bottom:8px; }
+  .chead img { width:64px; height:64px; border-radius:6px; object-fit:cover; border:1px solid var(--line); }
+  .cname { font-size:13px; font-weight:600; }
+  .cid { font-size:11px; color:var(--sub); }
+  .v { font-size:11px; padding:1px 7px; border-radius:99px; color:#fff; display:inline-block; margin-top:3px; }
+  .v.high { background:var(--high); } .v.partial { background:var(--part); } .v.unrelated { background:var(--un); }
+  dl { margin:0; font-size:12px; line-height:1.65; }
+  dt { color:var(--sub); margin-top:6px; font-size:11px; }
+  dd { margin:2px 0 0; }
+  ul { margin:2px 0 0; padding-left:16px; }
+  .note { font-size:11px; color:var(--sub); margin-top:10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>P4.15.3 冻结真实结果<span class="badge" id="mode">读取中</span></h1>
+  <div class="meta" id="sub"></div>
+</header>
+<div class="tabs" id="tabs"></div>
+<main>
+  <div class="qrow">
+    <img class="qimg" id="qimg" alt="查询图" />
+    <div class="qtext" id="qtext"></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="note">
+    本页只读取已付费的多图比较结果（<code>.rc1-audit/p415/cases/*.json</code>），
+    不发起任何上游请求；判定为模型原样输出，未经二次加工。
+  </div>
+</main>
+<script>
+const CASES = [
+  ["paris-rainy-day", "雨天的巴黎街道"],
+  ["fan-kuan-travelers", "溪山行旅图"],
+  ["guo-xi-early-spring", "早春图"],
+  ["american-gothic", "美国哥特式"],
+];
+const TITLES = {
+  "dance-class": "舞蹈课", "jatte": "大碗岛的星期天下午", "hunters-snow": "雪中猎归",
+  "fighting-temeraire": "被拖去解体的无畏号", "huizong-cranes": "瑞鹤图",
+  "guo-xi-early-spring": "早春图", "ni-zan-rongxi": "容膝斋图", "hiroshige-shower": "大桥骤雨",
+  "milkmaid": "倒牛奶的女仆", "whistlers-mother": "灰与黑的协奏曲一号",
+  "fan-kuan-travelers": "溪山行旅图", "scream": "呐喊", "american-gothic": "美国哥特式",
+  "paris-rainy-day": "雨天的巴黎街道", "the-kiss": "吻", "utamaro-three-beauties": "当时三美人",
+};
+
+const tabs = document.getElementById("tabs");
+CASES.forEach(([id, label]) => {
+  const b = document.createElement("div");
+  b.className = "tab"; b.dataset.id = id; b.textContent = label;
+  b.onclick = () => load(id);
+  tabs.appendChild(b);
+});
+
+async function load(id) {
+  [...tabs.children].forEach((t) => t.classList.toggle("on", t.dataset.id === id));
+  const r = await fetch("/api/p415/case?id=" + encodeURIComponent(id));
+  const doc = await r.json();
+  if (!doc.ok) { document.getElementById("grid").textContent = "未找到该案例结果：" + (doc.error || ""); return; }
+  const c = doc.case;
+  document.getElementById("mode").textContent = "冻结回放 · 不产生调用";
+  document.getElementById("sub").textContent =
+    `${c.title}｜模型 ${c.model}｜提示 ${c.promptVersion}｜finish ${c.finishReason}｜tokens ${c.usage?.total_tokens ?? "?"}｜耗时 ${c.latencyMs}ms｜${c.at}`;
+  document.getElementById("qimg").src = `/assets/artworks/${id}/preview.webp`;
+  document.getElementById("qtext").innerHTML =
+    `<b>比较集已冻结</b>（${c.candidateIds.length} 张，调用前写入 fixtures/frozen-sets-p4153.json）：`
+    + c.candidateIds.map((x) => `<code>${x}</code>`).join("、")
+    + `<br><span style="color:#6b6b6b">判定分布：high ${c.judgments.filter(j=>j.verdict==="high").length}｜`
+    + `partial ${c.judgments.filter(j=>j.verdict==="partial").length}｜unrelated ${c.judgments.filter(j=>j.verdict==="unrelated").length}</span>`;
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  for (const j of c.judgments) {
+    const cid = c.candidateIds[j.index];
+    const el = document.createElement("div");
+    el.className = "card " + j.verdict;
+    const li = (arr) => (arr && arr.length) ? `<ul>${arr.map((t) => `<li>${t}</li>`).join("")}</ul>` : "—";
+    el.innerHTML = `
+      <div class="chead">
+        <img src="/assets/artworks/${cid}/preview.webp" alt="" />
+        <div>
+          <div class="cname">${TITLES[cid] || cid}</div>
+          <div class="cid">${cid}${c.roles?.[cid] ? "｜" + c.roles[cid] : ""}</div>
+          <div class="v ${j.verdict}">${j.verdict}${j.downgraded ? "（已降档）" : ""}</div>
+        </div>
+      </div>
+      <dl>
+        <dt>构图证据</dt><dd>${j.compositionEvidence || "—"}</dd>
+        <dt>主体与人物关系</dt><dd>${j.subjectRelationEvidence || "—"}</dd>
+        <dt>空间组织</dt><dd>${j.borrowableSpace || "—"}</dd>
+        <dt>色彩与光线</dt><dd>${j.colorLightEvidence || "—"}</dd>
+        <dt>重大差异</dt><dd>${li(j.majorDifferences)}</dd>
+        <dt>可迁移方法</dt><dd>${j.borrowableForCreation || "—"}</dd>
+        <dt>无法判断</dt><dd>${li(j.unknown)}</dd>
+      </dl>`;
+    grid.appendChild(el);
+  }
+}
+load("paris-rainy-day");
+</script>
+</body>
+</html>

@@ -16,6 +16,21 @@ import path from "node:path";
 
 const DIMENSIONS = ["composition", "subject", "space", "colorLight"];
 
+/** 具体到能指认的词（强）与到处都有的通用词（弱）。
+ *  只有弱词重合不算命中——「都有人物」「都有背景」说明不了任何事。 */
+const STRONG = {
+  composition: ["竖向", "横向", "长卷", "对称", "三角", "对角", "并排", "并立", "居中", "中轴", "垂直轴线", "水平线", "留白", "层叠"],
+  subject: ["单人", "两人", "三人", "群像", "无人物", "裸体", "持杖", "撑伞", "农夫", "舞者", "并肩", "侧身", "背向"],
+  space: ["室内", "室外", "街道", "纵深感", "平面化", "长卷", "湿地面", "绢地", "留白过渡"],
+  colorLight: ["漫射", "硬光", "侧光", "逆光", "落日", "平光", "低饱和", "高饱和", "单色", "暖黄", "冷灰"],
+};
+const WEAK = {
+  composition: ["近景", "远景", "特写", "全身", "半身", "前景", "中景", "背景"],
+  subject: ["人物", "正面", "互动", "互动关系"],
+  space: ["建筑", "房屋", "天空", "山", "海", "雪", "乡村", "墙面"],
+  colorLight: ["明暗", "柔和", "灰", "暖", "冷", "金", "墨"],
+};
+
 /** 每个维度的可匹配词。宁缺毋滥：匹配上的必须能在原文里指出同一处。 */
 const TOKENS = {
   composition: ["竖向", "横向", "对称", "三角", "并排", "并立", "居中", "偏右", "偏左", "长卷", "对角", "留白", "近景", "远景", "特写", "全身", "半身", "层叠", "垂直轴线", "水平线"],
@@ -26,7 +41,23 @@ const TOKENS = {
 
 function extractTokens(text, dim) {
   const t = String(text || "");
-  return TOKENS[dim].filter((tok) => t.includes(tok));
+  return [...STRONG[dim], ...WEAK[dim]].filter((tok) => t.includes(tok));
+}
+
+/** 互相矛盾的证据对：命中它们就直接否决，不靠分数掩盖。 */
+const CONFLICTS = [
+  ["室内", "室外"],
+  ["无人物", "单人"], ["无人物", "两人"], ["无人物", "三人"], ["无人物", "群像"],
+];
+
+function hasConflict(qTokens, cTokens) {
+  const all = (t) => DIMENSIONS.flatMap((d) => t[d] || []);
+  const a = new Set(all(qTokens));
+  const b = new Set(all(cTokens));
+  for (const [x, y] of CONFLICTS) {
+    if ((a.has(x) && b.has(y)) || (a.has(y) && b.has(x))) return `${x} vs ${y}`;
+  }
+  return null;
 }
 
 function tokensOf(profile) {
@@ -41,12 +72,14 @@ function tokensOf(profile) {
   return out;
 }
 
-/** 单图 V2 分析 → 统一画像。 */
+/** 单图 V2 分析 → 统一画像。证据等级 A：直接看这张图得到的。 */
 function profileFromAnalysis(entryId, analysis, meta) {
   if (!analysis) return null;
   return {
     entryId,
-    kind: "single-image-analysis",
+    kind: meta.kind || "single-image-analysis",
+    evidenceTier: "A",
+    tierNote: null,
     source: meta,
     subject: {
       count: analysis.subject?.count ?? null,
@@ -87,6 +120,8 @@ function profileFromJudgment(entryId, judgment, meta) {
   const p = {
     entryId,
     kind: "comparison-judgment",
+    evidenceTier: "B",
+    tierNote: "来自与另一张查询图的关系描述，不是这张图自己的单图分析",
     source: meta,
     subject: {
       count: null,
@@ -134,6 +169,8 @@ function deriveQueryProfile(queryEntryId, judgments, meta) {
   const p = {
     entryId: queryEntryId,
     kind: "derived-query",
+    evidenceTier: "C",
+    tierNote: "从候选差异文本反推，不是对查询图的独立分析",
     source: meta,
     subject: { count: null, description: null, relation: null },
     figures: [],
@@ -163,10 +200,27 @@ function deriveQueryProfile(queryEntryId, judgments, meta) {
  * 构建语义画像表。
  * @returns {{profiles: Map, derivedQueries: Map, stats: object}}
  */
-export function buildSemanticTable({ cacheDir, statePath, fixturesPath }) {
+export function buildSemanticTable({ cacheDir, statePath, fixturesPath, analysesDir }) {
   const profiles = new Map();
   const derivedQueries = new Map();
-  const stats = { cacheEntries: 0, comparisonEntries: 0, candidateProfiles: 0, queryAnalyses: 0, derivedQueries: 0, skippedMock: 0, attributed: 0 };
+  const stats = { cacheEntries: 0, comparisonEntries: 0, candidateProfiles: 0, queryAnalyses: 0, derivedQueries: 0, skippedMock: 0, attributed: 0, independentAnalyses: 0 };
+
+  // 0a) 独立单图分析（A 级证据）：本轮真实付费产出的 v2-analyses/*.json
+  if (analysesDir) {
+    let files = [];
+    try { files = fs.readdirSync(analysesDir).filter((f) => f.endsWith(".json")); } catch { files = []; }
+    for (const f of files) {
+      let rec;
+      try { rec = JSON.parse(fs.readFileSync(path.join(analysesDir, f), "utf8")); } catch { continue; }
+      if (!rec?.ok || !rec.analysis) continue;
+      const meta = {
+        kind: "single-image-analysis", model: rec.model, promptVersion: rec.promptVersion,
+        callId: rec.callId || f.replace(/\.json$/, ""), at: rec.at, imageHash: rec.imageHash,
+      };
+      const p = profileFromAnalysis(rec.id, rec.analysis, meta);
+      if (p) { profiles.set(p.entryId, p); stats.independentAnalyses++; }
+    }
+  }
 
   // 0) 归因表：callId → 查询 id（来自固定夹具，不猜）
   let attribution = {};
@@ -191,7 +245,7 @@ export function buildSemanticTable({ cacheDir, statePath, fixturesPath }) {
       const p = profileFromAnalysis(qid || "american-gothic", analysis, {
         kind: "single-image-analysis", model: "deepseek-flash", promptVersion: "p415-v2.2", callId: "preflight-A2",
       });
-      if (p) { profiles.set(p.entryId, p); stats.queryAnalyses++; }
+      if (p && !profiles.has(p.entryId)) { profiles.set(p.entryId, p); stats.queryAnalyses++; }
     }
   } catch { /* 没有预检状态就少一条，不崩 */ }
 
@@ -214,7 +268,8 @@ export function buildSemanticTable({ cacheDir, statePath, fixturesPath }) {
       const id = cands[i];
       if (!id) return;
       const p = profileFromJudgment(id, j, meta);
-      if (p && (p.composition.skeleton || p.subject.relation || p.colorLight.dominant)) {
+      // B 级（关系描述）不能覆盖已有的 A 级（独立单图分析）
+      if (p && profiles.get(id)?.evidenceTier !== "A" && (p.composition.skeleton || p.subject.relation || p.colorLight.dominant)) {
         profiles.set(id, p);
         stats.candidateProfiles++;
       }
@@ -225,9 +280,9 @@ export function buildSemanticTable({ cacheDir, statePath, fixturesPath }) {
     stats.derivedQueries++;
     if (qid) {
       const qp = deriveQueryProfile(qid, payload.judgments || [], meta);
-      // 已有真实单图分析的查询不被反推画像覆盖（反推可信度更低）
+      // 已有 A 级独立分析的查询，不被 C 级反推覆盖（C 可信度更低）
       const existing = profiles.get(qid);
-      if (!existing || existing.kind === "derived-query") profiles.set(qid, qp);
+      if (!existing || existing.evidenceTier === "C") profiles.set(qid, qp);
       stats.attributed++;
     }
   }
@@ -251,33 +306,56 @@ export function attachDerivedQuery(table, callId, queryEntryId) {
 
 /**
  * 语义发现：查询画像 vs 候选画像，按维度求交集。
- * 命中条件：≥2 个维度有共同可核对词。返回命中与证据。
+ * 命中条件：≥2 个维度有共同可核对词。返回命中、证据与各自的证据等级。
+ * A=候选自身的独立单图分析；B=仅从关系描述得到（局限已标注）；
+ * 跨查询复用 B 级证据时必须显式告知，不能当 A 用。
  */
 export function semanticDiscover(queryProfile, candidateProfiles) {
   if (!queryProfile || !queryProfile.tokens) return { hits: [], skipped: "查询没有语义画像" };
   const hits = [];
+  let skippedTierC = 0;
   for (const [id, cProf] of candidateProfiles) {
     if (id === queryProfile.entryId) continue;
     if (!cProf || !cProf.tokens) continue;
+    // C 级是「从别的查询的差异文本反推出的属性」，不能当候选证据复用
+    if (cProf.evidenceTier === "C") { skippedTierC++; continue; }
     const dims = [];
     const evidence = [];
+    const strongShared = [];
+    const strongDims = new Set();
     for (const dim of DIMENSIONS) {
       const shared = queryProfile.tokens[dim].filter((t) => cProf.tokens[dim].includes(t));
       if (shared.length) {
         dims.push(dim);
-        evidence.push({ dim, tokens: shared, queryText: queryProfile.tokens[dim].join("、"), candidateText: cProf.tokens[dim].join("、") });
+        const strong = shared.filter((t) => STRONG[dim].includes(t));
+        if (strong.length) { strongDims.add(dim); strongShared.push(...strong); }
+        evidence.push({ dim, tokens: shared, strong, queryText: queryProfile.tokens[dim].join("、"), candidateText: cProf.tokens[dim].join("、") });
       }
     }
-    if (dims.length >= 2) {
+    // 命中门槛：≥2 维度 + 至少 2 个强词 + 强词不能只来自构图
+    //（不然「竖向 + 居中」就能把山水和人物画凑成一对）
+    const conflict = hasConflict(queryProfile.tokens, cProf.tokens);
+    const strongOutsideComposition = [...strongDims].some((d) => d !== "composition");
+    if (dims.length >= 2 && strongShared.length >= 2 && strongOutsideComposition && !conflict) {
+      const tier = cProf.evidenceTier || "B";
       hits.push({
-        id, matchedDimensions: dims, score: dims.length,
+        id, matchedDimensions: dims, score: strongShared.length * 2 + dims.length,
+        strongTokens: [...new Set(strongShared)],
         evidence,
-        priority: ["composition", "subject", "space", "colorLight"].map((d) => dims.indexOf(d)).filter((x) => x >= 0),
+        candidateEvidenceTier: tier,
+        candidateAnalysisUnavailable: tier !== "A",
+        limitation: tier !== "A" ? (cProf.tierNote || "候选没有独立单图分析，仅凭关系描述匹配") : null,
       });
     }
   }
-  hits.sort((a, b) => b.matchedDimensions.length - a.matchedDimensions.length);
-  return { hits, skipped: null };
+  hits.sort((a, b) => {
+    // A 级证据优先；其次看强词命中数与维度数
+    const ta = a.candidateEvidenceTier === "A" ? 0 : 1;
+    const tb = b.candidateEvidenceTier === "A" ? 0 : 1;
+    if (ta !== tb) return ta - tb;
+    return b.score - a.score;
+  });
+  return { hits, skipped: null, skippedTierC };
 }
 
 /** 候选是否有可信画像（没有就标 unanalyzed）。 */

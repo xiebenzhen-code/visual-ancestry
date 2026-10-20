@@ -1,0 +1,61 @@
+{
+  "round": "P4.15.3",
+  "note": "STEP 3 比较集。此文件在任何真实比较请求之前写入；之后不得因为模型结果而修改。",
+  "frozenAt": "见运行日志时间戳",
+  "rules": [
+    "每组至少 1 个有明确视觉关联假设的候选",
+    "每组至少 1 个旧系统靠前但可能无关的候选",
+    "有条件时含 1 个跨艺术传统参考"
+  ],
+  "cases": [
+    {
+      "id": "paris-rainy-day",
+      "title": "雨天的巴黎街道",
+      "candidates": ["dance-class", "jatte", "hunters-snow", "fighting-temeraire", "huizong-cranes"],
+      "roles": {
+        "dance-class": "假设候选：历史上曾被接受为 partial，本次用独立查询画像重测",
+        "jatte": "新召回候选：同为大碗岛/塞纳河岸的现代生活场景",
+        "hunters-snow": "旧系统靠前候选：雪景但题材为狩猎归途",
+        "fighting-temeraire": "旧系统靠前候选：同为透纳式气氛与光雾",
+        "huizong-cranes": "跨传统参考：中国绢本，检验模型是否会把工笔长卷误判为街景"
+      }
+    },
+    {
+      "id": "fan-kuan-travelers",
+      "title": "溪山行旅图",
+      "candidates": ["guo-xi-early-spring", "ni-zan-rongxi", "hiroshige-shower", "milkmaid", "whistlers-mother"],
+      "roles": {
+        "guo-xi-early-spring": "假设候选：同为北宋巨碑式山水，中轴主峰",
+        "ni-zan-rongxi": "同题材候选：元人逸笔山水，检验是否只认「山」不认「法」",
+        "hiroshige-shower": "跨传统参考：日本浮世绘雨景，竖幅+层叠",
+        "milkmaid": "旧系统靠前候选：室内单色人物画，预期无关",
+        "whistlers-mother": "旧系统靠前候选：室内双人肖像，预期无关"
+      }
+    },
+    {
+      "id": "guo-xi-early-spring",
+      "title": "早春图",
+      "candidates": ["fan-kuan-travelers", "ni-zan-rongxi", "scream", "american-gothic", "hiroshige-shower"],
+      "roles": {
+        "fan-kuan-travelers": "假设候选：同为北宋全景山水",
+        "ni-zan-rongxi": "同题材候选：元代逸笔，构图是否可迁移",
+        "scream": "旧系统靠前候选：表现主义人物，预期无关",
+        "american-gothic": "旧系统靠前候选：双人正面肖像，预期无关",
+        "hiroshige-shower": "跨传统参考：浮世绘雨景"
+      }
+    },
+    {
+      "id": "american-gothic",
+      "title": "美国哥特式",
+      "candidates": ["whistlers-mother", "milkmaid", "the-kiss", "utamaro-three-beauties", "dance-class", "paris-rainy-day"],
+      "roles": {
+        "whistlers-mother": "假设候选：母子双人正面端坐+室内建筑框景",
+        "milkmaid": "旧系统靠前候选：单人室内窗光",
+        "the-kiss": "历史候选：曾被评为 partial，检验是否仍成立",
+        "utamaro-three-beauties": "跨传统参考：日本美人画群像",
+        "dance-class": "旧系统靠前候选：芭蕾舞者群像",
+        "paris-rainy-day": "新召回候选（本轮独立画像）：双人+建筑透视"
+      }
+    }
+  ]
+}
