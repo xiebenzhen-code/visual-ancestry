@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>视觉参考检索 · 实验</title>
+<style>
+  :root { --ink:#1a1a18; --muted:#6b6b63; --line:#dcdcd2; --paper:#f5f4ee; --card:#fffef9; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif; }
+  header { padding:28px 20px 16px; max-width:1240px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 6px; font-weight:600; letter-spacing:.02em; }
+  .sub { color:var(--muted); font-size:13px; margin:0; }
+  main { max-width:1240px; margin:0 auto; padding:0 20px 64px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:18px 0 8px; }
+  button, select, input[type=file] { font:inherit; font-size:13px; padding:7px 12px; border:1px solid var(--line);
+                    background:var(--card); border-radius:2px; cursor:pointer; }
+  button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .hint { color:var(--muted); font-size:12px; margin:6px 0 18px; }
+  .cols { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  @media (max-width:900px) { .cols { grid-template-columns:1fr; } }
+  .col h2 { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+            margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); font-weight:600; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:2px; margin-bottom:12px; overflow:hidden; }
+  .card img { display:block; width:100%; height:170px; object-fit:cover; background:#e8e7df; }
+  .card .body { padding:9px 11px 11px; }
+  .card .t { font-size:13px; font-weight:600; margin:0 0 2px; }
+  .card .m { font-size:11px; color:var(--muted); margin:0 0 6px; }
+  .pill { display:inline-block; font-size:10px; padding:1px 6px; border:1px solid var(--line);
+          border-radius:99px; color:var(--muted); margin-right:4px; }
+  ul.pts { margin:4px 0 0; padding-left:15px; font-size:11.5px; color:#333; }
+  ul.pts li { margin:1px 0; }
+  .diff { color:#8a4b2f; }
+  .src { font-size:10.5px; color:var(--muted); margin-top:6px; }
+  .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); }
+  .q { display:flex; gap:14px; align-items:center; margin:12px 0 4px; }
+  .q img { width:96px; height:96px; object-fit:cover; border:1px solid var(--line); }
+  .note { font-size:12px; color:var(--muted); border-left:2px solid var(--line); padding-left:10px; margin:14px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>视觉参考检索 · 实验</h1>
+  <p class="sub">图像向量 + 结构关系 + 旧 VisualIntent。三列的算法名称已隐藏，请自己看图片判断哪一列更值得参考。</p>
+</header>
+<main>
+  <div class="controls">
+    <button id="mode-lib" class="on" type="button">选一件馆藏作品</button>
+    <button id="mode-up" type="button">上传一张图片</button>
+    <select id="pick" aria-label="选择作品"></select>
+    <input id="file" type="file" accept="image/*" hidden />
+    <select id="media" aria-label="媒介">
+      <option value="all">全部</option>
+      <option value="artwork">绘画</option>
+      <option value="film">电影</option>
+      <option value="animation">动画</option>
+    </select>
+  </div>
+  <p class="hint" id="hint">上传的图片只在本机计算向量，不会上传到任何服务器；向量由本地 MobileCLIP-S0（MIT）算出。</p>
+
+  <div class="q" id="queryBox" hidden>
+    <img id="queryImg" alt="" />
+    <div>
+      <div class="t" id="queryTitle"></div>
+      <div class="m" id="queryMeta"></div>
+    </div>
+  </div>
+
+  <div class="cols" id="cols"></div>
+  <p class="note" id="note" hidden></p>
+</main>
+
+<script type="module">
+import { library, searchByEmbedding, searchCombined, mediaLabel, LIBRARY_META } from "/src/services/features/visualSearch.js";
+import { structureFeatures, compareStructure } from "/src/services/features/structureFeatures.js";
+import { retrieveByArtworkChecked } from "/src/services/retrieval/retrievalService.js";
+
+const $ = (id) => document.getElementById(id);
+const LIB = library();
+const byId = new Map(LIB.map((e) => [e.id, e]));
+
+// 上传图的真实测量：宽高比 + 明暗/饱和/冷暖（canvas 采样，不伪造）
+function measureImage(img) {
+  const canvas = document.createElement("canvas");
+  const S = 64;
+  canvas.width = S; canvas.height = S;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, S, S);
+  const { data } = ctx.getImageData(0, 0, S, S);
+  let l = 0, s = 0, warm = 0, cool = 0, n = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i] / 255, g = data[i + 1] / 255, b = data[i + 2] / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const light = (max + min) / 2;
+    const sat = max === min ? 0 : (light > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min));
+    l += light; s += sat; n++;
+    if (max === r && g >= b) warm++; else if (max === b) cool++;
+  }
+  const aspect = Math.round((img.naturalWidth / img.naturalHeight) * 1000) / 1000;
+  return {
+    aspect: {
+      aspect,
+      orientation: aspect > 1.08 ? "landscape" : aspect < 0.92 ? "vertical" : "square",
+      label: aspect > 1.08 ? "横幅" : aspect < 0.92 ? "立轴" : "方形",
+      source: "measured-pixels",
+    },
+    tone: {
+      lightness: Math.round((l / n) * 1000) / 1000,
+      saturation: Math.round((s / n) * 1000) / 1000,
+      warmth: warm > cool * 1.5 ? "warm" : cool > warm * 1.5 ? "cool" : "neutral",
+      source: "canvas-sampled",
+    },
+    figure: { subject: null, scale: null, relation: null, count: null, source: "unavailable" },
+    space: { depth: null, environmentDominance: null, negativeSpace: null, source: "unavailable" },
+    unavailable: ["arrangement", "occlusion", "props", "figureCount", "subject", "depth"],
+  };
+}
+
+function imgUrl(e) {
+  return e.kind === "film"
+    ? `/assets/film/${e.id}/preview.webp`
+    : `/assets/artworks/${e.id}/preview.webp`;
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function card(e, extra) {
+  const pts = (e.samePoints || []).slice(0, 3);
+  const diffs = (e.differences || []).slice(0, 2);
+  const ref = e.kind === "film" ? (e.record.source?.name || "Wikimedia Commons") : (e.record.museum || "馆藏");
+  const sim = e.similarity != null ? `向量 ${e.similarity.toFixed(2)}` : "";
+  const st = e.structureMatch != null ? `结构 ${e.structureMatch.toFixed(2)}` : "";
+  return `<div class="card">
+    <img src="${imgUrl(e)}" alt="${esc(e.title)}" loading="lazy" />
+    <div class="body">
+      <p class="t">${esc(e.title)}</p>
+      <p class="m">${esc(e.creator)} · ${esc(e.year)} · ${esc(mediaLabel(e))}</p>
+      <span class="pill">${esc(sim)}</span><span class="pill">${esc(st)}</span>
+      ${pts.length ? `<ul class="pts">${pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
+      ${diffs.length ? `<ul class="pts">${diffs.map((p) => `<li class="diff">差异：${esc(p)}</li>`).join("")}</ul>` : ""}
+      <div class="src">出处：${esc(ref)}</div>
+    </div>
+  </div>`;
+}
+
+function renderColumn(title, results, note) {
+  const inner = results.length
+    ? results.map((r) => card(r)).join("")
+    : `<div class="empty">${esc(note || "没有可信候选")}</div>`;
+  return `<section class="col"><h2>${title}</h2>${inner}</section>`;
+}
+
+let queryVector = null;
+let queryStructure = null;
+let queryEntry = null;
+
+function run() {
+  const media = $("media").value;
+  const cols = $("cols");
+  if (!queryVector) { cols.innerHTML = ""; return; }
+
+  // A：现有算法（仅当查询是馆藏作品时有 VisualIntent）
+  let oldCols = "";
+  if (queryEntry) {
+    const out = retrieveByArtworkChecked(queryEntry.record, { limit: 5 });
+    const mapped = (out.results || []).map((r) => {
+      const id = r.artwork?.id;
+      const e = byId.get(id);
+      return e ? { ...e, similarity: null, structureMatch: null,
+        samePoints: (r.reasons || []).slice(0, 3), differences: [] } : null;
+    }).filter(Boolean);
+    oldCols = renderColumn("A", mapped, out.ok ? "没有可信候选" : `该作品不能作为检索起点（${out.error}）`);
+  } else {
+    oldCols = renderColumn("A", [], "上传图片没有 VisualIntent，旧算法无法运行（需要付费 Vision）");
+  }
+
+  const emb = searchByEmbedding(queryVector, { media, limit: 5, excludeId: queryEntry?.id || "" });
+  const comb = searchCombined(queryVector, queryStructure, { media, limit: 5, excludeId: queryEntry?.id || "" });
+
+  cols.innerHTML =
+    oldCols +
+    renderColumn("B", emb.results, "该媒介下没有可用候选") +
+    renderColumn("C", comb.results, "该媒介下没有可用候选");
+
+  $("note").hidden = false;
+  $("note").textContent = `图库 ${LIBRARY_META.count} 条 · 模型 ${LIBRARY_META.model}（${LIBRARY_META.license}，${LIBRARY_META.dim} 维，取景 ${LIBRARY_META.fit}）。` +
+    `B 只看图像向量；C 是向量召回后叠加结构关系重排。两者都只表示「看起来像」，不等于艺术参考价值——请以图片为准。`;
+}
+
+async function useLibrary(id) {
+  const e = byId.get(id);
+  if (!e) return;
+  queryEntry = e;
+  queryVector = e.vector;
+  queryStructure = e.structure;
+  $("queryBox").hidden = false;
+  $("queryImg").src = imgUrl(e);
+  $("queryTitle").textContent = e.title;
+  $("queryMeta").textContent = `${e.creator} · ${e.year} · ${mediaLabel(e)}`;
+  run();
+}
+
+async function useUpload(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  queryEntry = null;
+  queryStructure = measureImage(img);
+  $("queryBox").hidden = false;
+  $("queryImg").src = url;
+  $("queryTitle").textContent = file.name;
+  $("queryMeta").textContent = `${img.naturalWidth}×${img.naturalHeight}`;
+  $("hint").textContent = "正在用本地模型算这张图的向量…";
+  const b64 = await new Promise((res) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result));
+    fr.readAsDataURL(file);
+  });
+  const r = await fetch("/api/embed", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageBase64: b64 }),
+  });
+  if (!r.ok) { $("hint").textContent = "向量计算失败：" + (await r.text()).slice(0, 120); return; }
+  const j = await r.json();
+  queryVector = j.vector;
+  $("hint").textContent = `向量已算好（${j.model}，${j.dim} 维）。结构层只用到实测宽高比与明暗/饱和/冷暖；人物、纵深、道具这些维度上传图没有证据，不参与。`;
+  run();
+}
+
+// ---- 初始化 ----
+$("pick").innerHTML = LIB
+  .slice()
+  .sort((a, b) => String(a.title).localeCompare(String(b.title), "zh"))
+  .map((e) => `<option value="${esc(e.id)}">${esc(e.title)}（${esc(mediaLabel(e))}）</option>`)
+  .join("");
+
+$("pick").addEventListener("change", (ev) => useLibrary(ev.target.value));
+$("media").addEventListener("change", run);
+$("mode-lib").addEventListener("click", () => {
+  $("mode-lib").classList.add("on"); $("mode-up").classList.remove("on");
+  $("pick").hidden = false; $("file").hidden = true;
+});
+$("mode-up").addEventListener("click", () => {
+  $("mode-up").classList.add("on"); $("mode-lib").classList.remove("on");
+  $("pick").hidden = true; $("file").hidden = false; $("file").click();
+});
+$("file").addEventListener("change", (ev) => {
+  const f = ev.target.files && ev.target.files[0];
+  if (f) useUpload(f).catch((e) => { $("hint").textContent = "出错：" + e.message; });
+});
+
+useLibrary($("pick").value);
+</script>
+</body>
+</html>
