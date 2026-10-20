@@ -3,128 +3,436 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>视觉参考检索 · 实验</title>
+<title>Visual Ancestry / Find</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f3eddf'/%3E%3Crect x='7' y='9' width='18' height='14' fill='none' stroke='%2311110f' stroke-width='1.6'/%3E%3Ccircle cx='13' cy='15' r='1.8' fill='%2311110f'/%3E%3C/svg%3E" />
 <style>
-  :root { --ink:#1a1a18; --muted:#6b6b63; --line:#dcdcd2; --paper:#f5f4ee; --card:#fffef9; --accent:#8a4b2f; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink);
-         font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif; }
-  header { padding:26px 20px 12px; max-width:1240px; margin:0 auto; }
-  h1 { font-size:22px; margin:0 0 6px; font-weight:600; letter-spacing:.02em; }
-  .sub { color:var(--muted); font-size:13px; margin:0; }
-  main { max-width:1240px; margin:0 auto; padding:0 20px 64px; }
-  .panel { background:var(--card); border:1px solid var(--line); padding:14px 16px; margin:16px 0; }
-  .panel h3 { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
-              margin:0 0 10px; font-weight:600; }
-  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  button, select, input[type=file] { font:inherit; font-size:13px; padding:7px 12px; border:1px solid var(--line);
-                    background:#fff; border-radius:2px; cursor:pointer; }
-  button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
-  button.danger { color:var(--accent); border-color:#e2c9bb; }
-  .hint { color:var(--muted); font-size:12px; margin:8px 0 0; }
-  .mine { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:12px; }
-  .mine figure { margin:0; border:1px solid var(--line); background:#fff; }
-  .mine img { width:100%; height:84px; object-fit:cover; display:block; background:#e8e7df; }
-  .mine figcaption { font-size:10.5px; padding:5px 6px; color:var(--muted); display:flex; justify-content:space-between; gap:4px; }
-  .mine button { font-size:10px; padding:1px 5px; }
-  .cols { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:18px; }
-  @media (max-width:900px) { .cols { grid-template-columns:1fr; } }
-  .col h2 { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
-            margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); font-weight:600; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:2px; margin-bottom:12px; overflow:hidden; }
-  .card img { display:block; width:100%; height:170px; object-fit:cover; background:#e8e7df; }
-  .card .body { padding:9px 11px 11px; }
-  .card .t { font-size:13px; font-weight:600; margin:0 0 2px; }
-  .card .m { font-size:11px; color:var(--muted); margin:0 0 6px; }
-  .pill { display:inline-block; font-size:10px; padding:1px 6px; border:1px solid var(--line);
-          border-radius:99px; color:var(--muted); margin-right:4px; }
-  .pill.own { border-color:#a9b8a0; color:#4f6b45; }
-  ul.pts { margin:4px 0 0; padding-left:15px; font-size:11.5px; color:#333; }
-  ul.pts li { margin:1px 0; }
-  .diff { color:var(--accent); }
-  .src { font-size:10.5px; color:var(--muted); margin-top:6px; }
-  .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); }
-  .q { display:flex; gap:14px; align-items:center; margin:12px 0 4px; }
-  .q img { width:96px; height:96px; object-fit:cover; border:1px solid var(--line); }
-  .note { font-size:12px; color:var(--muted); border-left:2px solid var(--line); padding-left:10px; margin:14px 0; }
-  .count { font-size:12px; color:var(--muted); }
+  :root {
+    /* 与仓库既有纸色/墨色令牌对齐，不另起一套配色语义 */
+    --paper: #f3eddf;
+    --card: #f8f2e5;
+    --ink: #11110f;
+    --ink-2: #3a3833;
+    --ink-3: #767067;
+    --rule: #dcd3c0;
+    --rule-strong: #c3b9a3;
+    --hover: #e9e1d0;
+    --mat: #e3d8bf;
+    --max: 1180px;
+    --gap: 20px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { display: block; max-width: 100%; }
+  /* hidden 属性必须能压过 .query/.progress 上的 display:flex */
+  [hidden] { display: none !important; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+  @media (max-width: 640px) { .wrap { padding: 0 18px; } }
+
+  /* ---------- 报头 ---------- */
+  .masthead {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 26px 0 0; gap: 16px;
+  }
+  .wordmark {
+    font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 500; white-space: nowrap;
+  }
+  .wordmark .slash { color: var(--rule-strong); margin: 0 6px; }
+  .icon-btn {
+    width: 34px; height: 34px; padding: 0; border: 1px solid var(--rule);
+    background: transparent; border-radius: 50%; cursor: pointer;
+    display: grid; place-items: center; color: var(--ink-2); flex: none;
+  }
+  .icon-btn:hover { background: var(--hover); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  /* ---------- 标题 ---------- */
+  .lede { padding: 30px 0 0; }
+  .lede h1 {
+    margin: 0;
+    font-size: clamp(26px, 3.4vw, 42px);
+    line-height: 1.22;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    max-width: 20em;
+    overflow-wrap: anywhere;
+  }
+  .entries { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border-radius: 999px; border: 1px solid transparent;
+    cursor: pointer; font-size: 14px; font-weight: 500; white-space: nowrap;
+  }
+  .btn svg { width: 15px; height: 15px; flex: none; }
+  .btn.solid { background: var(--ink); color: var(--paper); }
+  .btn.solid:hover { background: #2b2823; }
+  .btn.ghost { background: transparent; border-color: var(--rule-strong); color: var(--ink); }
+  .btn.ghost:hover { background: var(--hover); }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  /* ---------- 精选 / 馆藏网格 ---------- */
+  .section { padding: 34px 0 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+  @media (max-width: 860px) { .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 520px) { .grid3 { grid-template-columns: minmax(0, 1fr); } }
+
+  .plate { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: block; width: 100%; }
+  .plate .frame {
+    display: block;
+    position: relative; background: var(--mat); border: 1px solid var(--rule);
+    /* 竖框：池内多为立轴/竖构图，用横框会把两侧空掉 */
+    aspect-ratio: 4 / 5; overflow: hidden;
+  }
+  .plate .frame img { width: 100%; height: 100%; object-fit: contain; }
+  .plate:hover .frame { border-color: var(--rule-strong); }
+  .plate .meta { display: block; padding: 10px 2px 0; min-width: 0; }
+  .plate .t {
+    display: block;
+    font-size: 13.5px; font-weight: 600; margin: 0; line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .plate .s { display: block; font-size: 12px; color: var(--ink-3); margin: 3px 0 0; line-height: 1.4; overflow-wrap: anywhere; }
+  .plate .hover-note {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 12px;
+    background: linear-gradient(to top, rgba(20,18,15,.62), rgba(20,18,15,0));
+    color: #fff; font-size: 11.5px; opacity: 0; transition: opacity .18s ease;
+  }
+  .plate:hover .hover-note, .plate:focus-visible .hover-note { opacity: 1; }
+  @media (hover: none) { .plate .hover-note { display: none; } }
+
+  .footnote { color: var(--ink-3); font-size: 12px; margin: 26px 0 0; }
+
+  /* ---------- 查询条 ---------- */
+  .query {
+    display: flex; gap: 18px; align-items: flex-start;
+    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    padding: 20px 0; margin: 34px 0 0;
+  }
+  .query .thumb {
+    width: 104px; height: 104px; flex: none; background: var(--mat);
+    border: 1px solid var(--rule); display: grid; place-items: center; overflow: hidden;
+  }
+  .query .thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .query .info { min-width: 0; padding-top: 4px; }
+  .query .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
+  .query .t { font-size: 19px; font-weight: 600; margin: 0; line-height: 1.3; overflow-wrap: anywhere; }
+  .query .s { font-size: 13px; color: var(--ink-2); margin: 4px 0 0; overflow-wrap: anywhere; }
+  .query .actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .linkish {
+    background: none; border: 0; padding: 0; font-size: 12.5px; color: var(--ink-2);
+    text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+  }
+  .linkish:hover { color: var(--ink); }
+
+  .progress {
+    margin: 14px 0 0; font-size: 12.5px; color: var(--ink-2);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .bar { position: relative; height: 2px; background: var(--rule); flex: 1; max-width: 220px; overflow: hidden; }
+  .bar::after {
+    content: ""; position: absolute; inset: 0; width: 40%; background: var(--ink-2);
+    animation: sweep 1.1s ease-in-out infinite;
+  }
+  @keyframes sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+  @media (prefers-reduced-motion: reduce) { .bar::after { animation: none; width: 100%; opacity: .5; } }
+
+  /* ---------- 结果 ---------- */
+  .results-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; padding: 30px 0 14px;
+  }
+  .results-head .count { font-size: 12.5px; color: var(--ink-3); }
+  .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; overflow: hidden; }
+  .seg button {
+    border: 0; background: transparent; padding: 7px 14px; font-size: 12.5px;
+    cursor: pointer; color: var(--ink-2); white-space: nowrap;
+  }
+  .seg button + button { border-left: 1px solid var(--rule); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  .abc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; }
+  @media (max-width: 900px) { .abc { grid-template-columns: minmax(0, 1fr); } }
+  .col-head {
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 14px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .card { margin: 0 0 22px; }
+  .card .frame {
+    background: var(--mat); border: 1px solid var(--rule); aspect-ratio: 1 / 1;
+    overflow: hidden; display: grid; place-items: center;
+  }
+  .card .frame img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
+  .card .body { padding: 9px 1px 0; min-width: 0; }
+  .card .t { font-size: 13.5px; font-weight: 600; margin: 0; line-height: 1.35; overflow-wrap: anywhere; }
+  .card .s { font-size: 12px; color: var(--ink-3); margin: 3px 0 0; overflow-wrap: anywhere; }
+  .card ul { margin: 7px 0 0; padding-left: 15px; font-size: 12px; color: var(--ink-2); }
+  .card li { margin: 2px 0; overflow-wrap: anywhere; }
+  .card .diff { color: #7c4a32; }
+  .tag { font-size: 10.5px; letter-spacing: .06em; color: var(--ink-3); border: 1px solid var(--rule); border-radius: 999px; padding: 1px 7px; }
+  .card .src { font-size: 11px; color: var(--ink-3); margin-top: 6px; overflow-wrap: anywhere; }
+
+  .abc-mobile { display: none; }
+  @media (max-width: 900px) {
+    .abc { display: none; }
+    .abc-mobile { display: block; }
+    .abc-mobile .pane[hidden] { display: none; }
+  }
+
+  /* ---------- 空 / 错误状态 ---------- */
+  .notice {
+    border: 1px solid var(--rule); background: var(--card);
+    padding: 22px 20px; font-size: 13.5px; color: var(--ink-2);
+  }
+  .notice strong { color: var(--ink); font-weight: 600; }
+  .notice .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .ph {
+    aspect-ratio: 4 / 3; border: 1px dashed var(--rule-strong); background: var(--mat);
+    display: grid; place-items: center; text-align: center; padding: 12px;
+    font-size: 12px; color: var(--ink-3);
+  }
+  /* 占位块要撑满画框，否则空框里浮一个小虚线盒子 */
+  .frame .ph, .thumb .ph { width: 100%; height: 100%; aspect-ratio: auto; border: 0; background: transparent; }
+
+  /* ---------- 详情 ---------- */
+  details.details { margin: 46px 0 0; border-top: 1px solid var(--rule); padding-top: 16px; }
+  details.details > summary {
+    cursor: pointer; font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-3); list-style: none;
+  }
+  details.details > summary::-webkit-details-marker { display: none; }
+  details.details > summary::after { content: " ＋"; }
+  details.details[open] > summary::after { content: " －"; }
+  .details-body { padding: 18px 0 0; font-size: 12.5px; color: var(--ink-2); }
+  .kv { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 6px 14px; }
+  .kv dt { color: var(--ink-3); }
+  .kv dd { margin: 0; overflow-wrap: anywhere; }
+  @media (max-width: 520px) { .kv { grid-template-columns: minmax(0,1fr); } .kv dt { margin-top: 8px; } }
+
+  .mine { display: grid; grid-template-columns: repeat(auto-fill, minmax(94px, 1fr)); gap: 10px; margin-top: 12px; }
+  .mine figure { margin: 0; border: 1px solid var(--rule); background: var(--card); min-width: 0; }
+  .mine img { width: 100%; height: 74px; object-fit: contain; background: #eae5d9; }
+  .mine figcaption { font-size: 10.5px; color: var(--ink-3); padding: 4px 6px; display: flex; justify-content: space-between; gap: 4px; }
+  .mine button { border: 0; background: none; padding: 0; color: #7c4a32; cursor: pointer; font-size: 10.5px; text-decoration: underline; }
+
+  /* ---------- 选择器面板 ---------- */
+  .sheet {
+    position: fixed; inset: 0; background: rgba(23,22,19,.34);
+    display: grid; place-items: end center; z-index: 40;
+  }
+  .sheet[hidden] { display: none; }
+  .sheet .panel {
+    background: var(--paper); width: min(100%, var(--max)); max-height: 86vh;
+    overflow: auto; border-top: 1px solid var(--rule-strong);
+    padding: 20px 28px 34px;
+  }
+  @media (max-width: 640px) { .sheet .panel { padding: 16px 18px 28px; } }
+  .sheet .panel-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; position: sticky; top: 0; background: var(--paper); padding-bottom: 12px;
+  }
+  .sheet h2 { font-size: 15px; margin: 0; font-weight: 600; }
+  .grid-lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); gap: 14px; }
+  @media (max-width: 520px) { .grid-lib { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; } }
+
+  .grid-lib .plate .t, .grid-lib .plate .s {
+    display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .grid-lib .plate .t { -webkit-line-clamp: 2; }
+  .grid-lib .plate .s { -webkit-line-clamp: 1; }
+
+  /* ---------- 放大查看 ---------- */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(16,15,13,.92); z-index: 60;
+    display: grid; place-items: center; padding: 32px;
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox img { max-width: 100%; max-height: 86vh; object-fit: contain; }
+  #lightboxHolder { display: grid; place-items: center; width: 100%; height: 100%; }
+  .lightbox button {
+    position: absolute; top: 18px; right: 20px; width: 36px; height: 36px;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: transparent;
+    color: #fff; cursor: pointer; font-size: 16px;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  footer.colophon { color: var(--ink-3); font-size: 11.5px; padding: 34px 0 46px; }
 </style>
 </head>
 <body>
-<header>
-  <h1>视觉参考检索 · 实验</h1>
-  <p class="sub">图像向量 + 结构关系 + 旧 VisualIntent。三列的算法名称已隐藏，请自己看图片判断哪一列更值得参考。</p>
-</header>
-<main>
-  <section class="panel">
-    <h3>我的参考</h3>
-    <div class="row">
-      <button id="pick-mode" class="on" type="button">选一件馆藏作品</button>
-      <button id="up-mode" type="button">用上传图片当查询</button>
-      <select id="pick" aria-label="选择作品"></select>
-      <input id="file" type="file" accept="image/jpeg,image/png,image/webp" hidden />
-      <select id="media" aria-label="媒介">
-        <option value="all">全部</option>
-        <option value="artwork">绘画</option>
-        <option value="film">彩色电影</option>
-        <option value="animation">动画</option>
-      </select>
-      <span class="count" id="poolCount"></span>
-    </div>
-    <p class="hint" id="hint">上传的图片只在本机计算向量，不会上传到任何服务器；向量由本地 MobileCLIP-S0（MIT）算出。</p>
+<div class="wrap" id="app">
 
-    <div class="row" style="margin-top:12px">
-      <input id="import-files" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden />
-      <button id="import-btn" type="button">导入到我的参考</button>
-      <select id="import-kind" aria-label="导入分类">
-        <option value="artwork">绘画</option>
-        <option value="film">彩色电影</option>
-        <option value="animation">动画</option>
-        <option value="anime">日本动漫</option>
-      </select>
-      <span class="count" id="mineCount">0 张</span>
+  <header class="masthead">
+    <span class="wordmark">Visual Ancestry <span class="slash">/</span> Find</span>
+    <button class="icon-btn" id="detailsToggle" type="button" aria-expanded="false" aria-controls="details" title="运行信息">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>
+      </svg>
+      <span class="sr-only">展开运行信息</span>
+    </button>
+  </header>
+
+  <section class="lede">
+    <h1>从一张画面，发现另一种视觉表达。</h1>
+    <div class="entries">
+      <button class="btn solid" id="btnUpload" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+        </svg>
+        上传画面
+      </button>
+      <button class="btn ghost" id="btnBrowse" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <rect x="3.5" y="5" width="17" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4 16l4.5-4 3.5 3 3-2.5L20 16"/>
+        </svg>
+        从馆藏选择
+      </button>
     </div>
-    <p class="hint" id="importHint">导入的图片保存为本机个人参考，只存在你自己的磁盘上，不会进仓库、不会进产物。</p>
-    <div class="mine" id="mine"></div>
+    <input id="fileUpload" type="file" accept="image/jpeg,image/png,image/webp" hidden />
   </section>
 
-  <div class="q" id="queryBox" hidden>
-    <img id="queryImg" alt="" />
-    <div>
-      <div class="t" id="queryTitle"></div>
-      <div class="m" id="queryMeta"></div>
+  <!-- 初始状态：精选 -->
+  <section class="section" id="curatedSection">
+    <div class="grid3" id="curatedGrid"></div>
+    <p class="footnote" id="curatedNote">选一幅开始；或上传你自己的一张画面。</p>
+  </section>
+
+  <!-- 查询条 -->
+  <section class="query" id="queryStrip" hidden>
+    <div class="thumb" id="queryThumb"></div>
+    <div class="info">
+      <p class="k">查询画面</p>
+      <p class="t" id="queryTitle"></p>
+      <p class="s" id="queryMeta"></p>
+      <div class="actions">
+        <button class="linkish" id="queryChange" type="button">换一张</button>
+        <button class="linkish" id="queryClear" type="button">清空</button>
+      </div>
     </div>
+  </section>
+
+  <div class="progress" id="progress" role="status" aria-live="polite" hidden>
+    <span id="progressText">正在计算视觉向量…</span>
+    <span class="bar" aria-hidden="true"></span>
   </div>
 
-  <div class="cols" id="cols"></div>
-  <p class="note" id="note" hidden></p>
-</main>
+  <!-- 结果 -->
+  <section class="results" id="results" hidden>
+    <div class="results-head">
+      <span class="count" id="resultCount" role="status" aria-live="polite"></span>
+      <div class="seg" id="mediaFilter" role="group" aria-label="媒介筛选">
+        <button type="button" data-media="all" aria-pressed="true">全部</button>
+        <button type="button" data-media="artwork" aria-pressed="false">绘画</button>
+        <button type="button" data-media="film" aria-pressed="false">彩色电影</button>
+        <button type="button" data-media="animation" aria-pressed="false">动画</button>
+      </div>
+    </div>
+
+    <div class="seg" id="abcTabs" role="group" aria-label="对照列" hidden>
+      <button type="button" data-col="A" aria-pressed="true">A</button>
+      <button type="button" data-col="B" aria-pressed="false">B</button>
+      <button type="button" data-col="C" aria-pressed="false">C</button>
+    </div>
+
+    <div class="abc" id="abc"></div>
+    <div class="abc-mobile" id="abcMobile"></div>
+  </section>
+
+  <!-- 空 / 错误状态 -->
+  <section class="section" id="noticeSection" hidden>
+    <div class="notice" id="notice"></div>
+  </section>
+
+  <!-- 详情 -->
+  <details class="details" id="details">
+    <summary>运行信息与我的参考</summary>
+    <div class="details-body">
+      <dl class="kv" id="runInfo"></dl>
+
+      <p style="margin:22px 0 0">
+        <button class="btn ghost" id="btnImport" type="button">导入到我的参考</button>
+        <input id="fileImport" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden />
+        <select id="importKind" aria-label="导入分类" style="margin-left:8px;padding:9px 10px;border:1px solid var(--rule-strong);background:transparent;border-radius:999px;font-size:12.5px">
+          <option value="artwork">绘画</option>
+          <option value="film">彩色电影</option>
+          <option value="animation">动画</option>
+          <option value="anime">日本动漫</option>
+        </select>
+      </p>
+      <p class="footnote" id="importHint" role="status" aria-live="polite">导入的图片只保存在本机，不会进仓库，也不会进发布产物。</p>
+      <p class="footnote" id="mineMsg" role="status" aria-live="polite"></p>
+      <div class="mine" id="mine"></div>
+    </div>
+  </details>
+
+  <footer class="colophon" id="colophon"></footer>
+</div>
+
+<!-- 馆藏选择面板 -->
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="sheetTitle">从馆藏选择</h2>
+      <button class="linkish" id="sheetClose" type="button">关闭</button>
+    </div>
+    <div class="grid-lib" id="libGrid"></div>
+  </div>
+</div>
+
+<!-- 放大查看 -->
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="查看大图">
+  <button id="lightboxClose" type="button" aria-label="关闭">✕</button>
+  <div id="lightboxHolder"></div>
+</div>
 
 <script type="module">
 import { library, searchByEmbedding, searchCombined, mediaLabel, LIBRARY_META } from "/src/services/features/visualSearch.js";
-import { compareStructure } from "/src/services/features/structureFeatures.js";
 import { retrieveByArtworkChecked } from "/src/services/retrieval/retrievalService.js";
 
 const $ = (id) => document.getElementById(id);
-// 盲评模式：只给图和事实（标题/媒介/出处），不给分数、不给相似点文案。
-// 为什么连相似点也要藏：那几行文字不同列长得不一样，本身就是身份指纹。
-const BLIND = new URLSearchParams(location.search).has("blind");
 const LIB = library();
 const byId = new Map(LIB.map((e) => [e.id, e]));
+const BLIND = new URLSearchParams(location.search).has("blind");
 
-let personal = [];        // 已导入的个人条目（服务端返回）
+const CURATED = ["the-kiss", "american-gothic", "wanderer"].filter((id) => byId.has(id));
+
+let personal = [];
+let queryEntry = null;
 let queryVector = null;
 let queryStructure = null;
-let queryEntry = null;
+let activeMedia = "all";
+let activeCol = "A";
+let busy = false;
+let lastData = null;   // 记住上一次结果，视口跨断点时重排
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-
-/** 个人条目的图片走服务端代理，不暴露磁盘路径。 */
+const baseImg = (e) => (e.kind === "film" ? `/assets/film/${e.id}/preview.webp` : `/assets/artworks/${e.id}/preview.webp`);
 const personalImg = (id) => `/api/user-media/${encodeURIComponent(id)}`;
-const baseImg = (e) => e.kind === "film" ? `/assets/film/${e.id}/preview.webp` : `/assets/artworks/${e.id}/preview.webp`;
 const imgOf = (e) => (e.personal ? personalImg(e.id) : baseImg(e));
 
-/** 用实测宽高 + 无色彩签名，构造个人条目的结构特征（缺的维度如实留空）。 */
+/** 图片加载失败 → 明确的占位说明，不留空方框。 */
+function frameImg(src, alt, cls = "") {
+  return `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" class="${cls}"
+    onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'图片无法加载'}))" />`;
+}
+
+/** 用实测宽高构造个人条目的结构特征（缺的维度如实留空，不猜）。
+ *  必须与旧页 structureFromRecord 一致：宽高比是真值，其余不可用。 */
 function structureFromRecord(rec) {
   const w = rec.width || 0, h = rec.height || 0;
   const aspect = w > 0 && h > 0 ? Math.round((w / h) * 1000) / 1000 : null;
@@ -140,19 +448,20 @@ function structureFromRecord(rec) {
   };
 }
 
+/** 个人条目转检索条目。字段映射与旧页严格一致，否则 C 列排序会变。 */
 function asEntry(item) {
-  const media = {
-    medium: item.media?.medium || "artwork",
-    visualForm: item.media?.visualForm || "still-image",
-    tradition: item.media?.tradition || null,
-    imageKind: item.media?.imageKind || "artwork-reproduction",
-  };
   return {
     id: item.id,
+    hash: item.hash,
     kind: item.kind || "artwork",
     personal: true,
     vector: item.vector,
-    media,
+    media: {
+      medium: item.media?.medium || "artwork",
+      visualForm: item.media?.visualForm || "still-image",
+      tradition: item.media?.tradition || null,
+      imageKind: item.media?.imageKind || "artwork-reproduction",
+    },
     structure: structureFromRecord(item),
     title: item.title || item.id,
     creator: item.creator || "",
@@ -161,211 +470,186 @@ function asEntry(item) {
   };
 }
 
-// ---------------------------------------------------------------- 个人图库
-async function loadPersonal() {
-  try {
-    const r = await fetch("/api/library/personal");
-    const j = await r.json();
-    personal = (j.items || []).map(asEntry);
-    renderMine(j.stats);
-  } catch (e) {
-    $("mineCount").textContent = "读取失败";
-  }
-}
+// ---------------------------------------------------------------- 状态
+function show(el, on) { el.hidden = !on; }
 
-function renderMine(stats) {
-  const n = stats ? stats.total : personal.length;
-  const stale = stats && stats.stale ? ` · ${stats.stale} 张待重建` : "";
-  $("mineCount").textContent = `${n} 张${stale}`;
-  $("mine").innerHTML = personal.length
-    ? personal.map((e) => `
-      <figure>
-        <img src="${personalImg(e.id)}" alt="${esc(e.title)}" loading="lazy" />
-        <figcaption>
-          <span>${esc(mediaLabel(e))}</span>
-          <button class="danger" data-del="${esc(e.id)}" type="button">删</button>
-        </figcaption>
-      </figure>`).join("")
-    : `<div class="empty" style="grid-column:1/-1">还没有导入任何个人参考图。选一个分类，点「导入到我的参考」。</div>`;
-
-  $("mine").querySelectorAll("[data-del]").forEach((b) => {
-    b.addEventListener("click", async () => {
-      b.disabled = true;
-      try {
-        const r = await fetch(`/api/library/personal/${encodeURIComponent(b.dataset.del)}`, { method: "DELETE" });
-        const j = await r.json();
-        await loadPersonal();
-        // 删掉的正好是当前查询图时，清空查询，避免指向已不存在的条目
-        if (queryEntry && queryEntry.id === b.dataset.del) {
-          queryEntry = null; queryVector = null; queryStructure = null;
-          $("queryBox").hidden = true; $("cols").innerHTML = "";
-        } else {
-          run();
-        }
-        updatePoolCount();
-        $("importHint").textContent = j.ok ? "已删除，索引已同步。" : "删除失败：该条目可能已不存在。";
-      } catch (e) {
-        b.disabled = false;
-        $("importHint").textContent = "删除出错：" + e.message;
-      }
-    });
+function setNotice(kind, title, body, actions = []) {
+  const sec = $("noticeSection");
+  const n = $("notice");
+  if (!kind) { show(sec, false); return; }
+  n.innerHTML = `<strong>${esc(title)}</strong>${body ? `<div style="margin-top:6px">${esc(body)}</div>` : ""}
+    ${actions.length ? `<div class="row">${actions.map((a, i) => `<button class="btn ghost" data-act="${i}" type="button">${esc(a.label)}</button>`).join("")}</div>` : ""}`;
+  show(sec, true);
+  n.querySelectorAll("[data-act]").forEach((b) => {
+    b.addEventListener("click", () => actions[Number(b.dataset.act)].run());
   });
 }
 
-/** 导入：一次一张地发，单张失败不影响其余（任务书要求）。 */
-async function importFiles(files) {
-  const kindSel = $("import-kind").value;
-  const map = {
-    artwork: { medium: "artwork", visualForm: "still-image", tradition: null, imageKind: "artwork-reproduction" },
-    film: { medium: "film", visualForm: "live-action", tradition: null, imageKind: "frame" },
-    animation: { medium: "film", visualForm: "animation", tradition: null, imageKind: "frame" },
-    anime: { medium: "film", visualForm: "animation", tradition: "anime", imageKind: "frame" },
-  };
-  const base = map[kindSel] || map.artwork;
-
-  let ok = 0, dup = 0, bad = 0;
-  const errors = [];
-  for (const f of files) {
-    $("importHint").textContent = `正在导入 ${ok + dup + bad + 1}/${files.length}：${f.name}…`;
-    try {
-      const b64 = await new Promise((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(String(fr.result));
-        fr.onerror = rej;
-        fr.readAsDataURL(f);
-      });
-      const r = await fetch("/api/library/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: f.name,
-          imageBase64: b64,
-          meta: { ...base, title: f.name.replace(/\.[^.]+$/, ""), creator: null, year: null },
-        }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (r.ok && j.ok) { j.deduped ? dup++ : ok++; }
-      else { bad++; errors.push(`${f.name}: ${j.error || r.status}`); }
-    } catch (e) {
-      bad++; errors.push(`${f.name}: ${e.message}`);
-    }
-  }
-  await loadPersonal();
-  updatePoolCount();
-  $("importHint").textContent =
-    `导入完成：新增 ${ok} 张，已存在 ${dup} 张，失败 ${bad} 张。` +
-    (errors.length ? ` 失败原因：${errors.slice(0, 3).join("；")}` : "");
-  run();
+function setBusy(on, text) {
+  busy = on;
+  show($("progress"), on);
+  if (text) $("progressText").textContent = text;
+  $("btnUpload").disabled = on;
+  $("btnBrowse").disabled = on;
+  $("results").setAttribute("aria-busy", on ? "true" : "false");
+  $("app").setAttribute("aria-busy", on ? "true" : "false");
 }
 
-// ---------------------------------------------------------------- 检索
-function passMediaClient(e, media) {
-  if (media === "all") return true;
-  if (media === "artwork") return (e.media?.medium || "artwork") === "artwork";
-  // 动画的 medium 也是 film。只看 medium 会把动画算进「彩色电影」。
-  if (media === "film") return e.media?.medium === "film" && e.media?.visualForm !== "animation";
-  if (media === "animation") return e.media?.visualForm === "animation";
-  return true;
+// ---------------------------------------------------------------- 精选 / 面板
+function plateHTML(e) {
+  return `<button class="plate" type="button" data-id="${esc(e.id)}">
+    <span class="frame">${frameImg(baseImg(e), e.title)}
+      <span class="hover-note">${esc(mediaLabel(e))}</span>
+    </span>
+    <span class="meta">
+      <span class="t">${esc(e.title)}</span>
+      <span class="s">${esc(e.creator || "")}${e.year ? " · " + esc(e.year) : ""}</span>
+    </span>
+  </button>`;
 }
 
-function candidateCount(media) {
-  const base = LIB.filter((e) => passMediaClient(e, media)).length;
-  const mine = personal.filter((e) => passMediaClient(e, media)).length;
-  return base + mine;
+function renderCurated() {
+  $("curatedGrid").innerHTML = CURATED.map((id) => plateHTML(byId.get(id))).join("");
+  $("curatedGrid").querySelectorAll("[data-id]").forEach((b) => {
+    b.addEventListener("click", () => pickLibrary(b.dataset.id));
+  });
 }
 
-function updatePoolCount() {
-  const media = $("media").value;
-  $("poolCount").textContent = `本次候选 ${candidateCount(media)} 张（基础 ${LIB.length} + 我的 ${personal.length}）`;
+function renderLibGrid() {
+  const list = [...LIB].sort((a, b) => String(a.title).localeCompare(String(b.title), "zh"));
+  $("libGrid").innerHTML = list.map((e) => `
+    <button class="plate" type="button" data-id="${esc(e.id)}">
+      <span class="frame">${frameImg(baseImg(e), e.title)}</span>
+      <span class="meta"><span class="t">${esc(e.title)}</span>
+      <span class="s">${esc(mediaLabel(e))}</span></span>
+    </button>`).join("");
+  $("libGrid").querySelectorAll("[data-id]").forEach((b) => {
+    b.addEventListener("click", () => { closeSheet(); pickLibrary(b.dataset.id); });
+  });
 }
 
-const card = (e) => {
-  const pts = (e.samePoints || []).slice(0, 3);
-  const diffs = (e.differences || []).slice(0, 2);
-  const ref = e.personal
-    ? (e.record?.source?.pageURL || "我的参考（本机导入）")
-    : e.kind === "film" ? (e.record.source?.name || "Wikimedia Commons") : (e.record.museum || "馆藏");
-  const sim = e.similarity != null ? `向量 ${e.similarity.toFixed(2)}` : "";
-  const st = e.structureMatch != null ? `结构 ${e.structureMatch.toFixed(2)}` : "";
-  return `<div class="card">
-    <img src="${imgOf(e)}" alt="${esc(e.title)}" loading="lazy" />
-    <div class="body">
-      <p class="t">${esc(e.title)}</p>
-      <p class="m">${esc(e.creator || "")}${e.year ? " · " + esc(e.year) : ""} · ${esc(mediaLabel(e))}</p>
-      ${e.personal ? `<span class="pill own">我的参考</span>` : ""}
-      ${BLIND ? "" : `<span class="pill">${esc(sim)}</span><span class="pill">${esc(st)}</span>`}
-      ${!BLIND && pts.length ? `<ul class="pts">${pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
-      ${!BLIND && diffs.length ? `<ul class="pts">${diffs.map((p) => `<li class="diff">差异：${esc(p)}</li>`).join("")}</ul>` : ""}
-      <div class="src">出处：${esc(ref)}</div>
-    </div>
-  </div>`;
-};
+function openSheet() { show($("sheet"), true); document.body.style.overflow = "hidden"; $("sheetClose").focus(); }
+function closeSheet() { show($("sheet"), false); document.body.style.overflow = ""; $("btnBrowse").focus(); }
 
-const column = (title, results, note) => `<section class="col"><h2>${title}</h2>${
-  results.length ? results.map(card).join("") : `<div class="empty">${esc(note)}</div>`
-}</section>`;
-
-function run() {
-  const media = $("media").value;
-  const cols = $("cols");
-  updatePoolCount();
-  if (!queryVector) { cols.innerHTML = ""; return; }
-
-  const excludeId = queryEntry?.id || "";
-  let aCol;
-  if (queryEntry && !queryEntry.personal) {
-    const out = retrieveByArtworkChecked(queryEntry.record, { limit: 5 });
-    const mapped = (out.results || []).map((r) => {
-      const e = byId.get(r.artwork?.id);
-      return e ? { ...e, similarity: null, structureMatch: null, samePoints: (r.reasons || []).slice(0, 3), differences: [] } : null;
-    }).filter(Boolean);
-    aCol = column("A", mapped, out.ok ? "没有可信候选" : `该作品不能作为检索起点（${out.error}）`);
-  } else {
-    aCol = column("A", [], queryEntry?.personal
-      ? "个人导入的图没有 VisualIntent，旧算法无法运行"
-      : "上传图片没有 VisualIntent，旧算法无法运行（需要付费 Vision）");
-  }
-
-  const emb = searchByEmbedding(queryVector, { media, limit: 5, excludeId, extraEntries: personal });
-  const comb = searchCombined(queryVector, queryStructure, { media, limit: 5, excludeId, extraEntries: personal });
-
-  // 任务书要求：不能把查询图自身当成灵感推荐。服务端已按 id 排除，这里再兜一层按哈希。
-  const selfHash = queryEntry?.hash || null;
-  const dropSelf = (list) => (selfHash ? list.filter((r) => r.hash !== selfHash) : list);
-
-  cols.innerHTML =
-    aCol +
-    column("B", dropSelf(emb.results), "该媒介下没有可用候选") +
-    column("C", dropSelf(comb.results), "该媒介下没有可用候选");
-
-  $("note").hidden = false;
-  if (BLIND) {
-    // 盲评时只说「在比什么」，不说哪列是哪个算法。
-    $("note").textContent = `本次候选 ${candidateCount(media)} 张（基础 ${LIBRARY_META.count} + 我的 ${personal.length}）。`
-      + `三列使用同一批候选、同一张查询图，差别只在排序方式。请只按图片判断「这张作为参考值不值得」。`;
-    return;
-  }
-  $("note").textContent =
-    `基础图库 ${LIBRARY_META.count} 条 + 我的参考 ${personal.length} 条 · 模型 ${LIBRARY_META.model}` +
-    `（${LIBRARY_META.license}，${LIBRARY_META.dim} 维，取景 ${LIBRARY_META.fit}）。` +
-    `B 只看图像向量；C 是向量召回后叠加结构关系重排。两者都只表示「看起来像」，不等于艺术参考价值。`;
-}
-
-async function useLibrary(id) {
+// ---------------------------------------------------------------- 查询
+function pickLibrary(id) {
   const e = byId.get(id);
   if (!e) return;
   queryEntry = e; queryVector = e.vector; queryStructure = e.structure;
-  $("queryBox").hidden = false;
-  $("queryImg").src = baseImg(e);
-  $("queryTitle").textContent = e.title;
-  $("queryMeta").textContent = `${e.creator} · ${e.year} · ${mediaLabel(e)}`;
+  setNotice(null);
+  renderQueryStrip();
   run();
 }
 
-/** 上传图没有色彩签名，但有像素——用 canvas 实测明暗/饱和/冷暖，不猜。 */
+function renderQueryStrip() {
+  show($("queryStrip"), true);
+  show($("curatedSection"), false);
+  const e = queryEntry;
+  if (e) {
+    $("queryThumb").innerHTML = frameImg(imgOf(e), e.title);
+    $("queryTitle").textContent = e.title;
+    $("queryMeta").textContent = [e.creator, e.year, mediaLabel(e)].filter(Boolean).join(" · ");
+  } else {
+    $("queryThumb").innerHTML = frameImg(queryPreviewURL, "上传的查询画面");
+    $("queryTitle").textContent = queryName || "上传的画面";
+    $("queryMeta").textContent = queryMetaText || "";
+  }
+}
+
+let queryPreviewURL = null;
+let queryName = null;
+let queryMetaText = null;
+let queryHash = null;   // 上传图的内容哈希，用来剔重「自己推自己」
+
+/** 内容哈希：与 library-store 一致（原始字节 sha256）。 */
+async function sha256Hex(buf) {
+  const d = await crypto.subtle.digest("SHA-256", buf);
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function bufToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  }
+  return btoa(bin);
+}
+
+/** 把服务端的英文错误码翻成人话；原文不丢，收进详情里。 */
+function humanError(msg) {
+  const s = String(msg || "");
+  if (/ECONNREFUSED|Failed to fetch|network|NetworkError/i.test(s)) return "本地服务没有响应（可能已经退出）";
+  if (/python|probe|not found/i.test(s)) return "本机没有可用的 Python，算不了向量";
+  if (/onnx|model|shape|dimension/i.test(s)) return "本地模型文件有问题，算不了向量";
+  if (/413|too large|8 ?MB/i.test(s)) return "图片太大了（上限 8MB）";
+  if (/415|unsupported/i.test(s)) return "这个格式本地模型读不了，请用 JPG / PNG / WebP";
+  if (/timeout|timed out/i.test(s)) return "本地模型算超时了";
+  return "本地模型返回了异常";
+}
+
+async function useUpload(file) {
+  if (!file) return;
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+    setNotice("error", "这个文件不是 JPG / PNG / WebP。", "请换一张图片。");
+    return;
+  }
+  queryEntry = null;
+  queryName = file.name;
+  queryPreviewURL = URL.createObjectURL(file);
+  const img = new Image();
+  const ok = await new Promise((res) => { img.onload = () => res(true); img.onerror = () => res(false); img.src = queryPreviewURL; });
+  if (!ok) {
+    setNotice("error", "这张图片无法解码。", "文件可能已损坏，或不是真正的图片。", [{ label: "换一张", run: () => $("fileUpload").click() }]);
+    return;
+  }  const aspect = Math.round((img.naturalWidth / img.naturalHeight) * 1000) / 1000;
+  queryMetaText = `${img.naturalWidth}×${img.naturalHeight}`;
+  queryStructure = {
+    id: "query",
+    aspect: { aspect, orientation: aspect > 1.08 ? "landscape" : aspect < 0.92 ? "vertical" : "square", label: null, source: "measured-pixels" },
+    figure: { subject: null, scale: null, relation: null, count: null, source: "unavailable" },
+    space: { depth: null, environmentDominance: null, negativeSpace: null, source: "unavailable" },
+    tone: measureTone(img),
+    unavailable: ["arrangement", "occlusion", "props", "figureCount", "subject", "depth"],
+    sources: {},
+  };
+  renderQueryStrip();
+  setBusy(true, "正在计算视觉向量…");
+  wireResults(null);
+  try {
+    // 一次读字节：既算向量，也算内容哈希（用来剔掉「自己推自己」）
+    const buf = await file.arrayBuffer();
+    queryHash = await sha256Hex(buf);
+    const b64 = `data:${file.type};base64,` + bufToBase64(buf);
+    const r = await fetch("/api/embed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: b64 }) });
+    if (!r.ok) {
+      const t = await r.text();
+      const err = new Error(t.slice(0, 160) || `HTTP ${r.status}`);
+      err.raw = `${r.status} ${t.slice(0, 300)}`;
+      throw err;
+    }
+    const j = await r.json();
+    if (!Array.isArray(j.vector) || !j.vector.length) throw new Error("向量为空");
+    queryVector = j.vector;
+    setBusy(false);
+    run();
+  } catch (e) {
+    setBusy(false);
+    wireResults(null);
+    setNotice(
+      "error",
+      "这张图暂时算不出向量。",
+      `${humanError(e.message)}。馆藏检索不依赖本地模型，仍然可用。`,
+      [{ label: "重试", run: () => useUpload(file) }, { label: "从馆藏选择", run: openSheet }]
+    );
+    // 原文留在控制台，不往界面倒英文栈
+    console.warn("[embed] 原始错误:", e.raw || e.message);
+  }
+}
+
 function measureTone(img) {
-  const S = 64;
-  const c = document.createElement("canvas");
+  const S = 64, c = document.createElement("canvas");
   c.width = S; c.height = S;
   const ctx = c.getContext("2d");
   ctx.drawImage(img, 0, 0, S, S);
@@ -388,54 +672,315 @@ function measureTone(img) {
   };
 }
 
-async function useUpload(file) {
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
-  const aspect = Math.round((img.naturalWidth / img.naturalHeight) * 1000) / 1000;
-  const orientation = aspect > 1.08 ? "landscape" : aspect < 0.92 ? "vertical" : "square";
-  queryEntry = null;
-  // 影调必须真的量出来，否则可比维度只有 2 个，低于组合检索的 4 维门槛，
-  // C 列就会退化成 B 列的副本——那不是「组合」，是重复。
-  queryStructure = {
-    id: "query", aspect: { aspect, orientation, label: null, source: "measured-pixels" },
-    figure: { subject: null, scale: null, relation: null, count: null, source: "unavailable" },
-    space: { depth: null, environmentDominance: null, negativeSpace: null, source: "unavailable" },
-    tone: measureTone(img),
-    unavailable: ["arrangement", "occlusion", "props", "figureCount", "subject", "depth"], sources: {},
-  };
-  $("queryBox").hidden = false;
-  $("queryImg").src = url;
-  $("queryTitle").textContent = file.name;
-  $("queryMeta").textContent = `${img.naturalWidth}×${img.naturalHeight}`;
-  $("hint").textContent = "正在用本地模型算这张图的向量…";
-  const b64 = await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(file); });
-  const r = await fetch("/api/embed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: b64 }) });
-  if (!r.ok) { $("hint").textContent = "向量计算失败：" + (await r.text()).slice(0, 120); return; }
-  const j = await r.json();
-  queryVector = j.vector;
-  $("hint").textContent = "向量已算好。结构层只用实测宽高比；上传图没有色彩签名与 VisualIntent，其余维度不参与。";
+// ---------------------------------------------------------------- 检索
+function passMedia(e, media) {
+  if (media === "all") return true;
+  const m = e.media || {};
+  if (media === "artwork") return (m.medium || "artwork") === "artwork";
+  if (media === "film") return m.medium === "film" && m.visualForm !== "animation";
+  if (media === "animation") return m.visualForm === "animation";
+  return true;
+}
+
+function candidateCount(media) {
+  return LIB.filter((e) => passMedia(e, media)).length + personal.filter((e) => passMedia(e, media)).length;
+}
+
+function cardHTML(e) {
+  const pts = (e.samePoints || []).slice(0, 3);
+  const diffs = (e.differences || []).slice(0, 2);
+  const ref = e.personal
+    ? (e.record?.source?.pageURL || "我的参考（本机导入）")
+    : e.kind === "film" ? (e.record?.source?.name || "Wikimedia Commons") : (e.record?.museum || "馆藏");
+  return `<article class="card" data-id="${esc(e.id)}">
+    <div class="frame">${frameImg(imgOf(e), e.title, "zoom")}</div>
+    <div class="body">
+      <p class="t">${esc(e.title)}</p>
+      <p class="s">${esc(e.creator || "")}${e.year ? " · " + esc(e.year) : ""} · ${esc(mediaLabel(e))}${e.personal ? ' · <span class="tag">我的参考</span>' : ""}</p>
+      ${!BLIND && pts.length ? `<ul>${pts.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
+      ${!BLIND && diffs.length ? `<ul>${diffs.map((p) => `<li class="diff">差异：${esc(p)}</li>`).join("")}</ul>` : ""}
+      <p class="src">出处：${esc(ref)}</p>
+    </div>
+  </article>`;
+}
+
+function emptyColumn(text) {
+  return `<div class="notice" style="font-size:12.5px">${esc(text)}</div>`;
+}
+
+function wireResults(data) {
+  if (!data) {
+    lastData = null;
+    // 不能只隐藏：旧卡片留在 DOM 里，计算中态等于「新查询图 + 旧结果」
+    $("abc").innerHTML = "";
+    $("abcMobile").innerHTML = "";
+    $("resultCount").textContent = "";
+    show($("results"), false);
+    show($("abcTabs"), false);
+    return;
+  }
+  lastData = data;
+  show($("results"), true);
+
+  const cols = data.cols;
+  const head = (k) => `<h2 class="col-head">${k}<span class="sr-only"> 列</span></h2>`;
+  $("abc").innerHTML = ["A", "B", "C"].map((k) => `
+    <section>
+      ${head(k)}
+      ${cols[k].length ? cols[k].map(cardHTML).join("") : emptyColumn(data.emptyNote[k] || "没有可信候选")}
+    </section>`).join("");
+
+  const isNarrow = window.matchMedia("(max-width: 900px)").matches;
+  show($("abcTabs"), isNarrow);
+  // 窄屏默认停在 A；若 A 对这类型查询本来就无内容（上传图 / 个人图），
+  // 落到第一个真有内容的列，否则用户第一眼看到的是空。
+  if (isNarrow && cols[activeCol].length === 0) {
+    const firstFilled = ["A", "B", "C"].find((k) => cols[k].length > 0);
+    if (firstFilled) activeCol = firstFilled;
+  }
+  $("abcMobile").innerHTML = ["A", "B", "C"].map((k) => `
+    <div class="pane" data-pane="${k}" ${k === activeCol ? "" : "hidden"}>
+      ${head(k)}
+      ${cols[k].length ? cols[k].map(cardHTML).join("") : emptyColumn(data.emptyNote[k] || "没有可信候选")}
+    </div>`).join("");
+  syncTabs();
+
+  bindZoom();
+  $("resultCount").textContent = BLIND
+    ? `候选 ${candidateCount(activeMedia)} 张（基础 ${LIBRARY_META.count} + 我的 ${personal.length}）`
+    : `候选 ${candidateCount(activeMedia)} 张（基础 ${LIBRARY_META.count} + 我的 ${personal.length}） · A 旧算法 / B 图像向量 / C 向量＋结构`;
+}
+
+function syncTabs() {
+  $("abcTabs").querySelectorAll("[data-col]").forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset.col === activeCol));
+  });
+  $("abcMobile").querySelectorAll("[data-pane]").forEach((p) => {
+    p.hidden = p.dataset.pane !== activeCol;
+  });
+}
+
+function run() {
+  setNotice(null);
+  if (!queryVector) return;
+  const excludeId = queryEntry?.id || "";
+  const selfHash = queryEntry?.hash || queryHash;   // 上传图也要能剔掉自己
+  const dropSelf = (l) => (selfHash ? l.filter((r) => r.hash !== selfHash) : l);
+
+  let A = [], aNote = "没有可信候选";
+  if (queryEntry && !queryEntry.personal) {
+    const out = retrieveByArtworkChecked(queryEntry.record, { limit: 5 });
+    A = (out.results || []).map((r) => {
+      const e = byId.get(r.artwork?.id);
+      return e ? { ...e, samePoints: (r.reasons || []).slice(0, 3), differences: [] } : null;
+    }).filter(Boolean)
+      // A 列也要跟着媒介筛选，否则「候选 1 张」旁边会摆着 5 张绘画
+      .filter((e) => passMedia(e, activeMedia));
+    if (!out.ok) aNote = `该作品不能作为检索起点（${out.error}）`;
+  } else if (BLIND) {
+    // 盲评时不说「哪一列是旧算法」，只说这列需要什么信息。
+    aNote = "这一列需要作品的结构与主题标注；这张图没有这些信息，因此不适用。";
+  } else {
+    aNote = queryEntry?.personal
+      ? "个人导入的图没有 VisualIntent，旧算法无法运行"
+      : "上传图片没有 VisualIntent，旧算法无法运行（需要付费 Vision）";
+  }
+
+  const B = dropSelf(searchByEmbedding(queryVector, { media: activeMedia, limit: 5, excludeId, extraEntries: personal }).results);
+  const C = dropSelf(searchCombined(queryVector, queryStructure, { media: activeMedia, limit: 5, excludeId, extraEntries: personal }).results);
+
+  const allEmpty = A.length === 0 && B.length === 0 && C.length === 0;
+  if (allEmpty) {
+    show($("results"), false);
+    const name = activeMedia === "animation" ? "动画" : activeMedia === "film" ? "彩色电影" : activeMedia === "artwork" ? "绘画" : "全部媒介";
+    setNotice("empty", `「${name}」下没有可用候选。`,
+      activeMedia === "animation" ? "本地图库还没有动画画面。可以在下方「运行信息与我的参考」里导入。" : "换一个媒介，或先导入参考图。",
+      [{ label: "看全部", run: () => setMedia("all") }]);
+    return;
+  }
+
+  wireResults({
+    cols: { A, B, C },
+    emptyNote: {
+      A: aNote,
+      B: `「${activeMedia === "all" ? "全部" : activeMedia}」下没有可比较的画面`,
+      C: `「${activeMedia === "all" ? "全部" : activeMedia}」下没有可比较的画面`,
+    },
+  });
+}
+
+function setMedia(m) {
+  activeMedia = m;
+  $("mediaFilter").querySelectorAll("[data-media]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.media === m)));
   run();
 }
 
-// ---- 初始化 ----
-$("pick").innerHTML = LIB.slice().sort((a, b) => String(a.title).localeCompare(String(b.title), "zh"))
-  .map((e) => `<option value="${esc(e.id)}">${esc(e.title)}（${esc(mediaLabel(e))}）</option>`).join("");
+// ---------------------------------------------------------------- 放大
+function bindZoom() {
+  document.querySelectorAll("img.zoom").forEach((img) => {
+    img.addEventListener("click", () => {
+      // 打开时才建 <img>：避免静态空 src 产生一个假的「破损图片」
+      $("lightboxHolder").innerHTML = `<img src="${esc(img.src)}" alt="${esc(img.alt)}" />`;
+      show($("lightbox"), true);
+      $("lightboxClose").focus();
+    });
+  });
+}
+function closeLightbox() { show($("lightbox"), false); $("lightboxHolder").innerHTML = ""; }
 
-$("pick").addEventListener("change", (ev) => useLibrary(ev.target.value));
-$("media").addEventListener("change", run);
-$("pick-mode").addEventListener("click", () => { $("pick-mode").classList.add("on"); $("up-mode").classList.remove("on"); $("pick").hidden = false; $("file").click(); });
-$("up-mode").addEventListener("click", () => { $("up-mode").classList.add("on"); $("pick-mode").classList.remove("on"); $("file").click(); });
-$("file").addEventListener("change", (ev) => { const f = ev.target.files?.[0]; if (f) useUpload(f).catch((e) => { $("hint").textContent = "出错：" + e.message; }); });
-$("import-btn").addEventListener("click", () => $("import-files").click());
-$("import-files").addEventListener("change", (ev) => {
+// ---------------------------------------------------------------- 个人参考
+async function loadPersonal() {
+  try {
+    const r = await fetch("/api/library/personal");
+    const j = await r.json();
+    personal = (j.items || []).map(asEntry);
+    renderMine(j.stats);
+    renderRunInfo(j.stats);
+  } catch {
+    $("mine").innerHTML = `<div class="notice" style="grid-column:1/-1">读取个人图库失败。刷新试试。</div>`;
+  }
+}
+
+function renderMine(stats) {
+  if (!personal.length) {
+    $("mine").innerHTML = `<div class="notice" style="grid-column:1/-1;font-size:12px">还没有导入个人参考图。</div>`;
+    return;
+  }
+  $("mine").innerHTML = personal.map((e) => `
+    <figure>
+      ${frameImg(personalImg(e.id), e.title)}
+      <figcaption><span>${esc(mediaLabel(e))}</span><button data-del="${esc(e.id)}" type="button">删除</button></figcaption>
+    </figure>`).join("");
+  $("mine").querySelectorAll("[data-del]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      const id = b.dataset.del;
+      const item = personal.find((p) => p.id === id);
+      // 删了就找不回来，先问一句
+      if (!confirm(`从「我的参考」里删除「${item ? item.title : id}」？`)) return;
+      b.disabled = true;
+      await fetch(`/api/library/personal/${encodeURIComponent(id)}`, { method: "DELETE" });
+      await loadPersonal();
+      $("mineMsg").textContent = `已删除 1 张（${item ? item.title : id}）。`;
+      if (queryEntry && queryEntry.id === id) resetQuery();
+      else run();
+    });
+  });
+}
+
+function renderRunInfo(stats) {
+  const rows = [
+    ["基础图库", `${LIBRARY_META.count} 条`],
+    ["我的参考", `${stats ? stats.total : personal.length} 条${stats && stats.stale ? `（${stats.stale} 条待重建）` : ""}`],
+    ["视觉模型", `${LIBRARY_META.model}`],
+    ["向量维度", `${LIBRARY_META.dim}`],
+    ["取景方式", `${LIBRARY_META.fit}`],
+    ["模型许可", `${LIBRARY_META.license}`],
+    ["本次候选", `${candidateCount(activeMedia)} 张`],
+  ];
+  $("runInfo").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  $("colophon").textContent = `视觉参考仅表示「看起来像」，不等于艺术价值判断。${BLIND ? "" : ""}`;
+}
+
+async function importFiles(files) {
+  const kind = $("importKind").value;
+  const map = {
+    artwork: { medium: "artwork", visualForm: "still-image", imageKind: "artwork-reproduction" },
+    film: { medium: "film", visualForm: "live-action", imageKind: "frame" },
+    animation: { medium: "film", visualForm: "animation", imageKind: "frame" },
+    anime: { medium: "film", visualForm: "animation", tradition: "anime", imageKind: "frame" },
+  };
+  const base = map[kind] || map.artwork;
+  let ok = 0, dup = 0, bad = 0;
+  const errs = [];
+  $("btnImport").disabled = true;
+  $("importKind").disabled = true;
+  for (const f of files) {
+    $("importHint").textContent = `正在导入 ${ok + dup + bad + 1}/${files.length}：${f.name}…`;
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.onerror = rej; fr.readAsDataURL(f);
+      });
+      const r = await fetch("/api/library/import", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: f.name, imageBase64: b64, meta: { ...base, title: f.name.replace(/\.[^.]+$/, "") } }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) { j.deduped ? dup++ : ok++; } else { bad++; errs.push(`${f.name}: ${j.error || r.status}`); }
+    } catch (e) { bad++; errs.push(`${f.name}: ${e.message}`); }
+  }
+  await loadPersonal();
+  $("btnImport").disabled = false;
+  $("importKind").disabled = false;
+  $("importHint").textContent = `导入完成：新增 ${ok}，已存在 ${dup}，失败 ${bad}。` + (errs.length ? ` ${errs.slice(0, 2).join("；")}` : "");
+  run();
+}
+
+function resetQuery() {
+  queryEntry = null; queryVector = null; queryStructure = null;
+  queryPreviewURL = null; queryName = null; queryMetaText = null; queryHash = null;
+  show($("queryStrip"), false);
+  show($("results"), false);
+  show($("abcTabs"), false);
+  show($("curatedSection"), true);
+  setNotice(null);
+  $("resultCount").textContent = "";
+}
+
+// ---------------------------------------------------------------- 绑定
+$("btnUpload").addEventListener("click", () => $("fileUpload").click());
+$("fileUpload").addEventListener("change", (ev) => {
+  const f = ev.target.files?.[0];
+  if (f) useUpload(f);
+  ev.target.value = "";
+});
+$("btnBrowse").addEventListener("click", openSheet);
+$("sheetClose").addEventListener("click", closeSheet);
+$("sheet").addEventListener("click", (ev) => { if (ev.target === $("sheet")) closeSheet(); });
+$("queryChange").addEventListener("click", () => $("fileUpload").click());
+$("queryClear").addEventListener("click", resetQuery);
+$("mediaFilter").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-media]");
+  if (b) setMedia(b.dataset.media);
+});
+$("abcTabs").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-col]");
+  if (!b) return;
+  activeCol = b.dataset.col;
+  syncTabs();
+});
+$("btnImport").addEventListener("click", () => $("fileImport").click());
+$("fileImport").addEventListener("change", (ev) => {
   const files = [...(ev.target.files || [])];
   if (files.length) importFiles(files);
   ev.target.value = "";
 });
+$("detailsToggle").addEventListener("click", () => {
+  const d = $("details");
+  d.open = !d.open;
+  $("detailsToggle").setAttribute("aria-expanded", String(d.open));
+  if (d.open) d.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+// 视口跨过 900px 断点时，三列 ↔ 单栏切换必须重算，
+// 否则先在桌面渲染、再缩到手机就会两边都看不到。
+const narrowMQ = window.matchMedia("(max-width: 900px)");
+const onBreakpoint = () => { if (lastData) wireResults(lastData); };
+if (narrowMQ.addEventListener) narrowMQ.addEventListener("change", onBreakpoint);
+else narrowMQ.addListener(onBreakpoint);
 
+$("lightboxClose").addEventListener("click", closeLightbox);
+$("lightbox").addEventListener("click", (ev) => { if (ev.target === $("lightbox")) closeLightbox(); });
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") {
+    if (!$("lightbox").hidden) closeLightbox();
+    else if (!$("sheet").hidden) closeSheet();
+  }
+});
+
+// ---------------------------------------------------------------- 启动
+renderCurated();
+renderLibGrid();
+renderRunInfo(null);
 await loadPersonal();
-useLibrary($("pick").value);
 </script>
 </body>
 </html>
