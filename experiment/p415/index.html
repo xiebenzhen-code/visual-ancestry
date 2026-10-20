@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visual Ancestry / Find — 多模态实验</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f3eddf'/%3E%3Crect x='7' y='9' width='18' height='14' fill='none' stroke='%2311110f' stroke-width='1.6'/%3E%3Ccircle cx='13' cy='15' r='1.8' fill='%2311110f'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --paper: #f3eddf; --card: #f8f2e5; --ink: #11110f; --ink-2: #3a3833; --ink-3: #767067;
+    --rule: #dcd3c0; --rule-strong: #c3b9a3; --hover: #e9e1d0; --mat: #e3d8bf;
+    --max: 1180px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font: 400 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  img { display: block; max-width: 100%; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+  @media (max-width: 640px) { .wrap { padding: 0 18px; } }
+
+  .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 26px 0 0; }
+  .wordmark { font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+  .wordmark .slash { color: var(--rule-strong); margin: 0 6px; }
+  .topnav { display: flex; align-items: center; gap: 14px; }
+  .linkish { background: none; border: 0; padding: 0; font-size: 12.5px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+  .linkish:hover { color: var(--ink); }
+
+  .lede { padding: 30px 0 0; }
+  .lede h1 { margin: 0; font-size: clamp(26px, 3.4vw, 42px); line-height: 1.22; font-weight: 600; letter-spacing: -0.01em; max-width: 20em; overflow-wrap: anywhere; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+  .badge { font-size: 11px; letter-spacing: .06em; border: 1px solid var(--rule-strong); border-radius: 999px; padding: 3px 10px; color: var(--ink-2); }
+  .badge.solid { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .badge.warn { border-color: #a4593a; color: #8a4a2e; }
+
+  .entries { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .btn svg { width: 15px; height: 15px; flex: none; }
+  .btn.solid { background: var(--ink); color: var(--paper); }
+  .btn.solid:hover { background: #2b2823; }
+  .btn.ghost { background: transparent; border-color: var(--rule-strong); color: var(--ink); }
+  .btn.ghost:hover { background: var(--hover); }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  .section { padding: 30px 0 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  @media (max-width: 860px) { .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 520px) { .grid3 { grid-template-columns: minmax(0, 1fr); } }
+
+  .plate { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: block; width: 100%; }
+  .plate .frame { display: block; position: relative; background: var(--mat); border: 1px solid var(--rule); aspect-ratio: 4 / 5; overflow: hidden; }
+  .plate .frame img { width: 100%; height: 100%; object-fit: contain; }
+  .plate:hover .frame { border-color: var(--rule-strong); }
+  .plate .meta { display: block; padding: 10px 2px 0; }
+  .plate .t { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .plate .s { display: block; font-size: 12px; color: var(--ink-3); margin-top: 3px; overflow-wrap: anywhere; }
+
+  .query { display: flex; gap: 18px; align-items: flex-start; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 20px 0; margin: 30px 0 0; }
+  .query .thumb { width: 104px; height: 104px; flex: none; background: var(--mat); border: 1px solid var(--rule); display: grid; place-items: center; overflow: hidden; }
+  .query .thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .query .info { min-width: 0; padding-top: 4px; }
+  .query .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
+  .query .t { font-size: 19px; font-weight: 600; margin: 0; line-height: 1.3; overflow-wrap: anywhere; }
+  .query .s { font-size: 13px; color: var(--ink-2); margin: 4px 0 0; overflow-wrap: anywhere; }
+
+  .results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 26px 0 12px; }
+  .count { font-size: 12.5px; color: var(--ink-3); }
+  .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; overflow: hidden; }
+  .seg button { border: 0; background: transparent; padding: 7px 14px; font-size: 12.5px; cursor: pointer; color: var(--ink-2); white-space: nowrap; }
+  .seg button + button { border-left: 1px solid var(--rule); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  .verdict-group { padding: 6px 0 0; }
+  .group-head { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); margin: 0; padding: 18px 0 10px; border-bottom: 1px solid var(--rule); }
+  .cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; padding: 16px 0 0; }
+  .card { display: grid; grid-template-columns: 258px minmax(0, 1fr); gap: 20px; align-items: start; min-width: 0; }
+  @media (max-width: 720px) { .card { grid-template-columns: minmax(0, 1fr); gap: 10px; } }
+  .card .frame { display: grid; place-items: center; background: var(--mat); border: 1px solid var(--rule); aspect-ratio: 4 / 3; overflow: hidden; }
+  .card .frame img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
+  .card .body { padding: 10px 1px 0; min-width: 0; }
+  .card .t { font-size: 14px; font-weight: 600; margin: 0; line-height: 1.35; overflow-wrap: anywhere; }
+  .card .s { font-size: 12px; color: var(--ink-3); margin: 3px 0 0; overflow-wrap: anywhere; }
+  .card dl { margin: 8px 0 0; font-size: 12.5px; display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 4px 12px; }
+  .card dt { color: var(--ink-3); font-size: 11px; letter-spacing: .06em; margin-top: 6px; }
+  .card dd { margin: 6px 0 0; color: var(--ink-2); overflow-wrap: anywhere; }
+  @media (max-width: 720px) { .card dl { grid-template-columns: minmax(0, 1fr); } .card dt { margin-top: 10px; } .card dd { margin-top: 2px; } }
+  .card .diffs { color: #7c4a32; }
+
+  .rel { display: inline-block; font-size: 10.5px; letter-spacing: .06em; border-radius: 999px; padding: 2px 9px; border: 1px solid var(--rule-strong); color: var(--ink-2); }
+  .rel.high { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .rel.partial { background: transparent; }
+  .rel.review { border-color: #a4593a; color: #8a4a2e; }
+
+  .notice { border: 1px solid var(--rule); background: var(--card); padding: 22px 20px; font-size: 13.5px; color: var(--ink-2); }
+  .notice strong { color: var(--ink); font-weight: 600; }
+  .notice .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .ph { aspect-ratio: 4 / 3; border: 1px dashed var(--rule-strong); background: var(--mat); display: grid; place-items: center; text-align: center; padding: 12px; font-size: 12px; color: var(--ink-3); }
+
+  .rejected { border-top: 1px solid var(--rule); margin-top: 26px; padding-top: 14px; }
+  .rejected summary { cursor: pointer; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .rej-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 14px; }
+  .rej { font-size: 12px; color: var(--ink-2); }
+  .rej img { width: 100%; height: 96px; object-fit: contain; background: var(--mat); border: 1px solid var(--rule); }
+  .rej .why { color: #7c4a32; margin-top: 4px; }
+
+  .progress { margin: 14px 0 0; font-size: 12.5px; color: var(--ink-2); display: flex; align-items: center; gap: 10px; }
+  .bar { position: relative; height: 2px; background: var(--rule); flex: 1; max-width: 220px; overflow: hidden; }
+  .bar::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--ink-2); animation: sweep 1.1s ease-in-out infinite; }
+  @keyframes sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+  @media (prefers-reduced-motion: reduce) { .bar::after { animation: none; width: 100%; opacity: .5; } }
+
+  .sheet { position: fixed; inset: 0; background: rgba(23,22,19,.34); display: grid; place-items: end center; z-index: 40; }
+  .sheet .panel { background: var(--paper); width: min(100%, var(--max)); max-height: 86vh; overflow: auto; border-top: 1px solid var(--rule-strong); padding: 20px 28px 34px; }
+  @media (max-width: 640px) { .sheet .panel { padding: 16px 18px 28px; } }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; position: sticky; top: 0; background: var(--paper); padding-bottom: 12px; }
+  .panel-head h2 { font-size: 15px; margin: 0; font-weight: 600; }
+  .grid-lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); gap: 14px; }
+  @media (max-width: 520px) { .grid-lib { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; } }
+  .grid-lib .plate .t, .grid-lib .plate .s { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .grid-lib .plate .t { -webkit-line-clamp: 2; } .grid-lib .plate .s { -webkit-line-clamp: 1; }
+
+  .lightbox { position: fixed; inset: 0; background: rgba(16,15,13,.92); z-index: 60; display: grid; place-items: center; padding: 32px; }
+  #lightboxHolder { display: grid; place-items: center; width: 100%; height: 100%; }
+  .lightbox img { max-width: 100%; max-height: 86vh; object-fit: contain; }
+  .lightbox button { position: absolute; top: 18px; right: 20px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: transparent; color: #fff; cursor: pointer; font-size: 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  footer.colophon { color: var(--ink-3); font-size: 11.5px; padding: 34px 0 46px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+
+  <header class="masthead">
+    <span class="wordmark">Visual Ancestry <span class="slash">/</span> Find</span>
+    <nav class="topnav">
+      <a class="linkish" href="/abc">A/B/C 对照（旧算法）</a>
+    </nav>
+  </header>
+
+  <section class="lede">
+    <h1>从一张画面，发现另一种视觉表达。</h1>
+    <div class="badges" id="badges">
+      <span class="badge solid">多模态实验</span>
+      <span class="badge" id="modeBadge">模型判断中…</span>
+      <span class="badge" id="budgetBadge"></span>
+    </div>
+    <div class="entries">
+      <button class="btn solid" id="btnUpload" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        上传画面
+      </button>
+      <button class="btn ghost" id="btnBrowse" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4 16l4.5-4 3.5 3 3-2.5L20 16"/></svg>
+        从馆藏选择
+      </button>
+    </div>
+    <input id="fileUpload" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+  </section>
+
+  <section class="section" id="curatedSection">
+    <div class="grid3" id="curatedGrid"></div>
+    <p class="count" style="margin:18px 0 0">选一幅开始。每张候选都由视觉模型逐张对照查询图判断，不只看标签。</p>
+  </section>
+
+  <section class="query" id="queryStrip" hidden>
+    <div class="thumb" id="queryThumb"></div>
+    <div class="info">
+      <p class="k">查询画面</p>
+      <p class="t" id="queryTitle"></p>
+      <p class="s" id="queryMeta"></p>
+      <p style="margin:10px 0 0"><button class="linkish" id="queryClear" type="button">清空</button></p>
+    </div>
+  </section>
+
+  <div class="progress" id="progress" role="status" aria-live="polite" hidden>
+    <span id="progressText">正在让视觉模型逐张比较…</span>
+    <span class="bar" aria-hidden="true"></span>
+  </div>
+
+  <section id="noticeSection" hidden style="padding-top:26px">
+    <div class="notice" id="notice"></div>
+  </section>
+
+  <section id="results" hidden>
+    <div class="results-head">
+      <span class="count" id="resultCount" role="status" aria-live="polite"></span>
+      <div class="seg" id="mediaFilter" role="group" aria-label="媒介筛选">
+        <button type="button" data-media="all" aria-pressed="true">全部</button>
+        <button type="button" data-media="artwork" aria-pressed="false">绘画</button>
+        <button type="button" data-media="film" aria-pressed="false">彩色电影</button>
+        <button type="button" data-media="animation" aria-pressed="false">动画</button>
+      </div>
+    </div>
+    <div id="verdicts"></div>
+    <details class="rejected" id="rejectedBox" hidden>
+      <summary id="rejectedSummary">被剔除的候选</summary>
+      <div class="rej-list" id="rejectedList"></div>
+    </details>
+  </section>
+
+  <footer class="colophon" id="colophon"></footer>
+</div>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="sheetTitle">从馆藏选择</h2>
+      <button class="linkish" id="sheetClose" type="button">关闭</button>
+    </div>
+    <div class="grid-lib" id="libGrid"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="查看大图">
+  <button id="lightboxClose" type="button" aria-label="关闭">✕</button>
+  <div id="lightboxHolder"></div>
+</div>
+
+<script type="module">
+import { library, mediaLabel, LIBRARY_META } from "/src/services/features/visualSearch.js";
+
+const $ = (id) => document.getElementById(id);
+const LIB = library();
+const byId = new Map(LIB.map((e) => [e.id, e]));
+const CURATED = ["the-kiss", "american-gothic", "paris-rainy-day"].filter((id) => byId.has(id));
+
+// 直接链接到某个查询 / 调大送入比较的候选数（默认 3），方便复现与截图。
+const QS = new URLSearchParams(location.search);
+const JUDGE_DEFAULT = Math.min(5, Math.max(1, Number(QS.get("judge")) || 3));
+
+let state = null;
+let queryId = null;
+let queryLabel = null;
+let activeMedia = "all";
+let busy = false;
+
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const baseImg = (e) => (e.kind === "film" ? `/assets/film/${e.id}/preview.webp` : `/assets/artworks/${e.id}/preview.webp`);
+const frameImg = (src, alt, cls = "") =>
+  `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" class="${cls}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'图片无法加载'}))" />`;
+
+function show(el, on) { el.hidden = !on; }
+
+// ---------------- 运行状态 ----------------
+async function loadState() {
+  try {
+    const r = await fetch("/api/p415/state");
+    state = await r.json();
+  } catch { state = null; }
+  const mode = $("modeBadge");
+  if (!state) { mode.textContent = "状态读取失败"; return; }
+  if (state.mode === "mock") {
+    mode.textContent = "MOCK 模式（不联网、不计费）";
+    mode.className = "badge warn";
+  } else if (!state.configured) {
+    mode.textContent = "未配置视觉模型";
+    mode.className = "badge warn";
+  } else {
+    mode.textContent = `${state.model} · 提示 ${state.promptVersion}`;
+    mode.className = "badge";
+  }
+  const b = state.budget;
+  $("budgetBadge").textContent = b ? `预算 ${b.used}/${b.limit}（今日）` : "";
+  $("colophon").textContent = `每次查询最多 ${state.maxUpstreamPerQuery} 次上游请求；缓存命中不消耗预算。视觉参考只说明「看起来像」，不等于艺术价值判断。`;
+}
+
+// ---------------- 精选 / 面板 ----------------
+const plateHTML = (e) => `<button class="plate" type="button" data-id="${esc(e.id)}">
+  <span class="frame">${frameImg(baseImg(e), e.title)}</span>
+  <span class="meta"><span class="t">${esc(e.title)}</span><span class="s">${esc(e.creator || "")}${e.year ? " · " + esc(e.year) : ""}</span></span>
+</button>`;
+
+$("curatedGrid").innerHTML = CURATED.map((id) => plateHTML(byId.get(id))).join("");
+$("curatedGrid").querySelectorAll("[data-id]").forEach((b) => b.addEventListener("click", () => run(b.dataset.id)));
+
+const libSorted = [...LIB].sort((a, b) => String(a.title).localeCompare(String(b.title), "zh"));
+$("libGrid").innerHTML = libSorted.map((e) => `<button class="plate" type="button" data-id="${esc(e.id)}">
+  <span class="frame">${frameImg(baseImg(e), e.title)}</span>
+  <span class="meta"><span class="t">${esc(e.title)}</span><span class="s">${esc(mediaLabel(e))}</span></span>
+</button>`).join("");
+$("libGrid").querySelectorAll("[data-id]").forEach((b) => b.addEventListener("click", () => { closeSheet(); run(b.dataset.id); }));
+
+function openSheet() { show($("sheet"), true); document.body.style.overflow = "hidden"; $("sheetClose").focus(); }
+function closeSheet() { show($("sheet"), false); document.body.style.overflow = ""; }
+
+// ---------------- 状态提示 ----------------
+function setNotice(kind, title, body, actions = []) {
+  const sec = $("noticeSection"), n = $("notice");
+  if (!kind) { show(sec, false); return; }
+  n.innerHTML = `<strong>${esc(title)}</strong>${body ? `<div style="margin-top:6px">${esc(body)}</div>` : ""}
+    ${actions.length ? `<div class="row">${actions.map((a, i) => `<button class="btn ghost" data-act="${i}" type="button">${esc(a.label)}</button>`).join("")}</div>` : ""}`;
+  show(sec, true);
+  n.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => actions[Number(b.dataset.act)].run()));
+}
+
+function setBusy(on, text) {
+  busy = on;
+  show($("progress"), on);
+  if (text) $("progressText").textContent = text;
+  $("btnUpload").disabled = on; $("btnBrowse").disabled = on;
+  $("app").setAttribute("aria-busy", on ? "true" : "false");
+}
+
+// ---------------- 查询 ----------------
+function renderQuery(e) {
+  show($("queryStrip"), true);
+  show($("curatedSection"), false);
+  $("queryThumb").innerHTML = frameImg(baseImg(e), e.title);
+  $("queryTitle").textContent = e.title;
+  $("queryMeta").textContent = [e.creator, e.year, mediaLabel(e)].filter(Boolean).join(" · ");
+}
+
+async function run(id) {
+  const e = byId.get(id);
+  if (!e) return;
+  queryId = id; queryLabel = e.title;
+  setNotice(null);
+  renderQuery(e);
+  await search({ queryId: id });
+}
+
+async function search(payload) {
+  setBusy(true, "正在让视觉模型逐张比较…（本次最多 1 次上游请求）");
+  show($("results"), false);
+  $("verdicts").innerHTML = "";
+  try {
+    const r = await fetch("/api/p415/search", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, media: activeMedia, judgeCount: JUDGE_DEFAULT }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) return handleError(data, r.status);
+    renderResults(data);
+  } catch (err) {
+    setNotice("error", "请求失败。", String(err.message || err), [{ label: "重试", run: () => search(payload) }]);
+  } finally {
+    setBusy(false);
+    loadState();
+  }
+}
+
+function handleError(data, status) {
+  const map = {
+    "budget-exhausted": ["今日视觉预算已用尽。", "本轮预算上限已达，不再发出请求。旧 A/B/C 对照仍可用。"],
+    "provider-not-configured": ["服务端没有配置视觉模型。", "页面不会假装成功；请联系维护者配置后再试。"],
+    "incomplete-analysis": ["模型返回的分析字段不完整。", "已按解析失败处理，未当作成功。"],
+    "invalid-json": ["模型返回的不是合法 JSON。", "已记录原始响应供复核，未当作成功。"],
+    "http-error": ["上游服务返回错误。", `${data.detail || ""}`],
+    "timeout": ["上游超时。", "本次未重试，避免重复计费。"],
+    "no-query-vector": ["这张图没有可用的视觉向量。", ""],
+  };
+  const [title, body] = map[data.error] || ["检索失败。", `${data.error || status}${data.detail ? "：" + data.detail : ""}`];
+  setNotice("error", title, body, [{ label: "重试", run: () => search({ queryId }) }, { label: "打开 A/B/C 对照", run: () => (location.href = "/abc") }]);
+}
+
+// ---------------- 结果 ----------------
+const REL_LABEL = { high: "高度相关", partial: "部分可借鉴", unrelated: "无关" };
+
+// 模型习惯按「全局图片序号」指代（查询图是第 1 张，候选从 2 开始），
+// 放进单张卡片里读着莫名其妙。这里只改显示，原始文本保留在 JSON 里供复核。
+const cleanRef = (s) => (s == null ? s : String(s).replace(/候选\s*\d+/g, "该候选").replace(/第\s*\d+\s*张(?:图)?/g, "该候选"));
+
+function cardHTML(c) {
+  const relCls = c.needsReview ? "review" : c.relation;
+  const relTxt = c.needsReview ? "待核实" : (REL_LABEL[c.relation] || c.relation);
+  const rows = [
+    ["构图证据", cleanRef(c.compositionEvidence)],
+    ["主体关系", cleanRef(c.subjectRelationEvidence)],
+    ["色彩光线", cleanRef(c.colorLightEvidence)],
+  ].filter(([, v]) => v);
+  return `<article class="card" data-id="${esc(c.id)}">
+    <div class="frame">${frameImg(c.image, c.title, "zoom")}</div>
+    <div class="body">
+      <p class="t">${esc(c.title)} <span class="rel ${relCls}">${esc(relTxt)}</span></p>
+      <p class="s">${esc(c.creator || "")}${c.year ? " · " + esc(c.year) : ""} · ${esc(c.media)}</p>
+      <dl>
+        ${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}
+        ${c.importantDifferences?.length ? `<dt>重要差异</dt><dd class="diffs">${c.importantDifferences.map((x) => esc(cleanRef(x))).join("；")}</dd>` : ""}
+        ${c.creativeTransfer ? `<dt>可迁移的创作方法</dt><dd>${esc(cleanRef(c.creativeTransfer))}</dd>` : ""}
+        ${c.confidenceLimitations?.length ? `<dt>判断限度</dt><dd>${c.confidenceLimitations.map(esc).join("；")}</dd>` : ""}
+      </dl>
+    </div>
+  </article>`;
+}
+
+function renderResults(data) {
+  const accepted = data.accepted || [];
+  const rejected = data.rejected || [];
+  show($("results"), true);
+
+  const acc = data.accounting || {};
+  const parts = [`接受 ${accepted.length} 张`, `剔除 ${rejected.length} 张`];
+  if (acc.cacheHit) parts.push("命中缓存（0 次上游请求）");
+  else parts.push(`本次上游请求 ${acc.upstreamCalls} 次`);
+  if (acc.latencyMs) parts.push(`${acc.latencyMs}ms`);
+  if (acc.usage?.total_tokens) parts.push(`${acc.usage.total_tokens} tokens`);
+  if (data.mock) parts.unshift("MOCK 数据");
+  $("resultCount").textContent = parts.join(" · ");
+
+  if (!accepted.length) {
+    $("verdicts").innerHTML = "";
+    setNotice("empty", "这次没有合格的视觉参考。",
+      data.reason || "所有候选都被判为无关，或存在证据矛盾需要人工复核。没有为了凑数保留结果。",
+      [{ label: "换一幅查询", run: () => { $("curatedSection").scrollIntoView({ behavior: "smooth" }); } }]);
+  } else {
+    setNotice(null);
+    const group = (title, list) => list.length ? `<section class="verdict-group"><h2 class="group-head">${title} · ${list.length}</h2><div class="cards">${list.map(cardHTML).join("")}</div></section>` : "";
+    $("verdicts").innerHTML =
+      group("高度相关", accepted.filter((c) => c.relation === "high" && !c.needsReview)) +
+      group("部分可借鉴", accepted.filter((c) => c.relation === "partial" && !c.needsReview)) +
+      group("待核实（证据与结论矛盾）", accepted.filter((c) => c.needsReview));
+  }
+
+  if (rejected.length) {
+    show($("rejectedBox"), true);
+    $("rejectedSummary").textContent = `被剔除的候选 · ${rejected.length}`;
+    $("rejectedList").innerHTML = rejected.map((r) => `<figure class="rej" style="margin:0">
+      ${r.image ? frameImg(r.image, r.title) : ""}
+      <div>${esc(r.title)}</div>
+      <div class="why">${esc((r.reasons || []).slice(0, 2).join("；") || "判为无关")}</div>
+    </figure>`).join("");
+  } else {
+    show($("rejectedBox"), false);
+  }
+
+  bindZoom();
+}
+
+function bindZoom() {
+  document.querySelectorAll("img.zoom").forEach((img) => {
+    img.addEventListener("click", () => {
+      $("lightboxHolder").innerHTML = `<img src="${esc(img.src)}" alt="${esc(img.alt)}" />`;
+      show($("lightbox"), true);
+      $("lightboxClose").focus();
+    });
+  });
+}
+const closeLightbox = () => { show($("lightbox"), false); $("lightboxHolder").innerHTML = ""; };
+
+// ---------------- 绑定 ----------------
+$("btnUpload").addEventListener("click", () => $("fileUpload").click());
+$("fileUpload").addEventListener("change", async (ev) => {
+  const f = ev.target.files?.[0];
+  ev.target.value = "";
+  if (!f) return;
+  const b64 = await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(f); });
+  show($("queryStrip"), true);
+  show($("curatedSection"), false);
+  $("queryThumb").innerHTML = `<img src="${b64}" alt="上传的画面" />`;
+  $("queryTitle").textContent = f.name;
+  $("queryMeta").textContent = `${(f.size / 1024).toFixed(0)} KB`;
+  queryId = null;
+  await search({ queryImageBase64: b64 });
+});
+$("btnBrowse").addEventListener("click", openSheet);
+$("sheetClose").addEventListener("click", closeSheet);
+$("sheet").addEventListener("click", (ev) => { if (ev.target === $("sheet")) closeSheet(); });
+$("queryClear").addEventListener("click", () => {
+  queryId = null;
+  show($("queryStrip"), false);
+  show($("results"), false);
+  show($("curatedSection"), true);
+  setNotice(null);
+});
+$("mediaFilter").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-media]");
+  if (!b) return;
+  activeMedia = b.dataset.media;
+  $("mediaFilter").querySelectorAll("[data-media]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.media === activeMedia)));
+  if (queryId) search({ queryId });
+  else if ($("queryThumb").querySelector("img")?.src?.startsWith("data:")) {
+    search({ queryImageBase64: $("queryThumb").querySelector("img").src });
+  }
+});
+$("lightboxClose").addEventListener("click", closeLightbox);
+$("lightbox").addEventListener("click", (ev) => { if (ev.target === $("lightbox")) closeLightbox(); });
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  if (!$("lightbox").hidden) closeLightbox();
+  else if (!$("sheet").hidden) closeSheet();
+});
+
+loadState();
+// 直达：/?q=american-gothic&judge=3
+const Q0 = QS.get("q");
+if (Q0 && byId.has(Q0)) run(Q0);
+</script>
+</body>
+</html>

@@ -45,7 +45,7 @@ export class AnalysisCache {
     }
   }
 
-  put(key, { kind, model, promptVersion, payload, imageHash, meta }) {
+  put(key, { kind, model, promptVersion, payload, imageHash, meta, rawText, callId }) {
     const p = this._path(key);
     const rec = {
       format: CACHE_FORMAT,
@@ -54,9 +54,12 @@ export class AnalysisCache {
       model,
       promptVersion,
       imageHash: imageHash || key.split("|")[0],
+      callId: callId || `${Date.now().toString(36)}-${crypto.randomBytes(4).toString("hex")}`,
       createdAt: new Date().toISOString(),
       meta: meta || {},
       payload,
+      // 原始模型文本只落在本地忽略目录，用于事后复核；不返回给浏览器。
+      rawText: typeof rawText === "string" ? rawText : null,
     };
     const tmp = `${p}.tmp-${process.pid}-${Math.random().toString(16).slice(2, 8)}`;
     fs.writeFileSync(tmp, JSON.stringify(rec), "utf8");
@@ -81,11 +84,16 @@ export class AnalysisCache {
  */
 export async function cachedAnalysis({ cache, key, kind, model, promptVersion, imageHash, compute }) {
   const hit = cache.get(key);
-  if (hit) return { hit: true, payload: hit.payload, createdAt: hit.createdAt };
+  if (hit) return { hit: true, payload: hit.payload, createdAt: hit.createdAt, callId: hit.callId };
 
   const result = await compute();
   if (!result || !result.ok) return { hit: false, error: result?.error || "compute-failed", detail: result?.detail };
 
-  cache.put(key, { kind, model, promptVersion, imageHash, payload: result });
-  return { hit: false, payload: result, createdAt: new Date().toISOString() };
+  const rec = cache.put(key, {
+    kind, model, promptVersion, imageHash,
+    payload: result,
+    rawText: result.raw,
+    meta: { usage: result.usage || null, latencyMs: result.latencyMs || null },
+  });
+  return { hit: false, payload: result, createdAt: rec.createdAt, callId: rec.callId };
 }

@@ -18,6 +18,12 @@ import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { LibraryStore, sniffImage, isSafeName, VECTOR_FINGERPRINT } from "./library-store.mjs";
 import { deriveMedia, baseHashIndex } from "./media-guard.mjs";
+import { visionSearch, MAX_UPSTREAM_PER_QUERY } from "../p415/vision-search.mjs";
+import { asEntry } from "../p415/personal-entries.mjs";
+import { AnalysisCache } from "../p415/analysis-cache.mjs";
+import { compareConfig, PROMPT_VERSION } from "../../server/vision/multimodalCompare.js";
+import { budgetStatus } from "../../server/security/budget.mjs";
+import { library as vpLibrary } from "../../src/services/features/visualSearch.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
@@ -51,7 +57,9 @@ const MIME = {
   ".svg": "image/svg+xml",
 };
 
-const PAGE = path.join(__dirname, "index.html");
+const PAGE = path.join(__dirname, "../p415/index.html");       // 默认页面：多模态实验
+const PAGE_ABC = path.join(__dirname, "index.html");            // 旧 A/B/C 对照入口
+const VISION_CACHE_DIR = path.join(ROOT, ".rc1-audit/p415/cache");
 
 function send(res, code, body, type = "text/plain; charset=utf-8") {
   res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store" });
@@ -173,6 +181,76 @@ const server = http.createServer(async (req, res) => {
     if (p === "/healthz") return send(res, 200, "ok");
 
     if (p === "/" || p === "/index.html") return send(res, 200, fs.readFileSync(PAGE), MIME[".html"]);
+    if (p === "/abc" || p === "/abc.html") return send(res, 200, fs.readFileSync(PAGE_ABC), MIME[".html"]);
+
+    // ---- P4.15 多模态实验 ----
+    if (p === "/api/p415/state" && req.method === "GET") {
+      const cfg = compareConfig();
+      const st = budgetStatus(cfg.budget);
+      const counters = st.counters || st;
+      const cacheStats = new AnalysisCache(VISION_CACHE_DIR).stats();
+      return sendJson(res, 200, {
+        ok: true,
+        mode: process.env.VISION_MOCK === "1" ? "mock" : "vision",
+        configured: cfg.configured,
+        model: cfg.model,
+        promptVersion: PROMPT_VERSION,
+        maxUpstreamPerQuery: MAX_UPSTREAM_PER_QUERY,
+        budget: {
+          used: counters.daily, limit: cfg.budget.dailyLimit,
+          totalUsed: counters.total, totalLimit: cfg.budget.totalLimit,
+        },
+        cache: cacheStats,
+        personal: STORE.stats(),
+      });
+    }
+
+    if (p === "/api/p415/search" && req.method === "POST") {
+      const raw = await readBody(req);
+      let body;
+      try { body = JSON.parse(raw.toString("utf8") || "{}"); }
+      catch { return sendJson(res, 400, { ok: false, error: "bad-json" }); }
+
+      const media = ["all", "artwork", "film", "animation", "anime"].includes(body.media) ? body.media : "all";
+      const judgeCount = Math.min(5, Math.max(1, Number(body.judgeCount) || 3));
+      const personal = STORE.usableItems().map(publicItem).map(asEntry);
+
+      let queryEntry = null;
+      let queryBytes = null;
+
+      if (body.queryId) {
+        queryEntry = vpLibrary().find((e) => e.id === body.queryId) || personal.find((e) => e.id === body.queryId) || null;
+        if (!queryEntry) return sendJson(res, 400, { ok: false, error: "unknown-query", detail: `没有这个条目：${body.queryId}` });
+      } else if (body.queryImageBase64) {
+        // 上传查询：先用本地模型算向量（不花上游预算），再把原图字节交给多模态比较
+        const b = String(body.queryImageBase64).replace(/^data:[^,]+,/, "");
+        if (!b) return sendJson(res, 400, { ok: false, error: "missing-image" });
+        const buf = Buffer.from(b, "base64");
+        if (!buf.length) return sendJson(res, 400, { ok: false, error: "empty-file" });
+        if (buf.length > LIMITS.maxFileBytes) return sendJson(res, 413, { ok: false, error: "file-too-large" });
+        const kind = sniffImage(buf);
+        if (!kind) return sendJson(res, 415, { ok: false, error: "not-an-image" });
+        const ext = kind === "jpeg" ? ".jpg" : `.${kind}`;
+        const embedded = await withTempFile(buf, ext, (tmp) => embedFile(tmp));
+        if (!embedded || !Array.isArray(embedded.vector)) return sendJson(res, 422, { ok: false, error: "embed-failed" });
+        queryBytes = buf;
+        queryEntry = {
+          id: "upload-query", hash: null, kind: "artwork", personal: false,
+          vector: embedded.vector,
+          media: { medium: "artwork", visualForm: "still-image", tradition: null, imageKind: "artwork-reproduction" },
+          structure: asEntry({ id: "upload-query", width: embedded.width, height: embedded.height, media: {} }).structure,
+          title: "上传的画面", creator: "", year: "",
+        };
+      } else {
+        return sendJson(res, 400, { ok: false, error: "missing-query" });
+      }
+
+      const out = await visionSearch({
+        queryEntry, queryBytes, extraEntries: personal, media, judgeCount,
+        root: ROOT, cacheDir: VISION_CACHE_DIR,
+      });
+      return sendJson(res, out.ok ? 200 : 422, out);
+    }
     if (p === "/app.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "app.js")), MIME[".js"]);
 
     if (p.startsWith("/src/")) return serveFile(res, path.join(ROOT, "src", decodeURIComponent(p.slice(5))), path.join(ROOT, "src"));

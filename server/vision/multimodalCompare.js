@@ -17,7 +17,7 @@ import { serverVisionConfig, visionConfigured } from "./openaiProvider.mjs";
 import { budgetConfig, reserveCall, budgetStatus } from "../security/budget.mjs";
 
 /** Bump when the prompt text changes. Part of every cache key. */
-export const PROMPT_VERSION = "p415-v2.1";
+export const PROMPT_VERSION = "p415-v2.2";
 
 export const VERDICTS = Object.freeze({
   HIGH: "high",
@@ -63,6 +63,9 @@ export function compareConfig(env = process.env) {
  */
 export const CANDIDATE_SCHEMA = `{
   "similarPoints": ["可见的构图/组织上的具体相似之处，最多 3 条"],
+  "compositionEvidence": "构图骨架层面的具体证据（骨架、主体位置、重心、留白）；没有就是 null",
+  "subjectRelationEvidence": "人物/主体的数量、姿态、朝向、彼此关系的具体证据；无主体就是 null",
+  "colorLightEvidence": "色彩与光线关系的具体证据（主导色、冷暖、明暗如何组织）；没有就是 null",
   "figureOrganization": "人物数量、姿态朝向、彼此关系的对照；没有人物写 null",
   "borrowableLight": "可以借鉴的光线处理；没有就是 null",
   "borrowableColor": "可以借鉴的色彩关系；没有就是 null",
@@ -232,6 +235,8 @@ export async function compareImages({
     dropped: normalized.dropped,
     usage: payload.usage || null,
     model: payload.model || config.model,
+    promptVersion: PROMPT_VERSION,
+    raw: content,          // 原始模型文本：只为本地复核，不上浏览器
     latencyMs: Date.now() - started,
   };
 }
@@ -286,6 +291,9 @@ export function parseComparison(parsed, expectedCount) {
       downgraded: Boolean(note),
       downgradeNote: note,
       similarPoints: similar,
+      compositionEvidence: orNull(raw?.compositionEvidence),
+      subjectRelationEvidence: orNull(raw?.subjectRelationEvidence),
+      colorLightEvidence: orNull(raw?.colorLightEvidence),
       figureOrganization: orNull(raw?.figureOrganization),
       borrowableLight: orNull(raw?.borrowableLight),
       borrowableColor: orNull(raw?.borrowableColor),
@@ -373,7 +381,13 @@ export function buildAnalysisMessages({ image }) {
   ];
 }
 
-/** Normalize an analysis result. Never invents a value for a null field. */
+/** Normalize an analysis result. Never invents a value for a null field.
+ *
+ *  核心字段缺一不可：以前只要"有一个字段非空"就返回 ok，于是模型漏掉构图和光影
+ *  也能被当成成功，下游拿到一堆 null 还以为是「本来就没有」。现在缺核心块就明确失败，
+ *  并把缺了哪几个报出来。 */
+export const CORE_ANALYSIS_BLOCKS = Object.freeze(["subject", "composition", "light", "space"]);
+
 export function parseAnalysis(parsed) {
   if (!parsed || typeof parsed !== "object") return { ok: false, detail: "不是对象" };
   const unknown = toList(parsed.unknown).map(String);
@@ -400,9 +414,23 @@ export function parseAnalysis(parsed) {
       : [],
     unknown,
   };
-  // 任何一个必需区块全空，就没有可用的视觉证据
-  const hasAny = out.space.foreground || out.composition.skeleton || out.color.dominant || out.light.direction || out.subject.description;
-  if (!hasAny) return { ok: false, detail: "所有视觉字段都为空" };
+
+  const present = {
+    subject: Boolean(out.subject.description) || out.subject.count != null,
+    composition: Boolean(out.composition.skeleton || out.composition.subjectPosition || out.composition.visualWeight),
+    light: Boolean(out.light.direction || out.light.quality || out.light.organization),
+    space: Boolean(out.space.foreground || out.space.midground || out.space.background || out.space.depthCue),
+  };
+  const missing = CORE_ANALYSIS_BLOCKS.filter((k) => !present[k]);
+  if (missing.length) {
+    return {
+      ok: false,
+      error: "incomplete-analysis",
+      missing,
+      detail: `核心字段缺失: ${missing.join(", ")}`,
+      partial: out,
+    };
+  }
   return { ok: true, analysis: out };
 }
 
@@ -454,6 +482,8 @@ export async function analyzeImage({ image, config, fetchImpl = globalThis.fetch
     analysis: normalized.analysis,
     usage: payload.usage || null,
     model: payload.model || config.model,
+    promptVersion: PROMPT_VERSION,
+    raw: content,          // 原始模型文本：只为本地复核，不上浏览器
     latencyMs: Date.now() - started,
   };
 }

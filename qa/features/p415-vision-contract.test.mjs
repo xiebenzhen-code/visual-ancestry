@@ -143,12 +143,31 @@ await check("缺字段填 null 并进 unknown，不补零", () => {
 await check("模型把 null 写成字符串也要还原成 null", () => {
   const r = parseAnalysis({
     subject: { description: "街景", count: 0 },
-    light: { direction: "unknown", quality: "null", organization: null },
+    space: { foreground: "街道" },
+    light: { direction: "unknown", quality: "null", organization: "均匀平光" },
     composition: { skeleton: "水平线" },
   });
   assert.equal(r.ok, true);
   assert.equal(r.analysis.light.direction, null);
   assert.equal(r.analysis.light.quality, null);
+});
+
+await check("缺核心块就明确报错，不静默返回 null 并声明成功", () => {
+  const r = parseAnalysis({ subject: { description: "街景", count: 0 }, composition: { skeleton: "水平线" } });
+  assert.equal(r.ok, false, "缺少 light / space 却被当成成功");
+  assert.equal(r.error, "incomplete-analysis");
+  assert.deepEqual(r.missing, ["light", "space"]);
+  assert.ok(r.detail.includes("light"));
+});
+
+await check("四个核心块齐了才算成功", () => {
+  const r = parseAnalysis({
+    subject: { description: "x", count: 1 },
+    composition: { visualWeight: "中" },
+    light: { organization: "平光" },
+    space: { depthCue: "线性透视" },
+  });
+  assert.equal(r.ok, true);
 });
 
 // ============================================================ 4. 不配置就不装
