@@ -1,5 +1,21 @@
 # ERROR_REGISTRY
 
+## P4.14-B/C 来源架构补录（2026-10-20）
+
+本节登记 PHASE B2/B3 与 C1/C2 的结论。阶段报告见 [P4.14-B/C 报告](../P4.14-PHASE-BC.md)。
+
+| ID | 类别 / 状态 | 根因与处置 | 修复提交 / 验证 |
+|---|---|---|---|
+| LIMIT-P414B-01 | 来源能力局限 / REGISTERED | 四个博物馆 adapter 均输出**真实可解码图像**，但 `analysisLevel = 0`，没有任何视觉特征。它们只能作元数据与图像线索，不能进视觉相似候选池。契约中正确地停在 `IMAGE_AVAILABLE`，**不是被永久排除**。 | 787fe5e 基线；`qa/source/p414-b2-b3.test.mjs` 32/32；`.rc1-audit/p414/step2-contract-verification.md`。 |
+| LIMIT-P414B-02 | 许可语义 / REGISTERED | 四个 adapter 不输出 `showable`，只输出 `publicDomain`；`showable` 在 `remoteDiscovery.js:923` 由 `Boolean(publicDomain) && Boolean(image.url)` 算出。四馆的 `publicDomain` 实际是四件不同的事：Rijks=CC PDM 1.0、Cleveland=CC0、Met/AIC=「作品处于公有领域」的布尔（**未对图像再分发作明示授权**）。契约里 Met/AIC 的 `cacheRedistributionAllowed` 记为 `unknown`，`verdict = unconfirmed`，因此不得升到 `RECOMMENDABLE`。 | 未修（需读机构条款）；`src/services/source/candidate.js` 的 `makeRightsEvidence` 四问分离。 |
+| BUG-P414B-01 | 图像可用性 / REGISTERED | **AIC 图片返回 HTTP 403**：记录有 `image_id`、URL 拼得出来，但 CDN 拒绝。若只看「有没有 URL」，该候选会被误报成可用图像。契约增加 `imageVerification` / `imageStatus`，明确失败即退回 `metadata-only`。 | 契约已加固；AIC 403 本身未解（未在其 API 文档中找到明确说明）。验收记录见 `.rc1-audit/p414/step2-contract-verification.md`。 |
+| LIMIT-P414B-03 | 判据结构局限 / REGISTERED | 双色 Technicolor 的色相天然收缩在 **8–13°**（实测该片四张素材 10.7°/12.3°/13°/8°），`minHueSpread: 25` 对这套工艺**结构性不可达**。此前文档把 Gold Diggers 被排除归因为「16mm 扫描件偏暗、颗粒重」，**该归因是错的**，已改正三处文档。**不降阈值、不补影片事实，维持保守排除。** | 787fe5e 之后的三处文档修订；`qa/find/monochrome-gate.test.mjs` 28/28 仍锁住当前行为。 |
+| BUG-P414B-02 | 路径不一致 / REGISTERED | **远程门控不查影片级事实**：`judgeFilmCandidate`（`monochromePolicy.js:238`）会短路，但远程路径 `remoteReferences.js:363` 调的 `gateRemoteFilmByColor`（`filmColorGate.js:140`）直接 `classifyChroma`，从不 import `FILM_COLOR_FACTS`；且远程 id 为 `remote-film:${sourceId}`，与 `film-*` 命名空间对不上。**给 Gold Diggers 补影片事实对远程候选零效果。** | 未修（属设计变更：需让远程门控按片名/QID 接受影片级事实），本轮明确不做。 |
+| LIMIT-P414B-04 | 来源缺口 / REGISTERED | **现代日本动漫帧无法合法获取**。五来源实测：Commons 仅公版区（约 1914–1929，且全部黑白）、Openverse 依赖上游、Internet Archive 缩略图仅 160×110、AniList 只有元数据、TMDB 明确 REJECT。结论：不用海报冒充镜头，动漫分类如实留空。 | 调查记录见阶段报告 §5；未接入任何动漫素材。 |
+| LIMIT-P414B-05 | 分类局限 / REGISTERED | 影片的 `traditions: ["电影"]` 是媒介名而非创作传统，若原样透传会得到同义反复。`mediaTaxonomy.js` 以 `NON_TRADITION_LABELS` 排除。另：`medium:"film"` **不能**推出 `visualForm:"live-action"`——没有事实的影片一律 `unknown`，防止将来接入动画片被默认错标。 | `qa/source/p414-b2-b3.test.mjs` 32/32。 |
+
+---
+
 ## P4.13-F 入口一致性补录（2026-10-20）
 
 本节只登记 P4.13-F 的修复与新增局限，不重写 P4.10 / P4.12 的历史状态。根因审计全文见 `.rc1-audit/P4.13-R-RELEVANCE-AUDIT.md`（该目录被 gitignore，属审计证据区）。

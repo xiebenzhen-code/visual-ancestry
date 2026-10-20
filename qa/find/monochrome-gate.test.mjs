@@ -229,7 +229,7 @@ check("两条着色路径给不同理由（sepia vs 青绿着色）", () => {
 });
 
 check("已知局限：16mm 扫描双色 Technicolor 会被保守排除（锁定现状，非正确性）", () => {
-  // Gold Diggers of Broadway (1929) 实测 colorShare 0.9208 / hueSpread 13° / corr 0.9521。
+  // Gold Diggers of Broadway (1929)，Technicolor Process 3 双色染印。
   // 画面确为彩色，但扫描件偏暗、颗粒重，三条证据无法与着色黑白可靠分离。
   // 见 docs/control/ERROR_REGISTRY.md 的 LIMIT 条目。
   const twoStrip = { ok: true, colorShare: 0.9208, hueSpreadDeg: 13, minChannelCorrelation: 0.9521 };
