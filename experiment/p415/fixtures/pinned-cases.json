@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "note": "P4.15.2 固定的历史事实与调用归因。数据来自 .rc1-audit 的真实运行记录，不含图片与密钥。供回归对照与语义画像归因使用。",
+  "preflight": { "A": "american-gothic", "note": "预检单图 V2 分析的查询图" },
+  "attribution": {
+    "mvgrxi2v-38abda84": { "queryId": "american-gothic", "case": "B-美国哥特式", "candidates": ["milkmaid", "radha-krishna-grove", "whistlers-mother"] },
+    "mvgrxaj8-72823b89": { "queryId": "paris-rainy-day", "case": "A-城市街景", "candidates": ["huizong-cranes", "radha-krishna-grove", "dance-class", "fighting-temeraire", "wang-ximeng-thousand-li"] },
+    "mvgsao38-bad481b4": { "queryId": "the-kiss", "case": "页面冒烟", "candidates": ["dance-class", "radha-krishna-grove", "jahangir-globe"] }
+  },
+  "facts": [
+    {
+      "query": "paris-rainy-day",
+      "fact": "曾接受《舞蹈课》（partial）",
+      "detail": {
+        "callId": "mvgrxaj8-72823b89",
+        "promptVersion": "p415-v2.2",
+        "relation": "partial",
+        "compositionEvidence": "前景左下角一名芭蕾舞者占据较大面积，中景右侧有站立的老者，远景右侧有横向排列的舞者群；视觉重心偏左下，右侧留出空间。",
+        "creativeTransfer": "可借鉴前景大人物、中景站立者、远景横向人群的三层纵深组织，以及左侧窗户进入的柔和侧光。",
+        "importantDifferences": [
+          "候选为室内场景，无街道与湿地面反光",
+          "候选无撑伞人物与阴天漫射光",
+          "候选前景人物为单人低头姿态，与查询前景并肩撑伞男女不同"
+        ]
+      }
+    },
+    {
+      "query": "paris-rainy-day",
+      "fact": "多路融合 v1（aba7840）将 dance-class 移出 top8",
+      "detail": {
+        "danceClassRecallRanks": { "vector": 3, "structure": 26 },
+        "top8After": ["huizong-cranes", "hunters-snow", "fighting-temeraire", "jatte", "u-610a55dbe26753b0", "wave", "radha-krishna-grove", "u-e98bcbdf2c1293dd"]
+      }
+    },
+    {
+      "query": "american-gothic",
+      "fact": "B 组仅接受《灰与黑的协奏曲》（partial）；《倒牛奶的女仆》《林中拉达与克里希纳》判 unrelated",
+      "detail": { "callId": "mvgrxi2v-38abda84", "promptVersion": "p415-v2.2", "accepted": ["whistlers-mother"], "rejected": ["milkmaid", "radha-krishna-grove"] }
+    },
+    {
+      "query": "paris-rainy-day",
+      "fact": "A 组剔除《瑞鹤图》《林中拉达与克里希纳》《被拖去解体的无畏号》《千里江山图》（均 unrelated）",
+      "detail": { "callId": "mvgrxaj8-72823b89", "rejected": ["huizong-cranes", "radha-krishna-grove", "fighting-temeraire", "wang-ximeng-thousand-li"] }
+    },
+    {
+      "query": "fan-kuan-travelers / shitao-album；guo-xi-early-spring / fuchun-mountains",
+      "fact": "历史笔记所称「向量碰撞」不成立：实际是 VisualIntent 23/23 字段完全相同，而向量不同（余弦 0.126 / 0.321），画幅比 0.499 vs 2.069、0.688 vs 1.87 可干净区分",
+      "detail": { "cosines": { "fan-kuan--shitao": 0.126393, "guo-xi--fuchun": 0.321064 }, "measuredAt": "2026-10-21" }
+    }
+  ],
+  "beforeAfter": {
+    "american-gothic": {
+      "before": ["milkmaid", "radha-krishna-grove", "whistlers-mother", "fan-kuan-travelers", "paris-rainy-day"],
+      "after": ["milkmaid", "radha-krishna-grove", "whistlers-mother", "guo-xi-early-spring", "dance-class", "scream", "meninas", "the-kiss"]
+    },
+    "paris-rainy-day": {
+      "before": ["huizong-cranes", "radha-krishna-grove", "dance-class", "fighting-temeraire", "wang-ximeng-thousand-li"],
+      "after": ["huizong-cranes", "hunters-snow", "fighting-temeraire", "jatte", "u-610a55dbe26753b0", "wave", "radha-krishna-grove", "u-e98bcbdf2c1293dd"]
+    },
+    "fan-kuan-travelers": {
+      "before": ["milkmaid", "whistlers-mother", "american-gothic", "radha-krishna-grove", "wang-ximeng-thousand-li"],
+      "after": ["milkmaid", "whistlers-mother", "meninas", "hiroshige-shower", "jahangir-globe", "huizong-cranes", "mont-sainte-victoire", "pearl"]
+    },
+    "guo-xi-early-spring": {
+      "before": ["hiroshige-shower", "qianlong-review", "starry", "primavera", "scream"],
+      "after": ["scream", "qianlong-review", "hiroshige-shower", "american-gothic", "ni-zan-rongxi", "radha-krishna-grove", "wheatfield-crows", "primavera"]
+    }
+  }
+}

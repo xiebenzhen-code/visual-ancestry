@@ -89,20 +89,28 @@ await check("多路命中的候选被标记", () => {
   assert.ok(multi.length > 0, "没有任何候选被两路以上命中，融合等于单路");
 });
 
-console.log("\n=== 3. 比较集选择：不能全来自同一路 ===");
-await check("送进比较的候选覆盖多路", () => {
+console.log("\n=== 3. 比较集选择：去除强制每路取一的政策 ===");
+await check("主集按融合序取满 judgeCount", () => {
   const r = rm.multipathRecall({ queryEntry: PARIS, media: "all", limit: 12, root: ROOT, perPath: 10 });
   const picked = rm.selectForComparison(r.candidates, 3);
   assert.equal(picked.length, 3);
-  const pathsUsed = new Set();
-  for (const c of picked) for (const s of c.sources) pathsUsed.add(s.path);
-  assert.ok(pathsUsed.size >= 2, `3 张只来自 ${pathsUsed.size} 路`);
+  assert.deepEqual(picked.map((c) => c.id), r.candidates.slice(0, 3).map((c) => c.id), "主集必须严格按融合序");
 });
 
-await check("judgeCount 大于候选数时不死循环", () => {
-  const r = rm.multipathRecall({ queryEntry: AG, media: "all", limit: 3, root: ROOT, perPath: 6 });
-  const picked = rm.selectForComparison(r.candidates, 10);
-  assert.ok(picked.length <= r.candidates.length);
+await check("语义发现不抢主集名额，只在剩余名额内补入且带标记", () => {
+  const r = rm.multipathRecall({ queryEntry: PARIS, media: "all", limit: 12, root: ROOT, perPath: 10 });
+  const fake = { id: "__semantic_only__", sources: [], semanticDiscovery: { matchedDimensions: ["composition", "space"] } };
+  const picked = rm.selectForComparison(r.candidates, 3, [fake]);
+  assert.equal(picked.length, 4, "补入后应为 4");
+  assert.deepEqual(picked.slice(0, 3).map((c) => c.id), r.candidates.slice(0, 3).map((c) => c.id), "主集不能被挤动");
+  assert.equal(picked[3].id, "__semantic_only__");
+});
+
+await check("补入上限 6，judgeCount 再大也不超", () => {
+  const r = rm.multipathRecall({ queryEntry: PARIS, media: "all", limit: 12, root: ROOT, perPath: 10 });
+  const extras = Array.from({ length: 8 }, (_, i) => ({ id: `x${i}`, sources: [], semanticDiscovery: { matchedDimensions: ["space"] } }));
+  const picked = rm.selectForComparison(r.candidates, 5, extras);
+  assert.ok(picked.length <= 6, `实得 ${picked.length}`);
 });
 
 console.log("\n=== 4. 作用域分级：只有光线不能说构图 ===");

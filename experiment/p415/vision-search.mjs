@@ -24,11 +24,30 @@ import { budgetStatus } from "../../server/security/budget.mjs";
 import { AnalysisCache, cacheKey } from "./analysis-cache.mjs";
 import { library, searchCombined, passMedia, mediaLabel } from "../../src/services/features/visualSearch.js";
 import { multipathRecall, selectForComparison } from "./recall-multipath.mjs";
+import { buildSemanticTable, semanticDiscover } from "./semantics.mjs";
 
 /** 一个用户查询允许的最大上游请求数。 */
 export const MAX_UPSTREAM_PER_QUERY = 1;
 
 const SHOWABLE = new Set([VERDICTS.HIGH, VERDICTS.PARTIAL]);
+
+/** 比较集上限：允许 5–6 张候选做后续多图判断。 */
+export const MAX_COMPARE_CANDIDATES = 6;
+
+let semanticTableCache = null;
+function semanticTable(root) {
+  if (semanticTableCache) return semanticTableCache;
+  try {
+    semanticTableCache = buildSemanticTable({
+      cacheDir: path.join(root, ".rc1-audit/p415/cache"),
+      statePath: path.join(root, ".rc1-audit/p415/preflight-state.json"),
+      fixturesPath: path.join(root, "experiment/p415/fixtures/pinned-cases.json"),
+    });
+  } catch {
+    semanticTableCache = { profiles: new Map(), derivedQueries: new Map(), stats: {} };
+  }
+  return semanticTableCache;
+}
 
 export const newRequestId = () => `req-${Date.now().toString(36)}-${crypto.randomBytes(3).toString("hex")}`;
 
@@ -195,21 +214,66 @@ export async function visionSearch(opts) {
     })),
   };
 
+  // 1b) V2 语义发现：不进 RRF 权重，只负责把「有核实画像且能对上」的候选
+  //     重新带回比较集，并标明是哪条路发现的。
+  const table = semanticTable(root);
+  const queryProfile = table.profiles.get(queryEntry.id) || null;
+  const allPool = library().concat(extraEntries).filter((e) => passMedia(e, media) && e.id !== queryEntry.id);
+  const candidateProfiles = new Map();
+  for (const e of allPool) {
+    const p = table.profiles.get(e.id);
+    if (p) candidateProfiles.set(e.id, p);
+  }
+  const disc = queryProfile
+    ? semanticDiscover(queryProfile, candidateProfiles)
+    : { hits: [], skipped: "查询没有已核实的 V2 语义画像" };
+
+  const semanticInfo = {
+    queryProfile: queryProfile
+      ? { available: true, kind: queryProfile.kind, source: queryProfile.source, tokens: queryProfile.tokens }
+      : { available: false, reason: "查询未做过单图 V2 分析，也没有可归因的历史比较" },
+    tableStats: table.stats,
+    hits: disc.hits || [],
+    skipped: disc.skipped || null,
+    unanalyzed: allPool.filter((e) => !table.profiles.has(e.id)).map((e) => e.id),
+  };
+
+  // 语义发现到的、且不在融合列表里的候选，标记后并入池尾（不参与 RRF 权重）
+  const fusedIds = new Set(recalled.map((e) => e.id));
+  const semanticOnly = [];
+  for (const h of semanticInfo.hits) {
+    if (fusedIds.has(h.id)) {
+      const r = recalled.find((e) => e.id === h.id);
+      r.semanticDiscovery = { matchedDimensions: h.matchedDimensions, evidence: h.evidence };
+      continue;
+    }
+    const e = allPool.find((x) => x.id === h.id);
+    if (!e) continue;
+    semanticOnly.push({
+      ...e, fused: null, fromPaths: ["semantic"], sources: [{ path: "semantic", rank: semanticOnly.length + 1, score: h.matchedDimensions.length, reason: h.evidence.map((x) => `${x.dim}:${x.tokens.join("/")}`).join("；") }],
+      semanticDiscovery: { matchedDimensions: h.matchedDimensions, evidence: h.evidence },
+    });
+  }
+  semanticInfo.broughtIn = semanticOnly.map((s) => s.id);
+
   if (!recalled.length) {
     return {
       ...base, query: summarizeEntry(queryEntry), accepted: [], rejected: [], judged: [],
-      recall: recallInfo, recallCount: 0,
+      recall: recallInfo, semantic: semanticInfo, recallCount: 0,
       reason: media === "all" ? "库里没有可比较的候选" : `「${mediaLabelOf(media)}」下没有可比较的候选`,
       accounting: { requestId, upstreamCalls: 0, cacheHit: false, maxUpstreamPerQuery: MAX_UPSTREAM_PER_QUERY },
     };
   }
 
+  const judgeN = Math.max(1, judgeCount);
   const candidates = recallMode === "legacy"
-    ? recalled.slice(0, Math.max(1, judgeCount))
-    : selectForComparison(recalled, Math.max(1, judgeCount));
+    ? recalled.slice(0, judgeN)
+    : selectForComparison(recalled, judgeN, semanticOnly);
 
   recallInfo.compared = candidates.map((c) => c.id);
-  recallInfo.selection = recallMode === "legacy" ? "top-n" : "per-path-then-fused";
+  recallInfo.selection = recallMode === "legacy"
+    ? "top-n"
+    : `fused-top-${judgeN}` + (candidates.some((c) => c.semanticDiscovery) ? "+语义发现" : "");
 
   // 2) 取真实图片字节
   const queryBuf = opts.queryBytes || imageBytesFor(queryEntry, root);
@@ -355,6 +419,7 @@ function finish(payload, usable, droppedNoBytes, ctx) {
     mock: payload.mock === true,
     query: summarizeEntry(ctx.queryEntry),
     recall: ctx.recallInfo || null,
+    semantic: ctx.semanticInfo || null,
     judged,
     accepted,
     rejected: [...rejected, ...droppedNoBytes.map((d) => ({ ...d, relation: "unknown", reasons: [d.reason], reviewFlags: [] }))],

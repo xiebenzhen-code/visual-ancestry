@@ -194,29 +194,24 @@ export function multipathRecall({
 /**
  * 从融合列表里挑出要送进模型比较的候选。
  *
- * 纯按融合分取前 N 会有个副作用：某一路的强项（比如向量第 3 名）会被
- * 另外两路的高分候选沉到 N 名之外，于是「扩大召回」反而把上一轮唯一可用的
- * 候选换掉了。这里先每路各取第一名，再按融合分补齐，保证比较集不全是同一路。
+ * P4.15.2：取消「每路无条件各取一名」。没有证据说明每路第一名都有价值，
+ * 强推等于给通路发福利。新规则：
+ *   · 主集 = 融合分前 judgeCount 名
+ *   · 语义发现的候选（extras）若不在主集里，可在剩余名额内补入，
+ *     但必须带 semanticDiscovery 标记，上限 MAX_COMPARE_CANDIDATES(6)
+ * 主集严格按融合序；语义补入排在其后，排名意义不同，不能混在一起。
  */
-export function selectForComparison(candidates, judgeCount) {
+export function selectForComparison(candidates, judgeCount, extras = []) {
+  const cap = Math.min(6, Math.max(judgeCount, judgeCount + extras.length));
   const picked = [];
   const seen = new Set();
-  const bestPerPath = new Map();
-  for (const c of candidates) {
-    for (const s of c.sources) {
-      const cur = bestPerPath.get(s.path);
-      if (!cur || s.rank < cur.rank) bestPerPath.set(s.path, { c, rank: s.rank });
-    }
-  }
-  for (const p of RECALL_PATHS) {
-    const best = bestPerPath.get(p);
-    if (best && !seen.has(best.c.id) && picked.length < judgeCount) {
-      picked.push(best.c); seen.add(best.c.id);
-    }
-  }
   for (const c of candidates) {
     if (picked.length >= judgeCount) break;
-    if (!seen.has(c.id)) { picked.push(c); seen.add(c.id); }
+    picked.push(c); seen.add(c.id);
+  }
+  for (const e of extras) {
+    if (picked.length >= cap) break;
+    if (!seen.has(e.id)) { picked.push(e); seen.add(e.id); }
   }
   return picked;
 }

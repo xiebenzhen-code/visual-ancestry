@@ -259,7 +259,7 @@ const server = http.createServer(async (req, res) => {
       catch { return sendJson(res, 400, { ok: false, error: "bad-json" }); }
 
       const media = ["all", "artwork", "film", "animation", "anime"].includes(body.media) ? body.media : "all";
-      const judgeCount = Math.min(5, Math.max(1, Number(body.judgeCount) || 3));
+      const judgeCount = Math.min(6, Math.max(1, Number(body.judgeCount) || 5));
       const personal = STORE.usableItems().map(publicItem).map(asEntry);
 
       let queryEntry = null;

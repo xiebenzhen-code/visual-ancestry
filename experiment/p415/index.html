@@ -245,7 +245,7 @@ const CURATED = ["the-kiss", "american-gothic", "paris-rainy-day"].filter((id) =
 
 // 直接链接到某个查询 / 调大送入比较的候选数（默认 3），方便复现与截图。
 const QS = new URLSearchParams(location.search);
-const JUDGE_DEFAULT = Math.min(5, Math.max(1, Number(QS.get("judge")) || 3));
+const JUDGE_DEFAULT = Math.min(6, Math.max(1, Number(QS.get("judge")) || 5));
 
 let state = null;
 let queryId = null;
@@ -389,7 +389,7 @@ function cardHTML(c) {
   const relTxt = c.needsReview ? "待核实" : (REL_LABEL[c.relation] || c.relation);
   const scopeTxt = SCOPE_LABEL[c.referenceScope] || c.referenceScope || "";
   const scopeCls = SCOPE_CLS[c.referenceScope] || "";
-  const prov = (c.recall?.sources || []).map((s) => `${s.path === "vector" ? "向量" : s.path === "structure" ? "结构" : "可观测"} #${s.rank}`).join(" · ");
+  const prov = (c.recall?.sources || []).map((s) => `${s.path === "vector" ? "向量" : s.path === "structure" ? "结构" : s.path === "observable" ? "可观测" : s.path === "semantic" ? "语义" : s.path} #${s.rank}`).join(" · ");
   const rows = [
     ["构图证据", cleanRef(c.compositionEvidence)],
     ["主体关系", cleanRef(c.subjectRelationEvidence)],
