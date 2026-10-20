@@ -16,7 +16,9 @@
     "skill:search": "node skill/visual-ancestry/scripts/va.mjs search",
     "skill:intent": "node skill/visual-ancestry/scripts/va.mjs intent",
     "skill:plan": "node skill/visual-ancestry/scripts/va.mjs plan",
-    "skill:vision": "node skill/visual-ancestry/scripts/va.mjs vision-status"
+    "skill:vision": "node skill/visual-ancestry/scripts/va.mjs vision-status",
+    "exp:p414": "node --env-file-if-exists=.env experiment/p414/server.mjs 4600",
+    "vision:preflight": "node --env-file-if-exists=.env scripts/p415/preflight.mjs"
   },
   "devDependencies": {
     "sharp": "^0.35.4"
