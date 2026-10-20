@@ -139,7 +139,9 @@ await checkAsync("远程门：先过滤再截断（第 limit+1 名彩色候选�
   const list = [mk("a"), mk("b"), mk("c"), mk("d")];
   const measure = async (url) => {
     const id = url.split("/").pop().replace(".jpg", "");
-    if (id === "d") return { ok: true, chroma: { ok: true, colorShare: 0.5, hueSpreadDeg: 40 } };
+    // P4.13 起判定需要第三条证据（通道相关）。夹具写于新增该证据之前，
+    // 补齐是为了让「d 是彩色」这个前提成立，不改任何预期值。
+    if (id === "d") return { ok: true, chroma: { ok: true, colorShare: 0.5, hueSpreadDeg: 40, minChannelCorrelation: 0.42 } };
     return { ok: true, chroma: { ok: true, colorShare: 0, hueSpreadDeg: null } };
   };
   const r = await gate.gateRemoteFilmByColor(list, { measure });
@@ -177,14 +179,14 @@ await checkAsync("远程门：允许返回 0 条，不用无关素材补足", as
 // ---------------------------------------------------------------- 5. 判定函数
 check("sepia 单色相着色不被判成彩色（这是最容易误删/误放的地方）", () => {
   // 实测 sepia 片的真实特征：通道差大，但色相极集中
-  const sepia = { ok: true, colorShare: 0.79, hueSpreadDeg: 3.9 };
+  const sepia = { ok: true, colorShare: 0.79, hueSpreadDeg: 3.9, minChannelCorrelation: 0.992 };
   const cls = policy.classifyChroma(sepia);
   assert.equal(cls.verdict, "monochrome", `sepia 被判成 ${cls.verdict}`);
   assert.match(cls.reason, /单色相着色/);
 });
 
 check("真彩色不被判成黑白", () => {
-  const color = { ok: true, colorShare: 0.71, hueSpreadDeg: 36.3 };
+  const color = { ok: true, colorShare: 0.71, hueSpreadDeg: 36.3, minChannelCorrelation: 0.7295 };
   assert.equal(policy.classifyChroma(color).verdict, "color");
 });
 
@@ -194,8 +196,44 @@ check("纯黑白被判黑白", () => {
 
 check("低饱和度不足以判决（不看饱和度，只看色相分散度）", () => {
   // 低饱和但多色相 → 仍是彩色
-  const lowSatColor = { ok: true, colorShare: 0.05, hueSpreadDeg: 40 };
+  const lowSatColor = { ok: true, colorShare: 0.05, hueSpreadDeg: 40, minChannelCorrelation: 0.45 };
   assert.equal(policy.classifyChroma(lowSatColor).verdict, "color", "低饱和彩色被误删");
+});
+
+// ---- P4.13 新增：第三条证据（通道相关）锁死 ----
+check("着色黑白：色相铺得开但通道同步 → 判黑白（Way Down East 04 实测值）", () => {
+  // P4.13 修复的真实边界缺陷：青绿着色片 hueSpread 27.9° 会撞过色相门，
+  // 但三通道相关 0.9961，说明仍是「同一张亮度图 × 一条色调映射」。
+  const tinted = { ok: true, colorShare: 0.9102, hueSpreadDeg: 27.9, minChannelCorrelation: 0.9961 };
+  const cls = policy.classifyChroma(tinted);
+  assert.equal(cls.verdict, "monochrome", "青绿着色被判成 " + cls.verdict);
+  assert.match(cls.reason, /单色调映射/);
+});
+
+check("缺少通道相关证据 → 不默认放行，且理由不得冒充实测", () => {
+  const legacy = { ok: true, colorShare: 0.71, hueSpreadDeg: 36.3 };
+  const cls = policy.classifyChroma(legacy);
+  assert.equal(cls.verdict, "monochrome", "缺证据却放行了");
+  assert.match(cls.reason, /缺少通道相关证据/);
+  assert.doesNotMatch(cls.reason, /undefined/, "理由里出现 undefined");
+});
+
+check("两条着色路径给不同理由（sepia vs 青绿着色）", () => {
+  const sepia = policy.classifyChroma({ ok: true, colorShare: 0.79, hueSpreadDeg: 3.9, minChannelCorrelation: 0.992 });
+  const greenish = policy.classifyChroma({ ok: true, colorShare: 0.9102, hueSpreadDeg: 27.9, minChannelCorrelation: 0.9961 });
+  assert.equal(sepia.verdict, "monochrome");
+  assert.equal(greenish.verdict, "monochrome");
+  assert.match(sepia.reason, /单色相着色/);
+  assert.match(greenish.reason, /单色调映射/);
+  assert.notEqual(sepia.reason, greenish.reason);
+});
+
+check("已知局限：16mm 扫描双色 Technicolor 会被保守排除（锁定现状，非正确性）", () => {
+  // Gold Diggers of Broadway (1929) 实测 colorShare 0.9208 / hueSpread 13° / corr 0.9521。
+  // 画面确为彩色，但扫描件偏暗、颗粒重，三条证据无法与着色黑白可靠分离。
+  // 见 docs/control/ERROR_REGISTRY.md 的 LIMIT 条目。
+  const twoStrip = { ok: true, colorShare: 0.9208, hueSpreadDeg: 13, minChannelCorrelation: 0.9521 };
+  assert.equal(policy.classifyChroma(twoStrip).verdict, "monochrome");
 });
 
 check("judgeFilmCandidate：黑白影片被拒绝并带原因", () => {

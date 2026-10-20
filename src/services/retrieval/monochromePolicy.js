@@ -57,6 +57,21 @@ export const CHROMA_THRESHOLDS = {
   minChannelSpread: 12,   // 单像素 max-min 超过此值才算携带色彩
   minColorShare: 0.02,    // 携带色彩的像素占比下限
   minHueSpread: 25,       // 色相循环标准差下限（度）
+  // P4.13 — 第三条证据：通道相关上限。
+  //
+  // 为什么需要它：色相分散度在「偏冷色调的着色黑白片」上会失效。
+  // 实测反例：Way Down East (1920) 三张同片剧照，02/03 是棕褐着色（hueSpread 6°/5.3°，
+  // 判对），04 是青绿着色（hueSpread 27.9°，超过 25° → 被误判成彩色）。
+  // 它不是彩色片，只是色调偏冷、色相铺得开。
+  //
+  // 着色黑白片本质是「同一张亮度图 × 一条色调映射」，所以 R/G/B 三通道高度线性相关。
+  // 真彩色画面的三通道彼此独立得多。这个差别比色相分散度稳。
+  //
+  // 实测 61 个样本（46 件绘画 + 15 部电影）：
+  //   已知黑白/着色 14 部：最小通道相关 0.9810 – 1.0000
+  //   真彩色：0.3505（the-kiss）到 0.912（american-gothic），最低 -0.539（wheatfield-crows）
+  // 两侧无重叠。取 0.95 作为上限，两侧各留约 0.03 余量。
+  maxChannelCorrelation: 0.95,
   sampleWidth: 200,
 };
 
@@ -103,6 +118,31 @@ export function measureChroma(img) {
 
   spreads.sort();
   const medianSpread = spreads[Math.floor(n / 2)];
+
+  // P4.13 — 通道相关：着色黑白片三通道高度线性相关，真彩色反之。
+  // 用第二个独立扫描算，避免把上面的循环搞复杂；多一次 O(n) 但 n 只有几万像素。
+  let minChannelCorr = null;
+  {
+    let mR = 0, mG = 0, mB = 0;
+    for (let i = 0; i < n; i++) {
+      const o = i * channels;
+      mR += data[o]; mG += data[o + 1]; mB += data[o + 2];
+    }
+    mR /= n; mG /= n; mB /= n;
+    let vRR = 0, vGG = 0, vBB = 0, vRG = 0, vRB = 0, vGB = 0;
+    for (let i = 0; i < n; i++) {
+      const o = i * channels;
+      const dr = data[o] - mR, dg = data[o + 1] - mG, db = data[o + 2] - mB;
+      vRR += dr * dr; vGG += dg * dg; vBB += db * db;
+      vRG += dr * dg; vRB += dr * db; vGB += dg * db;
+    }
+    const safe = (num, den) => (den > 0 ? num / Math.sqrt(den) : 0);
+    const rRG = safe(vRG, vRR * vGG);
+    const rRB = safe(vRB, vRR * vBB);
+    const rGB = safe(vGB, vGG * vBB);
+    // 取三者最小：只要有一个通道明显独立，就不是「单色调映射」。
+    minChannelCorr = Math.round(Math.min(rRG, rRB, rGB) * 10000) / 10000;
+  }
   const p90Spread = spreads[Math.floor(n * 0.9)];
   const colorShare = colored / n;
   let hueSpread = null;
@@ -119,6 +159,7 @@ export function measureChroma(img) {
     meanSaturation: Math.round((satSum / n) * 10000) / 10000,
     medianChannelSpread: medianSpread,
     p90ChannelSpread: p90Spread,
+    minChannelCorrelation: minChannelCorr,
   };
 }
 
@@ -126,27 +167,64 @@ export function measureChroma(img) {
  * 把色度指标翻译成色彩判定。
  * 注意：这个函数**只**用于「没有影片级事实」的候选（主要是远程 Commons 候选）。
  */
+/**
+ * 把色度指标翻译成色彩判定。
+ *
+ * P4.13 — 三条证据，判为彩色需**全部**满足：
+ *   1) colorShare >= 0.02        有足够多像素携带色彩（排除纯黑白）
+ *   2) hueSpreadDeg >= 25        色相铺得开（排除棕褐/青绿等着色）
+ *   3) minChannelCorrelation < 0.95  三通道彼此独立（排除「单色调映射」）
+ *
+ * 第 3 条是 P4.13 新增，用来修一个真实边界缺陷：
+ * Way Down East (1920) 的青绿着色剧照 hueSpread 27.9° 会撞过第 2 条，
+ * 但它仍是着色黑白片。它的通道相关 0.996，第 3 条把它挡回去。
+ *
+ * 三条都是**必要条件**，任一不满足即判黑白。这偏保守：
+ * 宁可漏掉一张真彩色，也不放行一张着色黑白——与产品规则一致（无法确认就不纳入）。
+ */
 export function classifyChroma(chroma) {
   if (!chroma || !chroma.ok) {
     return { verdict: "unknown", reason: `色度测量失败：${chroma?.reason || "无数据"}` };
   }
   const TH = CHROMA_THRESHOLDS;
-  const isColour = chroma.colorShare >= TH.minColorShare
-    && chroma.hueSpreadDeg !== null
-    && chroma.hueSpreadDeg >= TH.minHueSpread;
-  if (isColour) {
+  const hasColor = chroma.colorShare >= TH.minColorShare;
+  const hueWide = chroma.hueSpreadDeg !== null && chroma.hueSpreadDeg >= TH.minHueSpread;
+  // 第三条证据可能缺失（旧缓存 / 手工构造的 chroma 对象）。
+  // 缺失时：判定上按「无法确认」处理（不放行），但理由上不得冒充「实测相关高」。
+  const corrKnown = typeof chroma.minChannelCorrelation === "number";
+  const channelsIndependent = corrKnown && chroma.minChannelCorrelation < TH.maxChannelCorrelation;
+
+  if (hasColor && hueWide && channelsIndependent) {
     return {
       verdict: "color",
-      reason: `实测彩色：${Math.round(chroma.colorShare * 100)}% 像素携带色彩，色相分散 ${chroma.hueSpreadDeg}°`,
+      reason: `实测彩色：${Math.round(chroma.colorShare * 100)}% 像素携带色彩，色相分散 ${chroma.hueSpreadDeg}°，通道相关仅 ${chroma.minChannelCorrelation}`,
     };
   }
-  // 区分「纯黑白」与「单色相着色」，两者都要排除，但理由不同，便于审计
-  const tinted = chroma.colorShare >= TH.minColorShare;
+
+  // 不满足时给出**最先失效的那条证据**作为理由，而不是笼统归到某一条。
+  // 顺序很重要：旧实现在缺字段时会把原因错写成「通道相关高达 undefined」，
+  // 让一张真正的棕褐着色片被描述成「单色调映射」，审计时会误导读日志的人。
+  if (!hasColor) {
+    return {
+      verdict: "monochrome",
+      reason: `实测黑白：仅 ${Math.round(chroma.colorShare * 100)}% 像素携带色彩，通道差中位数 ${chroma.medianChannelSpread}`,
+    };
+  }
+  if (!hueWide) {
+    return {
+      verdict: "monochrome",
+      reason: `实测单色相着色（sepia/tint）：${Math.round(chroma.colorShare * 100)}% 像素有通道差，但色相只集中在 ${chroma.hueSpreadDeg}°`,
+    };
+  }
+  if (!corrKnown) {
+    return {
+      verdict: "monochrome",
+      reason: `缺少通道相关证据（旧数据或未测量），无法确认是彩色，按排除处理；色相分散 ${chroma.hueSpreadDeg}°`,
+    };
+  }
   return {
     verdict: "monochrome",
-    reason: tinted
-      ? `实测单色相着色（sepia/tint）：${Math.round(chroma.colorShare * 100)}% 像素有通道差，但色相只集中在 ${chroma.hueSpreadDeg}°`
-      : `实测黑白：仅 ${Math.round(chroma.colorShare * 100)}% 像素携带色彩，通道差中位数 ${chroma.medianChannelSpread}`,
+    reason: `实测单色调映射（着色黑白）：${Math.round(chroma.colorShare * 100)}% 像素有通道差，但三通道相关高达 ${chroma.minChannelCorrelation}（色相 ${chroma.hueSpreadDeg}°）`,
   };
 }
 

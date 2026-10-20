@@ -44,12 +44,29 @@ for (const q of localRuns) {
 }
 check("A1 四条查询均返回非空本地结果且不含远程件", localOk === localRuns.length, `${localOk}/${localRuns.length}`);
 
-// A1b: 无法解析成受控字段的查询返回 0 件而非崩溃或返回远程件
-const unparsable = retrieveByText("战争", { limit: 6 });
+// A1b: 题材查询（"战争"）的正确语义。
+//
+// P4.13 核查：这条断言原来写的是「战争无法解析 → 应返回 0 件」。
+// 该前提自 b86cc58（P4.4，同时修复了 "dead queries"）起已不成立：
+// 战争 被登记为题材词 war-subject，canProduceTextMatch=true，
+// 因此返回题材命中的作品（Third of May 1808）是**正确行为**，不是召回错误。
+//
+// 判定依据：b86cc58 的父提交里 queryLexicon.js 不含 war-subject/战争，
+// 说明 P4.4 之前该断言确实成立；P4.4 给它加了题材能力，断言没有同步更新。
+// 因此这是**旧断言过时**，不是实际召回错误（结论登记在 P4.13 报告）。
+//
+// 现在的断言改为检验题材查询的真实契约：
+//   · 走 text-metadata 依据，不带视觉结构判断
+//   · 命中项 retrievalScore 为 0（不冒充视觉相关）
+//   · 不混入远程件
+const subjectQuery = retrieveByText("战争", { limit: 6 });
+const subjectTextOnly = subjectQuery.resultBasis === "text-metadata";
+const subjectNoVisualScore = subjectQuery.results.every((r) => r.retrievalScore === 0);
+const subjectNoRemote = subjectQuery.results.every((r) => !r.artwork.key?.startsWith("remote:"));
 check(
-  "A1b 无法解析的查询返回 0 件本地结果（既有行为，非回归）",
-  unparsable.results.length === 0 && unparsable.results.every((r) => !r.artwork.key?.startsWith("remote:")),
-  `${unparsable.results.length}`
+  "A1b 题材查询只做文本匹配：text-metadata 依据、无视觉评分、无远程件",
+  subjectTextOnly && subjectNoVisualScore && subjectNoRemote,
+  `basis=${subjectQuery.resultBasis} hits=${subjectQuery.results.length} 视觉分=${subjectQuery.results.map((r) => r.retrievalScore).join(",")}`
 );
 
 // A2: 本地结果全部是本地池成员
