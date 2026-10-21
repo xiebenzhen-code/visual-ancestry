@@ -32,9 +32,18 @@ export const metAdapter = {
       try {
         const raw = await this.fetchObject(id);
         if (raw) out.push(raw);
-      } catch {
-        // skip objects that fail to load
+      } catch (e) {
+        // 403 = 限流：停一下重试一次，仍失败就跳过这一条（不把整个来源判死）
+        if (/\b403\b/.test(String(e.message))) {
+          await new Promise((r) => setTimeout(r, 1200));
+          try {
+            const raw = await this.fetchObject(id);
+            if (raw) out.push(raw);
+          } catch { /* 跳过 */ }
+        }
       }
+      // 详情接口没有批量方法，顺序请求必须留间隔，否则整段被限流
+      await new Promise((r) => setTimeout(r, 120));
     }
     return out;
   },

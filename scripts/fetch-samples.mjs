@@ -4,7 +4,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 
 const samples = [
   ["aic-search", "https://api.artic.edu/api/v1/artworks/search?q=monet&limit=2&fields=id,title,image_id,artist_display,date_display,artist_title,place_of_origin,classification_title,department_title,medium_display,is_public_domain,thumbnail"],
-  ["met-search", "https://collectionapi.metmuseum.org/public/collection/v1/search?q=monet&hasImages=true"],
+  ["met-search", "https://collectionapi.metmuseum.org/public/collection/v1.1/search?q=monet&hasImages=true"],
   ["met-object", "https://collectionapi.metmuseum.org/public/collection/v1/objects/438003"],
   ["clev-search", "https://openaccess-api.clevelandart.org/api/artworks/?search=monet&limit=2"],
 ];

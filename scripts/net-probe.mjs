@@ -3,7 +3,7 @@ import https from "node:https";
 const urls = [
   ["WIKI", "https://commons.wikimedia.org/wiki/Special:FilePath/Great%20Wave%20off%20Kanagawa2.jpg?width=200"],
   ["AIC", "https://api.artic.edu/api/v1/artworks/search?q=monet&limit=2&fields=id,title,image_id"],
-  ["MET", "https://collectionapi.metmuseum.org/public/collection/v1/search?q=monet&hasImages=true"],
+  ["MET", "https://collectionapi.metmuseum.org/public/collection/v1.1/search?q=monet&hasImages=true"],
   ["CLEV", "https://openaccess-api.clevelandart.org/api/artworks/?search=monet&limit=2"],
   ["RIJK", "https://www.rijksmuseum.nl/api/en/collection?key=__bad__&q=monet&ps=2"],
 ];

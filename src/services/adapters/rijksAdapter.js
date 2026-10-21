@@ -14,11 +14,9 @@ export const rijksAdapter = {
   enabled: true,
 
   async search(query, { limit = 12 } = {}) {
-    // The Search API has typed params, not a free-text "q". For a generic
-    // keyword we query the fields most likely to match: creator + description
-    // (English/Dutch terms both work), then merge + dedupe by LOD id.
+    // 该 Search API 没有自由文本 q，只接受 typed 参数；同时给 creator 和 description
+    // 等于要求两者都命中（实测三个关键词全部 0 条）。只用一个字段。
     const params = new URLSearchParams({ imageAvailable: "true" });
-    params.set("creator", query);
     params.set("description", query);
     const res = await fetch(`${SEARCH_URL}?${params}`);
     if (!res.ok) throw new Error(`Rijks search HTTP ${res.status}`);
@@ -55,6 +53,7 @@ export const rijksAdapter = {
     const creators = Array.isArray(cho.creator) ? cho.creator : cho.creator ? [cho.creator] : [];
     if (creators.length) {
       const labels = creators[0]["http://www.w3.org/2004/02/skos/core#prefLabel"];
+    if (!Array.isArray(labels)) return "";
       const pick = (arr) => (arr || []).find((l) => l["@language"] === "en")?.["@value"]
         || (arr || [])[0]?.["@value"] || "";
       artist = pick(labels);
@@ -79,6 +78,7 @@ export const rijksAdapter = {
     let medium = "";
     if (Array.isArray(cho.dcType) && cho.dcType.length) {
       const labels = cho.dcType[0]["http://www.w3.org/2004/02/skos/core#prefLabel"];
+      if (!Array.isArray(labels)) return "";
       medium = (labels || []).find((l) => l["@language"] === "en")?.["@value"] || "";
     }
     // IIIF image via iiif.micr.io access point

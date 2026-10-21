@@ -12,7 +12,8 @@ export const clevelandAdapter = {
       "id", "title", "creation_date", "culture", "technique", "department",
       "type", "images", "creators", "artists", "url", "share_license_status", "tombstone",
     ].join(",");
-    const url = `${API}?search=${encodeURIComponent(query)}&limit=${Math.min(limit, 24)}&select=${select}`;
+    // has_image=1：不加时 API 会返回没有 images.web 的档案条目，落地就是 0 件可用图。
+    const url = `${API}?search=${encodeURIComponent(query)}&has_image=1&limit=${Math.min(limit, 40)}&select=${select}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Cleveland ${res.status}`);
     const json = await res.json();

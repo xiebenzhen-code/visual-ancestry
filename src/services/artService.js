@@ -16,8 +16,9 @@ import { aicAdapter } from "./adapters/aicAdapter.js";
 import { metAdapter } from "./adapters/metAdapter.js";
 import { clevelandAdapter } from "./adapters/clevelandAdapter.js";
 import { rijksAdapter } from "./adapters/rijksAdapter.js";
+import { openverseAdapter } from "./adapters/openverseAdapter.js";
 
-export const adapters = [aicAdapter, metAdapter, clevelandAdapter, rijksAdapter];
+export const adapters = [aicAdapter, metAdapter, clevelandAdapter, rijksAdapter, openverseAdapter];
 
 const CACHE_KEY = "va-remote-cache-v1";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
