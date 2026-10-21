@@ -11,6 +11,7 @@ import { escapeHtml } from "../utils/html.js";
 import { track } from "../utils/profile.js";
 import { buildBranches } from "../services/explore/styleBranches.js";
 import { MEDIA_MODES } from "../services/explore/media.js";
+import { fetchExternalNeighbors } from "../services/discoveryClient.js";
 
 function factsBlock(artwork) {
   const rows = [
@@ -128,6 +129,52 @@ function branchCard(branch) {
     </article>`;
 }
 
+/* 外部发现：服务端按同一套规则把自动采集的图片归到四条分支里。
+   页面不直连外部 API，也不显示端点/模型/内部证据等级。 */
+function externalCard(item) {
+  return `
+    <a class="explore-card explore-external" href="${escapeHtml(item.sourceUrl || "#")}" target="_blank" rel="noreferrer"
+       data-ext-kind="${escapeHtml(item.imageKind || "unknown")}">
+      <span class="img-slot"><img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async" /></span>
+      <strong>${escapeHtml(item.title || "(无标题)")}</strong>
+      <span class="explore-artist">${escapeHtml(item.creator || "")}${item.year ? " · " + escapeHtml(String(item.year)) : ""}</span>
+      <span class="explore-change">${escapeHtml(item.branchReason || "外部候选")}</span>
+      <span class="explore-badge is-external">外部发现 · ${escapeHtml(item.provider)}</span>
+    </a>`;
+}
+
+async function hydrateExternal(app, artwork) {
+  const status = app.querySelector("#explore-external-status");
+  if (status) status.textContent = "正在从外部来源补充候选…";
+  const r = await fetchExternalNeighbors(artwork.id);
+  if (!r || !r.ok) {
+    if (status) status.textContent = r && r.error === "vector-unavailable"
+      ? "外部候选暂不可用（索引未就绪）；上面的候选仍然可用。"
+      : "外部来源暂时没有返回；上面的候选仍然可用。";
+    return;
+  }
+  let added = 0;
+  for (const [key, arr] of Object.entries(r.buckets || {})) {
+    if (!arr.length) continue;
+    const branch = app.querySelector(`[data-branch="${key}"]`);
+    if (!branch) continue;
+    let list = branch.querySelector(".explore-results");
+    if (!list) {
+      branch.querySelector(".explore-empty")?.remove();
+      list = document.createElement("div");
+      list.className = "explore-results";
+      branch.appendChild(list);
+    }
+    list.insertAdjacentHTML("beforeend", arr.map(externalCard).join(""));
+    added += arr.length;
+  }
+  if (status) {
+    status.textContent = added
+      ? `已接入 ${added} 张外部自动发现图（当前索引 ${r.indexed} 张）`
+      : "外部索引里暂时没有更多候选。";
+  }
+}
+
 function exploreSection(artwork) {
   const branches = buildBranches(artwork);
   return `
@@ -140,6 +187,7 @@ function exploreSection(artwork) {
           (m) => `<button type="button" class="${m.value === "all" ? "is-on" : ""}" data-explore-media="${m.value}">${m.label}</button>`
         ).join("")}
       </div>
+      <p class="explore-external-status" id="explore-external-status" aria-live="polite"></p>
       <div class="explore-branches" id="explore-branches">
         ${branches.map(branchCard).join("")}
       </div>
@@ -210,6 +258,7 @@ export function renderArtwork(app, key) {
   // 媒介筛选：只重绘分支区，不重载页面，也不改路由。
   const explore = app.querySelector("#explore");
   if (explore) {
+    hydrateExternal(app, artwork);
     const branchesHost = explore.querySelector("#explore-branches");
     const note = explore.querySelector("#explore-media-note");
     explore.querySelectorAll("[data-explore-media]").forEach((btn) => {
@@ -221,6 +270,17 @@ export function renderArtwork(app, key) {
         branchesHost.innerHTML = next.map(branchCard).join("");
         const excluded = next[0] && next[0].mediaState ? next[0].mediaState.excluded : { monochromeFilms: 0 };
         const emptyCount = next.filter((b) => b.empty).length;
+        // 外部卡按 imageKind 过滤：动画档不显示绘画/照片，跨媒介只显示非绘画
+        app.querySelectorAll(".explore-external").forEach((el) => {
+          const kind = el.dataset.extKind || "unknown";
+          const isArtwork = kind === "artwork";
+          const hide =
+            (mode === "artwork" && !isArtwork) ||
+            (mode === "film" && kind !== "film-still" && kind !== "tv-episode-still") ||
+            (mode === "animation" && kind !== "tv-episode-still") ||
+            (mode === "cross" && isArtwork);
+          el.classList.toggle("is-hidden", hide);
+        });
         note.textContent = [
           excluded.monochromeFilms ? `已排除 ${excluded.monochromeFilms} 张黑白电影剧照（不作为 AIGC 视觉参考）。` : "",
           emptyCount === 4 ? (next[0].emptyReason || "") : "",

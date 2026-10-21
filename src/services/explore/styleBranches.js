@@ -20,9 +20,9 @@ const TXT = (w) => [
   w.color || "", w.spatialStructure || "", (w.visualDNA || []).join(" "),
 ].join(" ");
 
-const PEOPLE_WORDS = /人物|肖像|双人|两人|三人|单人|群像|舞者|母亲|少女|妇人|男子|女子|人像|自画像|孩童|孩子|农夫|市民|拥抱|坐姿|站立|行人|人群/g;
-const CITY_WORDS = /街道|建筑|房屋|屋|窗|桥|城|广场|墙|街区|码头|港口/g;
-const LAND_WORDS = /山|水面|海|雪|林|树|云|瀑|田野|河谷|原野|江|湖|舟|钓|港/g;
+const PEOPLE_WORDS = /人物|肖像|双人|两人|三人|单人|群像|舞者|母亲|少女|妇人|男子|女子|人像|自画像|孩童|孩子|农夫|市民|拥抱|坐姿|站立|行人|人群|portrait|self-portrait|madonna|woman|man\b|girl|boy|family|couple|dancers|figure/gi;
+const CITY_WORDS = /街道|建筑|房屋|屋|窗|桥|城|广场|墙|街区|码头|港口|street|city|town|bridge|square|harbou?r|building|cathedral|station|avenue/gi;
+const LAND_WORDS = /山|水面|海|雪|林|树|云|瀑|田野|河谷|原野|江|湖|舟|钓|港|mountain|landscape|river|lake|sea|ocean|forest|snow|valley|field|garden|cliff|coast/gi;
 
 const hits = (text, re) => (text.match(re) || []).length;
 
@@ -40,8 +40,8 @@ export function subjectClass(work) {
   return best[0];
 }
 
-const INDOOR_WORDS = /室内|房间|屋内|桌面|教堂内|室内空间|闺房/g;
-const NIGHT_WORDS = /夜|灯火|月光|暮色/g;
+const INDOOR_WORDS = /室内|房间|屋内|桌面|教堂内|室内空间|闺房|interior|room|indoors|parlour|parlor/gi;
+const NIGHT_WORDS = /夜|灯火|月光|暮色|night|moonlight|evening|dusk/gi;
 
 export function sceneClass(work) {
   const t = TXT(work);

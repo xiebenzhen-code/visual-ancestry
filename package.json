@@ -18,7 +18,12 @@
     "skill:plan": "node skill/visual-ancestry/scripts/va.mjs plan",
     "skill:vision": "node skill/visual-ancestry/scripts/va.mjs vision-status",
     "exp:p414": "node --env-file-if-exists=.env experiment/p414/server.mjs 4600",
-    "vision:preflight": "node --env-file-if-exists=.env scripts/p415/preflight.mjs"
+    "vision:preflight": "node --env-file-if-exists=.env scripts/p415/preflight.mjs",
+    "discovery:discover": "node scripts/discovery/harvest.mjs discover",
+    "discovery:harvest": "node scripts/discovery/harvest.mjs discover --limit 30",
+    "discovery:index": "node scripts/discovery/harvest.mjs index",
+    "discovery:verify": "node scripts/discovery/harvest.mjs verify",
+    "discovery:status": "node scripts/discovery/harvest.mjs status"
   },
   "devDependencies": {
     "sharp": "^0.35.4"

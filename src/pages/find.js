@@ -32,6 +32,7 @@ import {
   isFeedEligible,
   dedupeFeed,
 } from "../services/artService.js";
+import { fetchDiscoveryWall } from "../services/discoveryClient.js";
 import { bindWorkPanel } from "../components/workPanel.js";
 import { matchNames, namePool } from "../utils/nameMatch.js";
 
@@ -205,6 +206,39 @@ function remotePlateHtml(artwork) {
  * 目标：合计不超过 HOME_TOTAL，远端约 2/3。拿不到就停，页面保持可用。
  * 不新建数据服务——复用 artService 的 remote feed 状态机与四馆适配器。
  */
+function discoveredPlateHtml(item) {
+  return `
+    <a class="plate plate-remote plate-discovered" href="${escapeHtml(item.sourceUrl || "#")}"
+       target="_blank" rel="noreferrer"
+       data-plate-key="discovered:${escapeHtml(item.id)}" data-ext-kind="${escapeHtml(item.imageKind || "unknown")}">
+      <figure>
+        <span class="img-slot"><img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async" /></span>
+        <figcaption class="plate-info">
+          <strong>${escapeHtml(item.creator || "自动发现")}</strong>
+          <span>${escapeHtml(item.title || "")}</span>
+          <em>${escapeHtml(String(item.year || ""))}</em>
+          <span class="plate-source">${escapeHtml([item.provider, "自动发现"].join(" · "))}</span>
+        </figcaption>
+      </figure>
+    </a>`;
+}
+
+/** 首页：把已入库的自动发现图接在馆藏图后面（只读缓存，不发起外部请求）。 */
+async function hydrateDiscovered(app, { limit = 8 } = {}) {
+  const host = app.querySelector("#album-remote");
+  const wall = app.querySelector("#album-wall-wrap .album-wall");
+  if (!wall) return;
+  try {
+    const doc = await fetchDiscoveryWall("", limit);
+    const items = (doc && doc.items) || [];
+    if (!items.length) return;
+    wall.insertAdjacentHTML("beforeend", items.map(discoveredPlateHtml).join(""));
+    bindImgFallback(wall);
+  } catch {
+    /* 发现服务不可用时首页保持原样 */
+  }
+}
+
 async function hydrateRemotePlates(app, { target = 16, localKeys = new Set() } = {}) {
   const host = app.querySelector("#album-remote");
   if (!host) return;
@@ -661,6 +695,7 @@ let lastRemote = null;
       Array.from(wallWrap ? wallWrap.querySelectorAll("[data-plate-key]") : []).map((el) => el.dataset.plateKey)
     );
     hydrateRemotePlates(app, { target: HOME_REMOTE, localKeys });
+    hydrateDiscovered(app, { limit: 8 });
   }
 
   // 首页交过来的查询：接线（含媒介按钮）完成后立刻执行一次，用户不必再点一次。

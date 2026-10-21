@@ -7,6 +7,12 @@ import { accessConfig, accessMode, authorizeVisionRequest, issueToken, verifyAcc
 import { budgetConfig, budgetStatus, budgetIntegrity, reserveCall, createConcurrencyGate } from "../server/security/budget.mjs";
 import { errorBody, providerReasonToCode, logServerEvent } from "../server/security/errors.mjs";
 import { resolveStaticPath, resolveRealStaticPath } from "../server/security/staticPathGuard.mjs";
+import { discoveryStatus, ensureDiscovery, neighborsOf, classifyCandidates, vectorForImage, imageFile, wallWorks } from "./discovery/service.mjs";
+import { readFile } from "node:fs/promises";
+import { findLocalById } from "../src/services/artService.js";
+import { VISUAL_METRICS } from "../src/data/visual-metrics.js";
+
+const visualMetricsOf = (id) => (VISUAL_METRICS.entries || {})[id] || null;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // P2.7.1 — the default static root is the BUILT output (`dist`). Serving the dev
@@ -407,6 +413,82 @@ function listen(port, host = BIND_HOST) {
         roundCalls,
         roundCallLimit: ROUND_CALL_LIMIT,
       });
+      return;
+    }
+
+    // ---- 自动发现（服务端）：浏览器不直连外部 API，也不接触任何 Token ----
+    if (req.method === "GET" && url.pathname === "/api/discovery/status") {
+      try {
+        sendJson(res, 200, discoveryStatus());
+      } catch (e) {
+        sendJson(res, 200, { ok: false, error: "discovery-unavailable", detail: String(e.message).slice(0, 120) });
+      }
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/discovery/wall") {
+      const topic = url.searchParams.get("topic") || "";
+      const limit = Math.min(12, Math.max(2, Number(url.searchParams.get("limit")) || 8));
+      try {
+        sendJson(res, 200, { ok: true, items: wallWorks(topic, limit) });
+      } catch (e) {
+        sendJson(res, 200, { ok: false, items: [], error: "wall-unavailable" });
+      }
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/discovery/harvest") {
+      readJsonBody(req, res).then(async (read) => {
+        if (!read.ok) return;
+        const body = read.body;
+        const query = String(body?.query || "").slice(0, 80);
+        if (!query) return sendJson(res, 400, { ok: false, error: "query-required" });
+        const limit = Math.min(40, Math.max(6, Number(body?.limit) || 24));
+        const r = await ensureDiscovery(query, { limit, providers: ["museums", "openverse", "commons"] });
+        sendJson(res, 200, r);
+      }).catch((e) => sendJson(res, 500, { ok: false, error: "harvest-failed", detail: String(e.message).slice(0, 120) }));
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/discovery/neighbors") {
+      readJsonBody(req, res).then(async (read) => {
+        if (!read.ok) return;
+        const body = read.body;
+        const id = String(body?.artworkId || "");
+        if (!id) return sendJson(res, 400, { ok: false, error: "artworkId-required" });
+        const art = findLocalById(id);
+        if (!art || !art.image) return sendJson(res, 404, { ok: false, error: "artwork-not-found" });
+
+        // 本地作品的向量：现算一次（不写索引，避免把查询图混进语料）
+        const abs = path.join(root, "public/assets/artworks", id, "preview.webp");
+        let vec = null;
+        try { vec = await vectorForImage(abs); } catch { vec = null; }
+        if (!vec?.vector) return sendJson(res, 200, { ok: false, error: "vector-unavailable", candidates: [] });
+
+        const cands = neighborsOf({ vector: vec.vector }, { limit: 40 });
+        const classified = await classifyCandidates({ work: art, metrics: visualMetricsOf(id) }, cands);
+        sendJson(res, 200, {
+          ok: true,
+          queryId: id,
+          indexed: discoveryStatus().indexed,
+          buckets: classified.buckets,
+          profile: classified.queryProfile,
+          total: cands.length,
+        });
+      }).catch((e) => sendJson(res, 500, { ok: false, error: "neighbors-failed", detail: String(e.message).slice(0, 120) }));
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname.startsWith("/api/discovery/image/")) {
+      const hash = decodeURIComponent(url.pathname.split("/").pop() || "");
+      const file = /^[a-f0-9]{40}$/i.test(hash) ? imageFile(hash) : null;
+      if (!file) return sendJson(res, 404, { ok: false, error: "image-not-found" });
+      readFile(file).then((buf) => {
+        const ext = path.extname(file).toLowerCase();
+        const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+        res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=86400" });
+        res.end(buf);
+      }).catch(() => sendJson(res, 404, { ok: false, error: "image-read-failed" }));
       return;
     }
 

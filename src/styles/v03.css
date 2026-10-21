@@ -220,3 +220,42 @@
   .explore-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .explore-branches { gap: 22px; }
 }
+
+/* ---------------- Phase 2：外部自动发现 ---------------- */
+
+.explore-external-status {
+  margin: 0 0 14px;
+  font-size: 11.5px;
+  color: var(--ink-3, #8a8a8a);
+}
+
+.explore-external .img-slot {
+  display: block;
+  width: 100%;
+  padding-top: 66%;
+  position: relative;
+  overflow: hidden;
+  background: #eee;
+  border-radius: 6px;
+}
+
+.explore-external .img-slot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.explore-badge.is-external {
+  border-color: #7a5cc0;
+  color: #5b3fa8;
+}
+
+.explore-external.is-hidden { display: none; }
+
+.plate-discovered .plate-source { color: #5b3fa8; }
+
+@media (max-width: 720px) {
+  .explore-external .img-slot { padding-top: 72%; }
+}
