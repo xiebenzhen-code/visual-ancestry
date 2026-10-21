@@ -399,7 +399,11 @@ function listen(port, host = BIND_HOST) {
   /* ---------------- 自动发现的触发保护 ---------------- */
 // 同源校验 + 每 IP 限速 + 可选 token。返回 {ok}；失败时已经写好响应。
 const triggerBudget = new Map();
-const DISCOVERY_RATE = { perMinute: 6, perHour: 40 };
+// 每 IP 的触发预算。默认值面向公开部署；本地验收可用环境变量临时放宽（会写进报告）。
+const DISCOVERY_RATE = {
+  perMinute: Number(process.env.DISCOVERY_RATE_PER_MINUTE) || 12,
+  perHour: Number(process.env.DISCOVERY_RATE_PER_HOUR) || 60,
+};
 
 function clientIp(req) {
   const xf = req.headers["x-forwarded-for"];

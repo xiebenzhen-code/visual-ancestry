@@ -162,6 +162,24 @@ export function visualAffinity(q, c) {
   return { score: Number(Math.min(1, score).toFixed(3)), parts, missing: null };
 }
 
+/* 结构相似度：明度三段分布 + 不对称度 + 画幅 + 边缘密度。
+   为什么加它：跨媒介时 CLIP 余弦容易被"内容"而不是"构图/光影"主导，
+   人工复核里最常被判"有道理"的恰是布局相近的候选。这是排序信号，不是风格结论。 */
+export function structureScore(q, c) {
+  if (!q || !c) return 0;
+  const parts = [];
+  const dl = (Math.abs((q.lumTop ?? 0) - (c.lumTop ?? 0)) + Math.abs((q.lumMid ?? 0) - (c.lumMid ?? 0)) + Math.abs((q.lumBottom ?? 0) - (c.lumBottom ?? 0))) / 3;
+  parts.push(dl);
+  const da = Math.abs((q.asymmetry ?? 0) - (c.asymmetry ?? 0));
+  parts.push(da);
+  const dAspect = Math.abs(Math.log((q.aspect ?? 1) / (c.aspect ?? 1))) / 0.7;
+  parts.push(Math.min(1, dAspect));
+  const dEdge = Math.abs((q.edgeDensity ?? 0) - (c.edgeDensity ?? 0)) / Math.max(q.edgeDensity ?? 0.02, 0.02);
+  parts.push(Math.min(1, dEdge));
+  const avg = parts.reduce((a, b) => a + b, 0) / parts.length;
+  return Number(Math.max(0, 1 - avg).toFixed(3));
+}
+
 const ASPECT_BUCKET = (a) => (a > 1.15 ? "竖幅" : a < 0.85 ? "横幅" : "近方形");
 const VER_ID = { "top-heavy": "重心偏上", "bottom-heavy": "重心偏下", even: "重心居中" };
 
@@ -339,7 +357,15 @@ export async function exploreFor({ artworkId = null, hash = null, limit = 40 } =
     : kind === "animation-frame" ? "animation"
     : kind === "artwork" ? "artwork" : "cross");
   const mediaNeighbors = { film: [], animation: [], artwork: [], cross: [] };
-  for (const s of scored) {
+  // 黑白画面在界面上本来就不作为参考，排序时先降权，免得占掉可见位次。
+  const usable = (s) => {
+    const sat = s.work.metrics?.meanSat;
+    return typeof sat === "number" && sat < 0.06 ? 0.7 : 1;
+  };
+  const rankOf = (s) => (0.5 * s.cos + 0.5 * structureScore(queryMetrics, s.work.metrics)) * usable(s);
+  const ranked = [...scored].sort((a, b) => rankOf(b) - rankOf(a));
+
+  for (const s of ranked) {
     const m = MEDIA_OF(s.work.imageKind);
     // 先多收一些：黑白画面会在客户端按媒介规则被剔除，池子太小会被筛空
     if (mediaNeighbors[m].length >= 14) continue;
@@ -348,6 +374,7 @@ export async function exploreFor({ artworkId = null, hash = null, limit = 40 } =
       ...s.work,
       metrics: s.work.metrics || null,
       cos: s.cos,
+      structure: structureScore(queryMetrics, s.work.metrics),
       affinity: s.affinity.score,
       level: "vector-only",
       retained: s.affinity.parts,

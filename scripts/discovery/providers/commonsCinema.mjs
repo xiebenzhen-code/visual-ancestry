@@ -22,14 +22,16 @@ const NOT_A_FRAME = [
   /behind the scenes/i, /making[- ]of/i, /\blogo\b/i, /\bcover\b/i, /\bdvd\b/i,
   /blu-?ray/i, /screenshot of (the )?(credits|menu)/i, /concept art/i, /storyboard/i,
   /\bpromo/i, /publicity/i, /film still photographer/i,
+  /\btitolo\b/i, /\btitel\b/i, /\btítulo\b/i, /\bzaglavlje\b/i,
   // 分类里混进来的非影片静帧（迈布里奇实验照片、核试验高速摄影等）
   /muybridge/i, /\btest stills?\b/i, /explosion/i, /nuclear/i, /high[- ]speed camera/i,
 ];
 
 const ANIMATION_HINT = /animat|cartoon|animation/i;
 
-export function isFrameCandidate(title, category) {
-  const t = `${title} ${category || ""}`;
+export function isFrameCandidate(title, category, description = "") {
+  // 描述也要查：有些片名字卡的标题很普通（Pisacane bis），但描述里写着 "titolo del film"
+  const t = `${title} ${category || ""} ${description || ""}`;
   if (NOT_A_FRAME.some((re) => re.test(t))) return false;
   return /\.(jpe?g|png|webp)$/i.test(title);
 }
@@ -81,7 +83,8 @@ export const commonsCinemaProvider = {
           const info = (p.imageinfo || [])[0];
           const title = plain(p.title);
           if (!info) { skipped.noImage += 1; continue; }
-          if (!isFrameCandidate(title, cat)) { skipped.notFrame += 1; continue; }
+          const metaRaw = info.extmetadata || {};
+          if (!isFrameCandidate(title, cat, plain(metaRaw.ImageDescription?.value))) { skipped.notFrame += 1; continue; }
           const meta = info.extmetadata || {};
           // 元数据必须能自证是"影片画面"：描述/分类/文件名里要有 film/movie/cinema/animation 之类
           const desc = plain(meta.ImageDescription?.value);

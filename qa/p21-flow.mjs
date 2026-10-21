@@ -150,8 +150,13 @@ try {
 
   await evalJs(`document.querySelector('[data-explore-media="animation"]').click()`);
   await sleep(400);
-  const anim = await evalJs(`({ ext: document.querySelectorAll("#explore .explore-external").length, note: document.querySelector("#explore-media-note")?.textContent || "" })`);
-  record("动画档不会用封面/绘画凑数", anim.ext === 0, `外部 ${anim.ext} 条 · ${anim.note.slice(0, 60)}`);
+  const anim = await evalJs(`(() => {
+    const cards = [...document.querySelectorAll("#explore .explore-external")];
+    const kinds = cards.map((c) => c.dataset.extKind);
+    return { ext: cards.length, kinds: [...new Set(kinds)], bad: kinds.filter((k) => k !== "animation-frame" && k !== "tv-episode-still").length,
+             note: document.querySelector("#explore-media-note")?.textContent || "" };
+  })()`);
+  record("动画档只出动画帧，不用封面/绘画凑数", anim.bad === 0, `${anim.ext} 条 · 类型 ${anim.kinds.join(",") || "无"}`);
   await evalJs(`document.querySelector('[data-explore-media="all"]').click()`);
 
   /* 9. 回退路径仍然可用 */
@@ -170,7 +175,7 @@ try {
   record("同一查询命中缓存，不重复抓取", Boolean(c1 && (c1.cached || (c1.job && c1.job.status === "cached"))), JSON.stringify(c1).slice(0, 90));
 
   let burst = [];
-  for (let i = 0; i < 9; i += 1) {
+  for (let i = 0; i < 20; i += 1) {
     burst.push(await fetch(`${BASE}/api/discovery/harvest`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: `burst-${i}` }),
