@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" font-family="'Microsoft YaHei', 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8a7f70"/>
+    </marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8a5c3c"/>
+    </marker>
+    <style>
+      .bg { fill: #f6f3ed; }
+      .title { font-family: Georgia, 'Times New Roman', serif; font-size: 40px; fill: #201e1b; letter-spacing: 1px; }
+      .subtitle { font-size: 17px; fill: #6f685d; }
+      .layer { fill: none; stroke: #d8d0c2; stroke-width: 1.5; }
+      .layer-label { font-size: 15px; fill: #8a7f70; letter-spacing: 2px; }
+      .box { fill: #fffdf9; stroke: #cfc6b6; stroke-width: 1.2; }
+      .box-accent { fill: #fbf3ea; stroke: #c79b74; stroke-width: 1.4; }
+      .box-dark { fill: #f0ece3; stroke: #b9ae9c; stroke-width: 1.2; }
+      .t { font-size: 16px; fill: #2a2723; }
+      .t-b { font-size: 16px; font-weight: 600; fill: #201e1b; }
+      .s { font-size: 13px; fill: #6f685d; }
+      .mono { font-family: Consolas, 'Courier New', monospace; font-size: 12.5px; fill: #6a6155; }
+      .lane { font-size: 14px; fill: #8a5c3c; font-weight: 600; }
+      .rule { stroke: #d8d0c2; stroke-width: 1; }
+      .chip { fill: #f2ede3; stroke: #d5cbba; }
+      .chip-t { font-size: 12.5px; fill: #5b5449; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1920" height="1080"/>
+
+  <!-- header -->
+  <text class="title" x="64" y="76">FRAME ATLAS · 系统架构</text>
+  <text class="subtitle" x="66" y="106">以实际源码为准：单进程 Node 服务 + 浏览器端 SPA；离线建索引、在线检索、后台补货三条路径分开</text>
+  <line class="rule" x1="64" y1="128" x2="1856" y2="128"/>
+
+  <!-- ============ 1 用户交互层 ============ -->
+  <rect class="layer" x="64" y="156" width="392" height="392" rx="6"/>
+  <text class="layer-label" x="84" y="184">① 用户交互层 · 浏览器</text>
+
+  <rect class="box" x="88" y="200" width="344" height="76" rx="4"/>
+  <text class="t-b" x="106" y="230">首页 #index</text>
+  <text class="s" x="106" y="254">本地 8 件即时渲染 + 馆藏/自动发现异步补位</text>
+
+  <rect class="box" x="88" y="290" width="344" height="76" rx="4"/>
+  <text class="t-b" x="106" y="320">作品详情 #artwork/&lt;key&gt;</text>
+  <text class="s" x="106" y="344">远端作品同一页面：#artwork/r.&lt;图片哈希&gt;</text>
+
+  <rect class="box-accent" x="88" y="380" width="344" height="82" rx="4"/>
+  <text class="t-b" x="106" y="410">探索区 · 四条风格分支</text>
+  <text class="s" x="106" y="432">换主体 / 换场景 / 换构图 / 局部视觉语言</text>
+  <text class="s" x="106" y="450">媒介筛选：不限 · 绘画 · 电影 · 动画 · 跨媒介</text>
+
+  <rect class="box" x="88" y="476" width="344" height="56" rx="4"/>
+  <text class="t-b" x="106" y="500">同媒介视觉近邻（独立一行）</text>
+  <text class="s" x="106" y="520">仅向量召回，标注“未做风格判定”</text>
+
+  <!-- ============ 2 前端服务与检索 ============ -->
+  <rect class="layer" x="492" y="156" width="452" height="392" rx="6"/>
+  <text class="layer-label" x="512" y="184">② 检索与探索服务 · 同源</text>
+
+  <rect class="box" x="516" y="200" width="404" height="78" rx="4"/>
+  <text class="t-b" x="534" y="230">styleBranches.js（纯函数）</text>
+  <text class="s" x="534" y="252">主体/场景判定 · 构图画像 · 色彩画像</text>
+  <text class="s" x="534" y="270">每条结果输出：保留 / 改变 / 证据来源</text>
+
+  <rect class="box" x="516" y="292" width="404" height="78" rx="4"/>
+  <text class="t-b" x="534" y="322">retrievalService.js</text>
+  <text class="s" x="534" y="344">档案签名检索：traditions / emotion / DNA</text>
+  <text class="s" x="534" y="362">与 FIND 入口共用同一排序参数</text>
+
+  <rect class="box-accent" x="516" y="384" width="404" height="96" rx="4"/>
+  <text class="t-b" x="534" y="414">exploreFor() · 服务端 /api/discovery/neighbors</text>
+  <text class="s" x="534" y="436">近邻召回 → 像素亲和度 × 结构相似 → 黑白降权</text>
+  <text class="s" x="534" y="456">证据两段：保留（≥3 项含色调） × 变化（主体/场景/构图）</text>
+  <text class="s" x="534" y="474">三档：待验证风格延展 / 同一视觉语言 / 证据不足</text>
+
+  <rect class="box" x="516" y="494" width="404" height="40" rx="4"/>
+  <text class="s" x="534" y="519">媒介规则 externalMedia.js：黑白画面（饱和度&lt;0.06）不得作为参考</text>
+
+  <!-- ============ 3 特征与索引 ============ -->
+  <rect class="layer" x="972" y="156" width="404" height="392" rx="6"/>
+  <text class="layer-label" x="992" y="184">③ 视觉特征与向量索引</text>
+
+  <rect class="box" x="996" y="200" width="356" height="78" rx="4"/>
+  <text class="t-b" x="1014" y="230">MobileCLIP-S0（ONNX，本地）</text>
+  <text class="s" x="1014" y="252">512 维图像向量 · INT8 量化 · 11.3 MB</text>
+  <text class="s" x="1014" y="270">不调用任何付费视觉模型参与排序</text>
+
+  <rect class="box" x="996" y="292" width="356" height="78" rx="4"/>
+  <text class="t-b" x="1014" y="322">像素特征 measure.py</text>
+  <text class="s" x="1014" y="344">明度三段 · 不对称度 · 饱和度 · 对比度 · 边缘密度</text>
+  <text class="s" x="1014" y="362">构图/光影类判断只从这里来</text>
+
+  <rect class="box-dark" x="996" y="384" width="356" height="86" rx="4"/>
+  <text class="t-b" x="1014" y="414">index.json（内容哈希为键）</text>
+  <text class="s" x="1014" y="436">哈希 → { 向量, 像素特征 }，同图不重复计算</text>
+  <text class="mono" x="1014" y="458">.rc1-audit/discovery/index.json</text>
+
+  <rect class="box" x="996" y="484" width="356" height="50" rx="4"/>
+  <text class="s" x="1014" y="506">local-vectors.json：46 件本地绘画，构建期预生成</text>
+  <text class="s" x="1014" y="524">请求期不跑 Python（未命中返回 202 vector-pending）</text>
+
+  <!-- ============ 4 数据接入 ============ -->
+  <rect class="layer" x="1408" y="156" width="448" height="392" rx="6"/>
+  <text class="layer-label" x="1428" y="184">④ 数据接入 · 官方 API</text>
+
+  <rect class="box" x="1432" y="200" width="400" height="66" rx="4"/>
+  <text class="t-b" x="1450" y="228">四馆馆藏</text>
+  <text class="s" x="1450" y="250">Art Institute · Met(v1.1) · Cleveland · Rijksmuseum</text>
+
+  <rect class="box" x="1432" y="276" width="400" height="50" rx="4"/>
+  <text class="t-b" x="1450" y="300">Openverse</text>
+  <text class="s" x="1450" y="318">匿名 page_size=20，翻页 ≤3，429 退避</text>
+
+  <rect class="box" x="1432" y="336" width="400" height="66" rx="4"/>
+  <text class="t-b" x="1450" y="364">Wikimedia Commons（分类采集）</text>
+  <text class="s" x="1450" y="386">Film screenshots / Film frames / Animated film screenshots</text>
+
+  <rect class="box-accent" x="1432" y="412" width="400" height="66" rx="4"/>
+  <text class="t-b" x="1450" y="440">Blender Open Movies · ffmpeg 抽帧</text>
+  <text class="s" x="1450" y="462">Tears of Steel（CC BY 3.0）· Big Buck Bunny（CC BY 3.0）</text>
+
+  <rect class="box" x="1432" y="488" width="400" height="46" rx="4"/>
+  <text class="s" x="1450" y="516">TMDB 适配器已实现，凭据缺失 → credential-required</text>
+
+  <!-- ============ 5 三条路径 ============ -->
+  <rect class="layer" x="64" y="576" width="1792" height="250" rx="6"/>
+  <text class="layer-label" x="84" y="604">⑤ 三条路径（互不阻塞）</text>
+
+  <!-- 离线 -->
+  <rect class="box-dark" x="88" y="620" width="560" height="182" rx="4"/>
+  <text class="lane" x="108" y="650">A · 离线数据构建</text>
+  <text class="s" x="108" y="678">harvest discover（博物馆 / Openverse / Commons 分类）</text>
+  <text class="s" x="108" y="700">→ 图片字节校验（Content-Type / 8MB / 头部尺寸）</text>
+  <text class="s" x="108" y="722">→ 三键去重（providerId / 内容哈希 / 标题+作者+年代）</text>
+  <text class="s" x="108" y="744">→ ffmpeg 抽帧（离线，不参与用户浏览）</text>
+  <text class="s" x="108" y="766">→ index：向量 + 像素特征 → index.json</text>
+  <text class="mono" x="108" y="790">npm run discovery:cinema / index / vectors</text>
+
+  <!-- 在线 -->
+  <rect class="box-accent" x="676" y="620" width="560" height="182" rx="4"/>
+  <text class="lane" x="696" y="650">B · 在线检索</text>
+  <text class="s" x="696" y="678">页面打开 → /api/discovery/neighbors</text>
+  <text class="s" x="696" y="700">→ 读 index.json：查询向量 + 候选特征</text>
+  <text class="s" x="696" y="722">→ 近邻召回 → 证据两段 → 四分支归类</text>
+  <text class="s" x="696" y="744">→ 同媒介近邻另行返回（仅向量）</text>
+  <text class="s" x="696" y="766">→ 前端只渲染，不直连外部 API</text>
+  <text class="mono" x="696" y="790">响应含：branches / mediaNeighbors / job</text>
+
+  <!-- 补货 -->
+  <rect class="box" x="1264" y="620" width="568" height="182" rx="4"/>
+  <text class="lane" x="1284" y="650">C · 后台按需补货</text>
+  <text class="s" x="1284" y="678">候选 &lt; 8 → enqueue（查询词由画派+主体派生）</text>
+  <text class="s" x="1284" y="700">→ 串行作业（并发 1，队列上限 6）</text>
+  <text class="s" x="1284" y="722">→ 写入 works.ndjson → 自动建索引</text>
+  <text class="s" x="1284" y="744">→ 前端轮询 /api/discovery/job/:id 后重算</text>
+  <text class="s" x="1284" y="766">同查询 30 分钟去重；命中缓存直接返回</text>
+  <text class="mono" x="1284" y="790">保护：同源校验 · 每 IP 限速 · 可选触发 token</text>
+
+  <!-- ============ 6 缓存 / 保护 / 部署 ============ -->
+  <rect class="layer" x="64" y="852" width="1792" height="164" rx="6"/>
+  <text class="layer-label" x="84" y="880">⑥ 缓存 · 保护 · 部署</text>
+
+  <rect class="box" x="88" y="896" width="404" height="104" rx="4"/>
+  <text class="t-b" x="106" y="924">磁盘状态（不进 Git）</text>
+  <text class="s" x="106" y="946">works.ndjson · runs.ndjson · api-cache（仅 200）</text>
+  <text class="s" x="106" y="968">images/ 缩略图 · index.json · query-cache.json</text>
+  <text class="mono" x="106" y="990">.rc1-audit/discovery/</text>
+
+  <rect class="box" x="516" y="896" width="404" height="104" rx="4"/>
+  <text class="t-b" x="534" y="924">服务端</text>
+  <text class="s" x="534" y="946">Node http 单进程：静态资源白名单 + /api 路由</text>
+  <text class="s" x="534" y="968">凭据仅服务端：VISION_* / TMDB_READ_ACCESS_TOKEN</text>
+  <text class="s" x="534" y="990">预算账本 fail-closed；本轮付费调用 0 次</text>
+
+  <rect class="box" x="944" y="896" width="404" height="104" rx="4"/>
+  <text class="t-b" x="962" y="924">构建产物</text>
+  <text class="s" x="962" y="946">scripts/build.mjs → dist/（121 文件）</text>
+  <text class="s" x="962" y="968">构建期泄漏扫描：0 命中；不产出 env.js</text>
+  <text class="s" x="962" y="990">桌面 + 移动双列图片墙</text>
+
+  <rect class="box-accent" x="1372" y="896" width="460" height="104" rx="4"/>
+  <text class="t-b" x="1390" y="924">部署形态</text>
+  <text class="s" x="1390" y="946">静态资源 + 同源 API 必须在同一进程后可访问</text>
+  <text class="s" x="1390" y="968">子域名部署待用户提供域名 / DNS / 平台凭据（本轮阻塞）</text>
+  <text class="s" x="1390" y="990">本地已验证 1920×1080 与移动端真实渲染</text>
+
+  <!-- arrows: layers -->
+  <line x1="456" y1="300" x2="490" y2="300" stroke="#8a7f70" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="944" y1="300" x2="970" y2="300" stroke="#8a7f70" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="1376" y1="300" x2="1406" y2="300" stroke="#8a7f70" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="1174" y1="548" x2="1174" y2="574" stroke="#8a5c3c" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+  <line x1="770" y1="548" x2="770" y2="574" stroke="#8a5c3c" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+
+  <!-- footer -->
+  <text class="s" x="64" y="1048">数据来源：Art Institute of Chicago · The Metropolitan Museum of Art · Cleveland Museum of Art · Rijksmuseum · Openverse · Wikimedia Commons · Blender Open Movies（CC BY 3.0）</text>
+  <text class="s" x="64" y="1068">绘图依据：src/pages/*.js · src/services/explore/*.js · scripts/discovery/*.mjs · scripts/server.mjs · scripts/build.mjs（develop/v0.3-visual-explore）</text>
+</svg>

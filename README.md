@@ -1,215 +1,157 @@
-# Visual Ancestry · 视觉参考与创作工具
+# Frame Atlas
 
-> 用电影的眼睛找画，用画的结构写镜头。
+**从一张图，找到它真正的视觉祖先。** 上传或选择一件作品，系统用本地视觉索引跨馆检索同源图像，并沿"保留画派、只换一个维度"的方向继续探索；必要时再把图片交给视觉模型做对照，只返回有证据的关联。
 
-Visual Ancestry 连接艺术档案与开放馆藏，帮助创作者通过视觉描述寻找绘画和电影参考，并把选中的画面转化为创作提示与拍摄方案。
-
-**寻找参考 → 理解视觉关系 → 生成创作提示 → 保存灵感**
-
-[English](./README.en.md) · [架构与数据流](./docs/ARCHITECTURE.md) · [验收报告](./docs/ACCEPTANCE-REPORT.md) · [演示脚本](./docs/DEMO-SCRIPT.md) · [Agent Skill](./skill/visual-ancestry/SKILL.md)
-
-![首页「画册」界面：1440×900 首屏 15 件作品，图像占首屏 73%](./docs/media/album-1-home.png)
-
-<p align="center">
-  <img src="./docs/media/album-2-search-results.png" width="49%" alt="搜索结果：命中带评分与理由">
-  <img src="./docs/media/album-4-create-picks.png" width="49%" alt="CREATE 参考选择：TaskContext 参考排在最前并处于选中态">
-</p>
-
-<p align="center">
-  <img src="./docs/media/album-1-home-mobile.png" width="32%" alt="390px 手机双列">
-</p>
+这不是一个"AI 生成相似图片"的产品：库里每一张都是真实馆藏或开放授权影片画面，每一条推荐都能点回原始来源。
 
 ---
 
-## 它能帮你做什么
+## 一、怎么用
 
-- **FIND · 找参考** —— 用一句描述说出你要的画面（「夜晚 冷色」「雾 空旷」「一个人站在很大的空间里」），
-  或直接输入片名，命中会给出评分与理由，并标明来源与许可。
-- **CREATE · 写提示** —— 选 2–4 件参考，生成结构化 Prompt，导出 Markdown / JSON；只写真实存在的字段，不补编。
-- **SHOOT · 定镜头** —— 把参考里的视觉原则（构图、光线、色彩、空间）翻成可执行的拍摄指导。
-- **MEMORY · 存灵感** —— 把看中的画面存进个人视觉档案，可导出、可迁移、可清空，数据留在你自己的浏览器里。
-
-## 参考从哪里来
-
-- **本地档案** —— 公共领域绘画与电影影像，逐件记录来源机构、Commons 文件页与许可。
-- **开放馆藏** —— Art Institute of Chicago、The Met、Cleveland Museum of Art、Rijksmuseum 的公开接口（免密钥）。
-- **Wikimedia Commons** —— 电影画面检索；命中会做身份核验与许可判定，核不出来的导演与身份如实留空。
-
-结果里会区分**视觉相关命中**与**文本元数据命中**：标题里恰好出现某个词，不会被说成「画面就是你要的」。
-
-已知限制：Met 馆藏接口首次连接可能约 10 秒超时（适配器无自动重试），该渠道失败时会明确说明，不影响其他来源。
-
-### 此备份分支的验收边界（2026-10-19）
-
-这是 P4 Vision feature 的可回退源码快照，未替换公开 main / v0.1.0 / v0.1.1，也不构成新部署。
-
-- **REAL-PROVIDER 单张历史实测**：P4.2 本地存档记录一次 HTTP 200、2060ms、返回结构化 intent；报告记录 22 字段校验通过。本轮只核对存档，未新增付费调用，不能外推为普遍识图可靠性。
-- **本轮功能复验**：修复后的候选重排完整函数定向测试 9/9；真实 Edge 路由与控件 10/10。分析响应使用注入 MOCK 或历史回放，不能计作新的真实识图测试。三套既有离线回归为 51/51、36/36、30/30。
-- **艺术推荐尚未验收**：像素可读取、可比较，但 P4.10 描述子判别效度失败，像素距离不改变元数据顺序。尚无独立标注集证明 Top 5 相关性或成对排序改善，不宣称完成视觉相似搜索。
-
-项目简介可采用：**面向影视创作的视觉参考工具，连接结构化检索、可追溯来源与创作方案；完成两项运行时缺陷修复复验，并明确区分历史单张真实识图、测试回放与尚未验证的艺术推荐质量。**
-
-详见 [独立错误日志](docs/control/ERROR_REGISTRY.md) 与 [修复复验及备份范围](docs/P4.10-FIX-REVALIDATION.md)。其余功能的原验收记录保留在下方及验收报告，本轮未全量重验。
-
-### 当前不提供的能力
-
-- **Vision 需要本地配置与预算授权** —— 历史单张真实调用已跑通；默认不附带 Provider 凭据，未配置时上传识图仍不可用并明确返回 503。单张链路成功不等于以图搜图质量已验收。
-- **动画参考检索尚未完成** —— 档案里没有动画素材，选择动画媒介只会得到如实的空状态。
-
-### 当前发布形态
-
-这是 **GitHub 源码发布**：仓库内**没有独立的线上应用入口**，需要按下方说明在本地运行。
+1. **首页**（`#index`）：本地 8 件作品即时显示，随后异步补入馆藏与自动发现图；搜索框支持文字描述、上传图片、选已有作品三种入口。
+2. **作品详情**（`#artwork/<key>`）：大图 + 作者/年代 + 「WHY IT WORKS」+「EXPLORE」+「Artwork facts」。
+3. **探索区**：四条分支（换主体 / 换场景 / 换构图 / 局部视觉语言），每条都写清保留了什么、改变了什么、证据来源；上方「同媒介视觉近邻」单独一行，只做同媒介向量召回。
+4. **跨媒介**：媒介切到「彩色电影」「动画」即可看到真实影片画面作为参考候选；点进去仍是同一个详情页。
+5. **连续探索**：任何外部作品都有内部地址（`#artwork/r.<图片哈希>`），可以直接刷新打开，也可以作为下一轮探索的起点。
 
 ---
 
-## 运行要求
+## 二、当前版本
 
-| 项目 | 要求 |
+| 项 | 值 |
 |---|---|
-| Node.js | **≥ 20**（用到内置 `fetch`、`node:crypto`） |
-| 运行时依赖 | **无**。只用 Node 内置模块，不需要 `npm install` |
-| 可选依赖 | `sharp` —— 仅 `npm run build` 需要 |
+| 版本 | v0.3.0（`develop/v0.3-visual-explore`） |
+| 正式网址 | **待部署**（见第九节：缺少域名/DNS/平台凭据，本轮阻塞） |
+| 演示视频 | `.rc1-audit/demo/frame-atlas-demo.mp4`（1920×1080 · H.264 · 89.6 秒 · 真实浏览器录制） |
+| 架构图 | `docs/architecture/frame-atlas-architecture.svg` / `.png`（1920×1080） |
+| 部署平台 | 暂未部署；本地生产构建已验证 |
 
-## 技术说明
+---
 
-以下内容面向想读代码或改造它的人。
+## 三、技术架构
 
-## 启动（Windows PowerShell）
+![架构图](docs/architecture/frame-atlas-architecture.png)
 
-```powershell
-# 1. 进目录
-cd <解压后的目录>
+单进程 Node 服务 + 浏览器端 SPA，三条路径互不阻塞：
 
-# 2. 启动（直接跑源码树，不需要先构建）
-$env:PORT = 5173
-npm start
-```
+- **离线构建**：采集 → 字节校验 → 三键去重 → ffmpeg 抽帧 → 向量与像素特征写入 `index.json`。
+- **在线检索**：页面只调同源 `/api/discovery/neighbors`，读索引、算证据、归类四分支；浏览器不直连外部 API。
+- **后台补货**：候选不足时入队串行作业（并发 1、队列 6、同查询 30 分钟去重），前端轮询任务状态。
 
-或者不经过 npm：
+视觉侧不训练模型：`MobileCLIP-S0`（ONNX，512 维，11.3 MB）负责召回；构图/光影类判断来自像素实测（明度三段、不对称度、饱和度、对比度、边缘密度）。**付费视觉模型不参与排序**。
 
-```powershell
-node scripts/server.mjs . 5173
-```
+---
 
-然后打开 <http://127.0.0.1:5173>。
+## 四、已完成模块
 
-> 服务端的默认静态根是 `dist/`（构建产物）。`node scripts/server.mjs .` 是**显式选择**
-> 直接服务源码树 —— 这是有意的：项目目录里有 `.env`，默认指向错误目录正是历史上
-> `GET /.env` 泄漏的原因。白名单守卫两种方式都拦得住。
-
-## 配置 Vision（可选）
-
-不配置也能完整使用检索、分析、CREATE、SHOOT、MEMORY。只有「上传图片 / 以图搜图」不可用。
-
-```powershell
-Copy-Item .env.example .env
-# 编辑 .env 填入 VISION_API_BASE / VISION_API_KEY（仅服务端生效）
-$env:VISION_API_BASE = "https://.../v1/chat/completions"
-$env:VISION_API_KEY = "..."
-node scripts/server.mjs . 5173
-```
-
-安全默认：Provider 已配置但**没配预算账本时，服务端拒绝调用**（fail-closed），
-不会因为「忘记设预算」而放开付费 Key。完整变量说明见 [`.env.example`](./.env.example)。
-
-## Agent Skill
-
-```bash
-node skill/visual-ancestry/scripts/va.mjs search "孤独 夜晚" --limit 5
-node skill/visual-ancestry/scripts/va.mjs intent bahram-gur-karg
-node skill/visual-ancestry/scripts/va.mjs plan --refs bahram-gur-karg,the-kiss --out plan.md
-node skill/visual-ancestry/scripts/va.mjs vision-status
-```
-
-Skill **直接 import 网页用的那份检索与分析模块**，不另写一套电影搜索算法。
-没有 Vision Provider 时它会明确报告不可用，不会把本地检索结果包装成「识图结果」。
-详见 [`skill/visual-ancestry/SKILL.md`](./skill/visual-ancestry/SKILL.md)。
-
-## 目录
-
-| 路径 | 内容 |
-|---|---|
-| `index.html` | 入口；默认皮肤是「画册」A 方案 |
-| `src/pages/` | 路由级页面：`find` / `create` / `shoot` / `memory` |
-| `src/services/retrieval/` | 检索与打分（Skill 与网页共用） |
-| `src/services/source/` | 外部来源：Commons 检索、电影概念拆分、许可判定 |
-| `src/services/vision/` | 视觉分析契约与归一化 |
-| `src/data/` | 档案数据（作品、电影画面、VisualIntent 记录） |
-| `server/security/` | 访问控制、预算账本、静态路径守卫 |
-| `scripts/server.mjs` | 静态服务 + Vision API |
-| `public/assets/` | 本地图片素材（thumb / preview / detail 三档） |
-| `qa/` | 可运行的验收脚本（不含浏览器 profile 与截图证据） |
-| `docs/` | 架构说明与阶段报告 |
-
-## 状态一览（技术视角）
-
-**已实现并真实验证**
-
-- 本地档案检索（绘画 51 + 电影影像 15），带评分与命中理由；中英文视觉描述都会先解析成
-  结构化 VisualIntent 再打分
-- 开放馆藏检索：AIC / Met / Cleveland / Rijksmuseum 免密钥接口（Met 走 v1.1 搜索，旧 v1 已退役）
-- Wikimedia Commons 电影画面检索，含多概念拆分、身份核验与许可判定
-- 45 条 VisualIntent 分析记录，读取时携带 provenance 与来源链接
-- CREATE 选参 → 生成 Prompt → 复制 / 导出 Markdown / JSON
-- TaskContext 参考在页间正确传递；SHOOT 拍摄指导；记忆的导出与再导入
-- 静态路径守卫、预算 fail-closed
-
-不提供的能力见上文「当前不提供的能力」。此外：**无用户系统、无云端持久化、无移动端原生壳**；
-记忆数据只保存在使用者自己的浏览器中。
-
-**Agent Skill 的能力边界**
-
-- 本地能力（不依赖外部服务）：`search`（本地档案检索）、`intent`（读取 45 条 VisualIntent 记录）、`plan`（生成并导出创作方案）
-- 依赖外部服务：`vision-status` 需要服务端 `/api/vision`（未配置时如实报告不可用）；带 `--external` 的检索需要访问 Wikimedia Commons（约 9–20s）
-
-## 素材许可
-
-代码 MIT。图片素材许可**逐件不同**；逐件许可、来源文件页与核验方法见
-[`LICENSE-ASSETS.md`](./LICENSE-ASSETS.md)：
-
-- 46 件附带图像的绘画：**44 件 Public domain + 2 件 CC0**（公有领域奉献），
-  全部经 Wikimedia Commons 文件页实时核验（核验日期 2026-10-18）
-- 15 件电影影像：均为 Public domain（Commons 文件页核验）；其中 5 件为宣传类影像，
-  10 件为影片帧 / 截图 / 剧照，性质已逐件标注
-- 另有 5 件绘画未附带图像（仅保留著录），不涉及再分发
-- 许可核验脚本与证据 JSON 随仓库分发（`qa/licence-audit/`），全新克隆后可复现
-
-### 商业使用
-
-| 内容 | 许可 | 可否商用 |
+| 模块 | 状态 | 说明 |
 |---|---|---|
-| 源代码 | MIT | **可以**（须保留版权与许可声明） |
-| 仓库内置图像（183 个 webp） | Public domain / CC0 | **可以**，不设版权限制 |
-| 在线检索结果（运行时取回的馆藏记录与图像） | **不适用本仓库许可**，由来源机构按各自条款提供 | 取决于来源条款；本仓库不转存、不镜像 |
-| 产品生成的 Prompt / 拍摄方案 | **不属于 MIT 授权范围**（是产品输出，不是被授权的素材） | 可自由使用，但属参考建议、**不构成法律意见** |
+| 首页图片墙（本地 + 远端混排） | ✅ | 双键去重、坏图剔除、移动双列 |
+| 作品详情统一页 | ✅ | 本地与外部作品同一套；外部作品 `#artwork/r.<hash>` |
+| 四条风格分支 | ✅ | 证据两段（保留 × 变化），三档表述，从不写"已验证" |
+| 媒介筛选（五档） | ✅ | 黑白画面不作为参考；外部候选不因重绘丢失 |
+| 四馆馆藏接入 | ✅ | Met(v1.1) / Cleveland / Rijksmuseum 有数据；AIC 适配器可用但本轮 0 件入库 |
+| Commons 分类采集 | ✅ | 电影/动画画面分类，许可与元数据双重门槛 |
+| Blender 开放影片抽帧 | ✅ | Tears of Steel、Big Buck Bunny；带影片名与时间戳 |
+| 按需补货 + 限速保护 | ✅ | 同源校验、每 IP 限速、可选触发 token |
+| 跨媒介探索 | ⚠️ 可用但弱 | 见第七节实测 |
+| TMDB（电影剧照/剧集） | ❌ 未验收 | 无凭据，标记 `credential-required` |
+| 商业日漫 | ❌ 未接入 | 第三方站点截图不等于索引授权 |
+| 子域名部署 | ❌ 阻塞 | 缺域名/DNS/平台凭据 |
 
-完整说明见 [`LICENSE-ASSETS.md` §6](./LICENSE-ASSETS.md)。一句话提醒：**MIT 不覆盖作品著作权**——
-代码可商用，不代表馆藏藏品可以随意商用。
+**功能完成率：9 / 12 = 75%**（分母为上表 12 项既定功能；⚠️ 计为完成但质量受限，❌ 计为未完成）。
 
-## 最小真实验收
+---
+
+## 五、数据覆盖（样本量，不是行业覆盖率）
+
+| 来源 | 数量 | 性质 |
+|---|---|---|
+| Cleveland Museum of Art | 89 | 馆藏作品 |
+| The Metropolitan Museum of Art | 107 | 馆藏作品 |
+| Openverse | 74 | 开放图像（CC 授权，含各馆上传件） |
+| Rijksmuseum | 26 | 馆藏作品 |
+| Wikimedia Commons | 202 | 作品 178 + 电影画面 14 + 动画画面 10 |
+| Blender Open Movies | 20 | 抽帧：电影 10 + 动画 10 |
+| AniList | 20 | **目录封面，不是画面** |
+| **合计** | **538** | 索引条目 553（含历史版本图片） |
+
+- 本地精选绘画：46 件（有预生成向量）。
+- **电影画面 23 张**（Blender 10 + Commons 13），其中 7 张黑白，可作参考 16 张。
+- **动画画面 20 张**（Blender 10 + Commons 10），其中 1 张黑白，可作参考 19 张。
+- TMDB：0 张（无凭据）。
+
+---
+
+## 六、搜索质量（Phase 2.2B 人工复核）
+
+四条跨媒介路径 × 3 个真实起点 × 4 张候选 = **48 张逐张人工复核**：
+
+| 判定 | 数量 | 比例 |
+|---|---|---|
+| 有效（能说出构图/色彩/光影对应） | 3 | 6.3% |
+| 弱（同媒介但只有笼统气质相近） | 24 | 50% |
+| 错误（内容与结构都无关） | 21 | 43.8% |
+| 无候选 | 0 | 0% |
+
+结论：**跨媒介可以探索，但只能作为"值得一看的参考"，不能宣称风格一致。** 512 维 MobileCLIP-S0 的余弦衡量的是同一媒介内的内容相似，抓不住跨媒介真正可解释的结构对应。报告见 `docs/p2/PHASE2.2B-REPORT.md`。
+
+同一媒介内（绘画→绘画）质量明显更好：四条分支要求"画派交集 + 明确维度变化"，不足就留空。
+
+---
+
+## 七、测试结果
+
+| 类别 | 结果 |
+|---|---|
+| 单元测试 | **543 / 543 PASS（23 套件）** |
+| 端到端（连续探索，真实浏览器） | **15 / 15 PASS** |
+| 端到端（电影/动画媒介） | **9 / 9 PASS** |
+| 视觉质量人工复核 | **48 张：有效 3 / 弱 24 / 错误 21** |
+| 构建 | `dist/` 320 文件；构建期泄漏扫描 0 命中 |
+| 付费视觉调用 | **0 次**（预算账本 15/17 未动） |
+
+---
+
+## 八、数据来源、许可与版权
+
+- **四馆**：均为馆方开放数据 API，使用其公开接口；作品权利状态随接口字段显示。
+- **Openverse / Commons**：只收公有领域、CC0、CC BY、CC BY-SA；许可字段缺失或 `fair use` 一律跳过。
+- **Blender Open Movies**：Tears of Steel、Big Buck Bunny 均为 **CC BY 3.0**，署名 Blender Foundation；视频与抽帧只存本地（`.rc1-audit/`，不进 Git），不随产品分发。
+- **TMDB**：适配器已实现但未启用，未取任何数据。
+- 产品内展示每一件外部作品都带「原始馆藏 ↗」外链。
+
+---
+
+## 九、实际限制（不粉饰）
+
+1. **跨媒介弱**：见第六节，有效仅 6.3%。
+2. **黑白画面被排除**：饱和度 < 0.06 的影片画面（含部分默片）不作为参考，这是产品政策。
+3. **商业日漫未覆盖**：动画素材是公有领域早期动画 + CC BY 的 Big Buck Bunny，**不代表商业日漫**。
+4. **TMDB 未验收**：没有凭据就没有数据，界面不假装有。
+5. **Commons 质量参差**：分类成员由上传者自述；已用许可 + 元数据 + 标题三重过滤，并人工移除 1 条片名字卡，但**没有逐张复核全部 202 件**。
+6. **未部署**：本轮缺域名/DNS/平台凭据，子域名与正式网址为空。
+7. **种子池小**：538 件，其中绘画 281、照片 194；跨媒介时可选面窄。
+8. **AIC 本轮 0 件**：适配器正常返回结果，但图片未能通过校验（IIIF 地址），数据集里没有 AIC 条目；这一条不写成"已覆盖四馆"。
+
+---
+
+## 十、本地运行
 
 ```powershell
-npm start
-# 浏览器打开 http://127.0.0.1:5173
-#   1. 首页搜索「孤独 夜晚」→ 应出现命中作品与理由
-#   2. 点开任一作品 → 侧栏出现「使用参考」
-#   3. 进入 CREATE（#create）→ 该参考应排在参考区最前并处于选中态
-#   4. 选到 2 幅 → 生成 Prompt → 导出 Markdown
-# 5. Skill（另开一个终端）
-node skill/visual-ancestry/scripts/va.mjs search "孤独 夜晚" --limit 3
-node skill/visual-ancestry/scripts/va.mjs plan --refs bahram-gur-karg --out plan.md
+npm install
+npm run build                 # 生产构建 → dist/
+node scripts/server.mjs . 4600  # 静态 + 同源 API
+# 打开 http://127.0.0.1:4600
 ```
 
-验收脚本（需要本机 Edge）：`node qa/ui/ui-final-acceptance.mjs`、`node qa/find/edge-cdp-e2e.mjs`、`node qa/ui/round3-check.mjs`。
+可选：自动发现需要一次离线准备（图片与索引都在 `.rc1-audit/`，不进 Git）：
 
-许可核验复现（免密钥，只读 Commons 公共 API）：
-
-```bash
-node qa/licence-audit/rc1-artwork-licence-audit.mjs   # 逐件核验 46 件画作
-node qa/licence-audit/rc1-film-licence-audit.mjs      # 逐件核验 15 件电影影像
+```powershell
+npm run discovery:cinema        # Commons 分类 + Blender 抽帧（需 ffmpeg）
+npm run discovery:index         # 向量 + 像素特征
+npm run discovery:vectors       # 本地绘画的查询向量
+npm run discovery:status
 ```
 
-## 数据与隐私
-
-- 视觉记忆保存在浏览器 localStorage，可一键导出/清空。
-- 所有 Vision 凭据只存在于服务端进程环境变量；构建产物不包含任何 `VISION_*` 值。
+环境变量见 `.env.example`：视觉模型与 TMDB 凭据**只在服务端**，不填也能浏览与探索。

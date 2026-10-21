@@ -96,7 +96,9 @@ export function filterByMedia(pool, mode = "all", queryKind = "artwork") {
 
 function emptyReasonFor(mode, count) {
   if (count > 0) return null;
-  if (mode === "animation") return "库里还没有动画素材。这一档是空的，不是没加载出来。";
+  // 动画画面已入库（Blender 抽帧 + 公有领域早期动画），但它们不在本地档案分支里，
+  // 所以这里的空栏是"本地分支没有"，不能说成"库里没有"。
+  if (mode === "animation") return "本地档案分支里没有动画候选；动画画面在上方「同媒介视觉近邻」里（来自自动发现，未做风格判定）。";
   if (mode === "film") return "没有可用的彩色电影画面。黑白影片不作为视觉参考，已排除。";
   if (mode === "cross") return "没有可用的跨媒介画面。黑白电影不作为 AIGC 视觉参考，因此不在这里凑数。";
   return "没有符合条件的候选。";
