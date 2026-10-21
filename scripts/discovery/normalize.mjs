@@ -14,6 +14,8 @@ export const IMAGE_KINDS = Object.freeze({
   POSTER: "poster",
   ANIME_COVER: "anime-cover",
   PHOTOGRAPH: "photograph",
+  // 动画电影的实际画面（区别于目录封面 anime-cover 与电视单集剧照）
+  ANIMATION_FRAME: "animation-frame",
   UNKNOWN: "unknown",
 });
 
@@ -42,6 +44,9 @@ export function normalize(raw, meta) {
     fetchedAt: new Date().toISOString(),
     query: meta.query || null,
     origin: str(raw.origin) || null,
+    // 来源特有的溯源信息（影片名/时间戳/许可链接/分类），不参与统一字段的判断
+    extra: raw.extra && typeof raw.extra === "object" ? raw.extra : null,
+    timestamp: typeof raw.timestamp === "number" ? raw.timestamp : null,
     missing: [],
   };
   if (!rec.providerId) rec.missing.push("providerId");
@@ -65,5 +70,7 @@ export function isPublishable(rec) {
 
 /** 是否可以作为"动画画面"参与视觉参考——目录封面一律不行。 */
 export function isAnimationFrame(rec) {
-  return rec.imageKind === IMAGE_KINDS.TV_EPISODE_STILL || rec.imageKind === IMAGE_KINDS.FILM_STILL;
+  return rec.imageKind === IMAGE_KINDS.TV_EPISODE_STILL
+    || rec.imageKind === IMAGE_KINDS.ANIMATION_FRAME
+    || rec.imageKind === IMAGE_KINDS.FILM_STILL;
 }

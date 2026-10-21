@@ -24,7 +24,7 @@ export function matchesMedia(item, mode) {
   const kind = (item && item.imageKind) || "unknown";
   if (mode === "artwork") return kind === "artwork";
   if (mode === "film") return (kind === "film-still" || kind === "tv-episode-still") && !isMonochromeItem(item);
-  if (mode === "animation") return kind === "tv-episode-still" && !isMonochromeItem(item);
+  if (mode === "animation") return (kind === "animation-frame" || kind === "tv-episode-still") && !isMonochromeItem(item);
   if (mode === "cross") return kind !== "artwork";
   return true;
 }

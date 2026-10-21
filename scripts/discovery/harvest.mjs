@@ -23,6 +23,8 @@ import { museumsProvider } from "./providers/museums.mjs";
 import { openverseProvider } from "./providers/openverse.mjs";
 import { commonsProvider } from "./providers/commons.mjs";
 import { tmdbProvider, tmdbStatus } from "./providers/tmdb.mjs";
+import { harvestCinema } from "./engine.mjs";
+import { movieStatus } from "./providers/blenderFrames.mjs";
 import { anilistProvider } from "./providers/anilist.mjs";
 
 const PROVIDERS = {
@@ -202,6 +204,30 @@ async function vectors() {
   console.log(`  本地向量：${Object.keys(out.vectors).length} 件 → .rc1-audit/discovery/local-vectors.json`);
 }
 
+const CINEMA_CATEGORIES = [
+  "Category:Film screenshots",
+  "Category:Film frames",
+  "Category:Film stills",
+  "Category:Animated film screenshots",
+];
+
+/** cinema — 电影与动画的真实画面（Commons 分类 + Blender 开放影片抽帧）。 */
+async function cinema() {
+  console.log("  开放影片:");
+  for (const m of movieStatus()) console.log(`   ${m.id.padEnd(16)} ${m.license.padEnd(10)} ${m.sizeMb} MB ${m.file || "(未下载)"}`);
+  const cats = (flag("categories", "") || "").split("|").filter(Boolean);
+  const only = flag("only", "");
+  const r = await harvestCinema({
+    commonsLimit: Number(flag("limit", "48")),
+    categories: only === "blender" ? [] : (cats.length ? cats : CINEMA_CATEGORIES),
+    skipCommons: only === "blender",
+    skipBlender: only === "commons",
+  });
+  console.log(`  Commons: ${JSON.stringify(r.commons)}`);
+  console.log(`  Blender: ${JSON.stringify(r.blender)}`);
+  console.log(`  新增入库 ${r.added} 件（库内合计 ${readWorks().length}）`);
+}
+
 function verify() {
   const works = readWorks();
   const doc = readIndex();
@@ -220,9 +246,9 @@ function status() {
   console.log(JSON.stringify({ ...s, tmdb: tmdbStatus(), dataDir: path.relative(ROOT, DATA_DIR) }, null, 1));
 }
 
-const modes = { discover, index, vectors, verify, status };
+const modes = { discover, index, vectors, cinema, verify, status };
 if (!modes[mode]) {
-  console.error(`  未知模式：${mode}（discover / index / vectors / verify / status）`);
+  console.error(`  未知模式：${mode}（discover / index / vectors / cinema / verify / status）`);
   process.exit(2);
 }
 await modes[mode]();

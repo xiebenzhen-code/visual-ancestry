@@ -23,7 +23,9 @@
     "discovery:harvest": "node scripts/discovery/harvest.mjs discover --limit 30",
     "discovery:index": "node scripts/discovery/harvest.mjs index",
     "discovery:verify": "node scripts/discovery/harvest.mjs verify",
-    "discovery:status": "node scripts/discovery/harvest.mjs status"
+    "discovery:status": "node scripts/discovery/harvest.mjs status",
+    "discovery:cinema": "node scripts/discovery/harvest.mjs cinema",
+    "discovery:cinema:blender": "node scripts/discovery/harvest.mjs cinema --only blender"
   },
   "devDependencies": {
     "sharp": "^0.35.4"

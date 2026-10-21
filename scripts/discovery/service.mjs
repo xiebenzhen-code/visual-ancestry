@@ -89,13 +89,23 @@ export function wallWorks(topic, limit = 8) {
   return pool.slice(0, limit).map(publicWork);
 }
 
+/** 文件名式的标题（如 CNAM5.mp4.00 16 45 02.Still001）不好读：
+    有描述时用描述，且把原文件名留在 providerId/来源里，不丢线索。 */
+function displayTitle(w) {
+  const raw = String(w.title || "").replace(/\.(jpe?g|png|tiff?|webp|gif)$/i, "");
+  const desc = String(w.extra?.description || "").replace(/^image du film\s*/i, "").trim();
+  const looksMachine = /\.(mp4|mov|avi|mkv)\.|\bStill\s?\d+\b|^[A-Za-z0-9_-]{8,}$/.test(raw);
+  if (looksMachine && desc.length >= 3 && desc.length <= 80) return desc;
+  return raw;
+}
+
 function publicWork(w) {
   return {
     id: w.id,
     href: `#artwork/r.${w.imageHash}`,
     provider: w.provider,
     providerId: w.providerId,
-    title: String(w.title || "").replace(/\.(jpe?g|png|tiff?|webp|gif)$/i, ""),
+    title: displayTitle(w),
     creator: w.creator,
     year: w.year,
     medium: w.medium,
@@ -104,6 +114,11 @@ function publicWork(w) {
     sourceUrl: w.sourceUrl,
     image: `/api/discovery/image/${encodeURIComponent(w.imageHash)}`,
     foundBy: w.query || null,
+    // 画面类作品的可追溯信息：来自哪部片、第几秒、署名与许可出处
+    movie: w.extra?.movie || null,
+    timestamp: typeof w.timestamp === "number" ? w.timestamp : (w.extra?.timestamp ?? null),
+    credit: w.extra?.credit || null,
+    licenseUrl: w.extra?.licenseUrl || null,
   };
 }
 
@@ -316,6 +331,32 @@ export async function exploreFor({ artworkId = null, hash = null, limit = 40 } =
       (LEVEL_RANK[a.level] ?? 3) - (LEVEL_RANK[b.level] ?? 3) || b.affinity - a.affinity || b.cos - a.cos);
   }
 
+  // 同媒介近邻：向量层面的"同媒介最近"，**不宣称风格**。
+  // 为什么单独给：电影/动画画面与一幅绘画在像素亲和度上往往达不到阈值，
+  // 若只按风格证据筛，媒介档会永远是空的。这里如实给出"同媒介 + 向量近邻"，
+  // 并在文案里写明"未做风格判定"，不混进四条风格分支。
+  const MEDIA_OF = (kind) => (kind === "film-still" || kind === "tv-episode-still" ? "film"
+    : kind === "animation-frame" ? "animation"
+    : kind === "artwork" ? "artwork" : "cross");
+  const mediaNeighbors = { film: [], animation: [], artwork: [], cross: [] };
+  for (const s of scored) {
+    const m = MEDIA_OF(s.work.imageKind);
+    // 先多收一些：黑白画面会在客户端按媒介规则被剔除，池子太小会被筛空
+    if (mediaNeighbors[m].length >= 14) continue;
+    if (mediaNeighbors[m].some((x) => x.id === s.work.id)) continue;
+    mediaNeighbors[m].push({
+      ...s.work,
+      metrics: s.work.metrics || null,
+      cos: s.cos,
+      affinity: s.affinity.score,
+      level: "vector-only",
+      retained: s.affinity.parts,
+      changed: [],
+      evidence: [{ kind: "向量近邻", text: `cos ${s.cos}` }],
+      claim: "同媒介视觉近邻（仅向量，未做风格判定）",
+    });
+  }
+
   const total = buckets.subject.length + buckets.scene.length + buckets.composition.length + buckets.local.length;
   const thin = total < THRESHOLD.thin;
 
@@ -337,6 +378,7 @@ export async function exploreFor({ artworkId = null, hash = null, limit = 40 } =
     ok: true,
     query: { ...queryWork, subject: qSubject, scene: qScene, metrics: queryMetrics },
     branches: buckets,
+    mediaNeighbors,
     total,
     thin,
     job,

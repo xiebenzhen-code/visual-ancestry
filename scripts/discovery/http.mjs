@@ -81,7 +81,8 @@ export async function getJson(url, { headers = {}, timeoutMs = LIMITS.timeoutMs,
       lastError = e;
       const retryable = e instanceof HttpError ? e.status === 429 || e.status === 503 || e.status === 0 : true;
       if (!retryable || attempt === retries) break;
-      await sleep(e.retryAfter || LIMITS.retryDelayMs * (attempt + 1));
+      // Retry-After 可能高达数千秒：照单全睡会把整轮采集拖死。上限 2.5s，宁可跳过这张图。
+      await sleep(Math.min(e.retryAfter || LIMITS.retryDelayMs * (attempt + 1), 2500));
       attempt += 1;
     } finally {
       clearTimeout(timer);
@@ -109,7 +110,7 @@ export async function getImage(url, { headers = {}, timeoutMs = LIMITS.timeoutMs
       if (res.status === 429 || res.status === 503) {
         const ra = Number(res.headers.get("retry-after")) || 0;
         lastErr = new HttpError(`image HTTP ${res.status}`, { status: res.status, url, retryAfter: ra * 1000 });
-        if (i + 1 < attempts) { await sleep(ra * 1000 || 1200); continue; }
+        if (i + 1 < attempts) { await sleep(Math.min(ra * 1000 || 1200, 2500)); continue; }
         throw lastErr;
       }
       if (!res.ok) throw new HttpError(`image HTTP ${res.status}`, { status: res.status, url });
@@ -124,6 +125,7 @@ export async function getImage(url, { headers = {}, timeoutMs = LIMITS.timeoutMs
       lastErr = e;
       if (i + 1 >= attempts || !(e instanceof HttpError) || (e.status && e.status !== 429 && e.status !== 503 && e.status !== 0)) throw e;
       await sleep(1200);
+      // 说明：图床限流时最多等 2.5s，超出就记失败——失败可重跑，卡死不可接受。
     } finally {
       clearTimeout(timer);
     }

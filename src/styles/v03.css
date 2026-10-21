@@ -318,6 +318,36 @@
   text-underline-offset: 2px;
 }
 
+.explore-media-row {
+  margin: 0 0 18px;
+  padding: 14px 0 4px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.18);
+}
+
+.explore-media-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.explore-media-row-head h4 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.explore-media-row-head span {
+  font-size: 11px;
+  color: var(--ink-3, #8a8a8a);
+}
+
+.explore-media-row-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
 /* 手机端：双列墙里卡片较窄，证据文字收一行 */
 @media (max-width: 720px) {
   .explore-external .explore-evidence li {

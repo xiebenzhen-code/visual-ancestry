@@ -8,13 +8,19 @@ import { mapLimit, LIMITS } from "./http.mjs";
 import { validateImage } from "./validate-image.mjs";
 import { isPublishable } from "./normalize.mjs";
 import { readWorks, appendWorks, appendRun, saveImage } from "./store.mjs";
+import fs from "node:fs";
+import { dimensionsOf } from "./validate-image.mjs";
 import { museumsProvider } from "./providers/museums.mjs";
+import { commonsCinemaProvider } from "./providers/commonsCinema.mjs";
+import { blenderRecords } from "./providers/blenderFrames.mjs";
 import { openverseProvider } from "./providers/openverse.mjs";
 import { commonsProvider } from "./providers/commons.mjs";
 import { tmdbProvider } from "./providers/tmdb.mjs";
 import { anilistProvider } from "./providers/anilist.mjs";
 
 const PROVIDERS = {
+  "commons-cinema": commonsCinemaProvider,
+  blender: { id: "blender", label: "Blender Open Movies", capabilities: ["film-still", "animation-frame"], credentialRequired: false, search: async () => [{ provider: "blender", status: 200, returned: 0, records: [], latencyMs: 0 }] },
   museums: museumsProvider,
   openverse: openverseProvider,
   commons: commonsProvider,
@@ -43,6 +49,83 @@ export function dedupeAgainst(records, existing) {
     fresh.push(rec);
   }
   return { fresh, dupId, dupHash, dupWork };
+}
+
+/** 本地文件（ffmpeg 抽帧）直接入库：读字节 → 真解码尺寸 → 落盘 → 记哈希。 */
+function ingestLocal(records) {
+  const good = [];
+  for (const rec of records) {
+    try {
+      const abs = path.resolve(process.cwd(), rec.localFile);
+      const bytes = fs.readFileSync(abs);
+      const dims = dimensionsOf(bytes);
+      if (!dims || Math.min(dims.width, dims.height) < 200) continue;
+      const ct = /\.png$/i.test(abs) ? "image/png" : "image/jpeg";
+      const stored = saveImage(bytes, ct);
+      good.push({ ...rec, imageHash: stored.hash, storedImage: stored.rel, width: dims.width, height: dims.height, validatedAt: new Date().toISOString() });
+    } catch { /* 单帧失败不影响其它帧 */ }
+  }
+  return good;
+}
+
+/**
+ * cinema：Commons 分类画面 + Blender 开放影片抽帧，一次跑完。
+ * 两类分开统计，不用一类凑另一类。
+ */
+export async function harvestCinema({ commonsLimit = 40, categories = [], force = false, skipCommons = false, skipBlender = false } = {}) {
+  const dbg = (...a) => { if (process.env.DISCOVERY_DEBUG === "1") console.error("  [cinema]", ...a, `${Date.now() % 100000}ms`); };
+  dbg("start", { commonsLimit, skipCommons, skipBlender });
+  const existing = readWorks();
+  const knownIds = new Set(existing.map((w) => w.id));
+  const stats = { commons: null, blender: null, added: 0 };
+
+  // 1) Commons 分类
+  let commonsRecords = [];
+  const filmCats = categories.filter((c) => /film screenshots|film frames|film stills/i.test(c) && !/animat/i.test(c));
+  const animCats = categories.filter((c) => /animat/i.test(c));
+  for (const [cats, hint] of (skipCommons ? [] : [[filmCats, null], [animCats, "animation"]])) {
+    if (!cats.length) continue;
+    dbg("commons 请求", cats);
+    const runs = await commonsCinemaProvider.search("", { limit: commonsLimit, categories: cats, kindHint: hint });
+    dbg("commons 返回", runs[0].returned, "条");
+    const run = runs[0];
+    stats.commons = {
+      status: run.status,
+      returned: run.returned,
+      skipped: run.skipped,
+      errors: run.errors,
+      latencyMs: run.latencyMs,
+    };
+    commonsRecords.push(...run.records);
+  }
+  const commonsFresh = commonsRecords.filter((r) => !knownIds.has(r.id));
+  dbg("待校验图片", commonsFresh.length);
+  const validated = await mapLimit(commonsFresh, LIMITS.concurrency, async (rec) => {
+    const v = await validateImage(rec.thumbnailUrl || rec.imageUrl);
+    if (!v.ok) return null;
+    const stored = saveImage(v.bytes, v.contentType);
+    return { ...rec, imageHash: stored.hash, storedImage: stored.rel, width: v.width, height: v.height, validatedAt: new Date().toISOString() };
+  });
+  const commonsGood = validated.filter(Boolean);
+  dbg("校验通过", commonsGood.length);
+
+  // 2) Blender 抽帧（离线）
+  const blenderRecs = skipBlender ? [] : await blenderRecords({ force });
+  const blenderFresh = blenderRecs.filter((r) => !knownIds.has(r.id));
+  const blenderGood = ingestLocal(blenderFresh);
+  stats.blender = { extracted: blenderRecs.length, ingested: blenderGood.length };
+
+  const all = [...commonsGood, ...blenderGood];
+  const { fresh, dupId, dupHash, dupWork } = dedupeAgainst(all, existing);
+  appendWorks(fresh);
+  appendRun({
+    at: new Date().toISOString(), mode: "cinema",
+    totals: { commonsValidated: commonsGood.length, blenderIngested: blenderGood.length, fresh: fresh.length, dupId, dupHash, dupWork },
+    sources: [stats.commons, stats.blender],
+  });
+  stats.added = fresh.length;
+  stats.fresh = fresh.length;
+  return stats;
 }
 
 /**

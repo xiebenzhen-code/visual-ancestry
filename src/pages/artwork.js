@@ -29,6 +29,7 @@ const REMOTE_PREFIX = "r.";
 const isRemoteKey = (key) => typeof key === "string" && key.startsWith(REMOTE_PREFIX);
 
 const LEVEL_LABEL = {
+  "vector-only": "同媒介近邻（仅向量）",
   "style-candidate": "待验证的风格延展",
   "same-language": "同一视觉语言（主体未变）",
   "changed-only": "视觉语言证据不足",
@@ -71,6 +72,9 @@ function factsBlock(artwork) {
     ["版权", artwork.rightsStatus],
     ["Evidence", artwork.evidenceLevel],
     ["发现关键词", artwork.foundBy],
+    ["影片", artwork.movie],
+    ["时间戳", artwork.timestamp !== null && artwork.timestamp !== undefined ? `${artwork.timestamp}s` : null],
+    ["署名", artwork.credit],
   ].filter(([, v]) => v);
   return `
     <details class="detail-facts">
@@ -193,9 +197,10 @@ function branchCard(branch) {
 
 function externalCard(item) {
   const level = item.level || "changed-only";
-  const tone = level === "style-candidate" ? "candidate" : level === "same-language" ? "same" : "weak";
+  const tone = level === "style-candidate" ? "candidate" : level === "same-language" ? "same" : level === "vector-only" ? "media" : "weak";
   const retained = (item.retained || []).filter(Boolean);
   const changed = (item.changed || []).filter(Boolean);
+  const vectorOnly = level === "vector-only";
   // 卡片外层不是链接：里面有两个目标（画之旅内部详情 / 原始馆藏），嵌套 <a> 会被浏览器拆开。
   return `
     <div class="explore-card explore-external"
@@ -208,18 +213,25 @@ function externalCard(item) {
         <span class="explore-artist">${escapeHtml(item.creator || "")}${item.year ? " · " + escapeHtml(String(item.year)) : ""}</span>
       </a>
       <span class="explore-claim" data-tone="${tone}">${escapeHtml(LEVEL_LABEL[level] || "待验证")}</span>
-      <ul class="explore-evidence">
-        ${
-          retained.length
-            ? `<li><span class="ev-kind">保留</span>${escapeHtml(retained.join("；"))}</li>`
-            : `<li><span class="ev-kind">保留</span>像素证据不足，只有向量近邻（不作为风格证据）</li>`
-        }
-        ${
-          changed.length
-            ? `<li><span class="ev-kind">改变</span>${escapeHtml(changed.join("；"))}</li>`
-            : `<li><span class="ev-kind">改变</span>未检测到主体/场景/构图变化</li>`
-        }
-      </ul>
+      ${
+        vectorOnly
+          ? `<ul class="explore-evidence">
+               <li><span class="ev-kind">依据</span>向量近邻 cos ${escapeHtml(String(item.cos))}（仅同媒介召回，未做风格判定）</li>
+               ${retained.length ? `<li><span class="ev-kind">参考</span>像素相似项 ${escapeHtml(retained.join("；"))}（未达风格阈值）</li>` : ""}
+             </ul>`
+          : `<ul class="explore-evidence">
+               ${
+                 retained.length
+                   ? `<li><span class="ev-kind">保留</span>${escapeHtml(retained.join("；"))}</li>`
+                   : `<li><span class="ev-kind">保留</span>像素证据不足，只有向量近邻（不作为风格证据）</li>`
+               }
+               ${
+                 changed.length
+                   ? `<li><span class="ev-kind">改变</span>${escapeHtml(changed.join("；"))}</li>`
+                   : `<li><span class="ev-kind">改变</span>未检测到主体/场景/构图变化</li>`
+               }
+             </ul>`
+      }
       <span class="explore-badge is-external">自动发现 · ${escapeHtml(PROVIDER_LABEL[item.provider] || item.provider)}</span>
       <span class="explore-source"><a href="${escapeHtml(item.sourceUrl || "#")}" target="_blank" rel="noreferrer" data-raw-source>原始馆藏 ↗</a></span>
     </div>`;
@@ -238,6 +250,36 @@ function visibleExternal(mode) {
     buckets[key] = keep;
   }
   return { buckets, hidden, total };
+}
+
+/** 同媒介视觉近邻：仅向量，未做风格判定——所以单独一行，不混进风格分支。 */
+function mediaRowCards(mode) {
+  const data = pageState && pageState.external && pageState.external.mediaNeighbors;
+  if (!data || mode === "all") return { items: [], hidden: 0 };
+  const all = data[mode] || [];
+  const items = all.filter((i) => matchesMedia(i, mode));
+  return { items, hidden: all.length - items.length, total: all.length };
+}
+
+function renderMediaRow(mode) {
+  const host = document.querySelector("#explore-media-row");
+  if (!host) return { shown: 0 };
+  const picked = mediaRowCards(mode);
+  const items = picked.items.slice(0, 6);
+  const hidden = picked.hidden + Math.max(0, picked.items.length - items.length);
+  if (!items.length) {
+    host.hidden = true;
+    host.innerHTML = "";
+    return { shown: 0, hidden };
+  }
+  host.hidden = false;
+  host.innerHTML = `
+    <div class="explore-media-row-head">
+      <h4>同媒介视觉近邻</h4>
+      <span>仅向量近邻，未做风格判定 · ${items.length} 张${hidden ? `（另有 ${hidden} 张因媒介规则隐藏）` : ""}</span>
+    </div>
+    <div class="explore-media-row-cards">${items.map(externalCard).join("")}</div>`;
+  return { shown: items.length, hidden };
 }
 
 function appendExternal(host, mode) {
@@ -286,7 +328,8 @@ function renderBranches(host, artwork, mode) {
     });
   }
   const added = appendExternal(host, mode);
-  return { local, ...added };
+  const media = renderMediaRow(mode);
+  return { local, ...added, media };
 }
 
 /* ---------------- 外部候选抓取与补货 ---------------- */
@@ -368,6 +411,7 @@ function exploreSection(artwork) {
         ).join("")}
       </div>
       <p class="explore-external-status" id="explore-external-status" aria-live="polite"></p>
+      <div class="explore-media-row" id="explore-media-row" hidden></div>
       <div class="explore-branches" id="explore-branches">
         ${
           artwork.remote
@@ -469,9 +513,11 @@ function wireDetail(app, artwork, hash) {
         const excluded = local[0] && local[0].mediaState ? local[0].mediaState.excluded : { monochromeFilms: 0 };
         const emptyCount = local.filter((b) => b.empty).length;
         const externalTotal = pageState.external ? Object.values(pageState.external.branches).flat().length : 0;
+        const mediaShown = branchesHost.parentElement.querySelector("#explore-media-row:not([hidden])") ? true : false;
         note.textContent = [
           excluded.monochromeFilms ? `已排除 ${excluded.monochromeFilms} 张黑白电影剧照（不作为 AIGC 视觉参考）。` : "",
-          externalTotal ? `外部候选 ${externalTotal} 条，本媒介下 ${shown} 条${hidden ? `，隐藏 ${hidden} 条` : ""}。` : "",
+          externalTotal ? `风格候选 ${externalTotal} 条，本媒介下 ${shown} 条${hidden ? `，隐藏 ${hidden} 条` : ""}。` : "",
+          mediaShown ? "下方另列同媒介视觉近邻（仅向量）。" : "",
           emptyCount === 4 && !shown ? (local[0].emptyReason || "") : "",
         ].filter(Boolean).join(" ");
       });
@@ -507,6 +553,10 @@ function remoteToArtwork(doc) {
     rightsStatus: w.rights,
     sourceUrl: w.sourceUrl,
     foundBy: w.foundBy,
+    movie: w.movie,
+    timestamp: w.timestamp,
+    credit: w.credit,
+    licenseUrl: w.licenseUrl,
     image: { url: w.image, ratio },
     metrics: doc.metrics || null,
     hasAnalysis: false,
