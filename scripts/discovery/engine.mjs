@@ -65,7 +65,11 @@ export async function harvestQuery(query, { limit = 24, providers = ["museums", 
   }
 
   const candidate = all.filter(isPublishable);
-  const validated = await mapLimit(candidate, LIMITS.concurrency, async (rec) => {
+  // 先按 providerId 预过滤：已入库的记录不必再下载图片（重复运行的核心节省）
+  const known = new Set(readWorks().map((w) => w.id));
+  const toFetch = candidate.filter((r) => !known.has(r.id));
+  const skippedKnown = candidate.length - toFetch.length;
+  const validated = await mapLimit(toFetch, LIMITS.concurrency, async (rec) => {
     const v = await validateImage(rec.thumbnailUrl || rec.imageUrl);
     if (!v.ok) return null;
     const stored = saveImage(v.bytes, v.contentType);
@@ -80,7 +84,7 @@ export async function harvestQuery(query, { limit = 24, providers = ["museums", 
     totals: { raw: all.length, publishable: candidate.length, validated: good.length, fresh: fresh.length, dupId, dupHash, dupWork },
     sources: allRuns,
   });
-  return { added: fresh.length, runs: allRuns, totals: { raw: all.length, validated: good.length, fresh: fresh.length, dupId, dupHash, dupWork } };
+  return { added: fresh.length, skippedKnown, runs: allRuns, totals: { raw: all.length, validated: good.length, fresh: fresh.length, dupId, dupHash, dupWork } };
 }
 
 export { PROVIDERS };

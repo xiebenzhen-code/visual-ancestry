@@ -97,7 +97,10 @@ async function discover() {
   const rejected = all.filter((r) => !isPublishable(r));
   console.log(`  可发布候选 ${candidate.length}，字段不全被拒 ${rejected.length}`);
 
-  const validated = await mapLimit(candidate, LIMITS.concurrency, async (rec) => {
+  const knownIds = new Set(readWorks().map((w) => w.id));
+  const toFetch = candidate.filter((r) => !knownIds.has(r.id));
+  console.log(`  已入库跳过 ${candidate.length - toFetch.length} 条（不重复下载）`);
+  const validated = await mapLimit(toFetch, LIMITS.concurrency, async (rec) => {
     const v = await validateImage(rec.thumbnailUrl || rec.imageUrl);
     if (!v.ok) return { rec, ok: false, error: v.error };
     const stored = saveImage(v.bytes, v.contentType);
