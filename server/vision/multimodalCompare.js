@@ -14,14 +14,18 @@
 //      downgraded. "Both are group portraits" is not a reason.
 
 import { serverVisionConfig, visionConfigured } from "./openaiProvider.mjs";
+import { adjudicate, TIERS } from "./relationTier.js";
 import { budgetConfig, reserveCall, budgetStatus } from "../security/budget.mjs";
 
 /** Bump when the prompt text changes. Part of every cache key. */
 export const PROMPT_VERSION = "p415-v2.3";
 
+// 四档。specific 是本地证据档位：只有色彩/光线/局部形式可借鉴，
+// 不构成整体画面关联。模型侧仍是三值（提示词本轮不动，避免缓存失效）。
 export const VERDICTS = Object.freeze({
   HIGH: "high",
   PARTIAL: "partial",
+  SPECIFIC: "specific",
   UNRELATED: "unrelated",
 });
 
@@ -283,6 +287,13 @@ export function parseComparison(parsed, expectedCount) {
       finalVerdict = VERDICTS.UNRELATED;
       note = "partial 却给不出任何具体相似点，已降级";
     }
+
+    // 证据裁决：用差异证伪相似点，只降不升（见 relationTier.js）
+    const adj = adjudicate(finalVerdict, { similarPoints: similar, majorDifferences: diffs });
+    if (adj.relation !== finalVerdict) {
+      note = note ? `${note}；${adj.notes[adj.notes.length - 1]}` : `证据不足以支撑 ${finalVerdict}：${adj.notes[adj.notes.length - 1] || "无可用证据"}`;
+      finalVerdict = adj.relation;
+    }
     if (finalVerdict === VERDICTS.UNRELATED && diffs.length === 0) {
       diffs.push("模型未给出具体差异");
     }
@@ -304,6 +315,11 @@ export function parseComparison(parsed, expectedCount) {
       majorDifferences: diffs,
       borrowableForCreation: orNull(raw?.borrowableForCreation),
       unknown,
+      // 证据裁决留痕：哪些维度站得住、哪些被差异推翻
+      relationDerived: adj.derived,
+      positiveDims: adj.positiveDims,
+      contradictedDims: adj.contradicted,
+      evidenceNotes: adj.notes,
     };
     judgments.push(j);
     if (finalVerdict === VERDICTS.UNRELATED) dropped.push({ index: i, reasons: diffs });

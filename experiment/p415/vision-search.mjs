@@ -97,21 +97,34 @@ export function reviewFlags(j) {
 
 /**
  * 参考作用域：整体参考 vs 局部方法参考。
- * 只有色彩光线证据的，不能说成构图相关——这是本轮明确要求。
+ *
+ * P4.15.4 修正：不再用 compositionEvidence / subjectRelationEvidence /
+ * colorLightEvidence 判断“覆盖了哪些维度”——这三个字段描述的是**某一张图的样子**
+ * （有时是查询、有时是候选），不是「两张图共享什么」。拿它们当证据会导致
+ * 每个候选都“有证据”，从而永远 partial。
+ * 现在只认 positiveDims：由相似点经差异证伪后剩下的维度（见 relationTier.js）。
  */
 export function referenceScope(j) {
-  const dims = [];
-  if (j.compositionEvidence) dims.push("composition");
-  if (j.subjectRelationEvidence) dims.push("subject");
-  if (j.colorLightEvidence) dims.push("colorLight");
-  if (dims.includes("composition") && dims.includes("subject")) {
+  const dims = Array.isArray(j.positiveDims) ? [...j.positiveDims] : deriveDimsFallback(j);
+  if (dims.includes("composition") && (dims.includes("subject") || dims.includes("space"))) {
     return { scope: "overall", dims, limitation: null };
   }
   if (dims.length === 1 && dims[0] === "colorLight") {
     return { scope: "specific", dims, limitation: "只有色彩光线关联，不构成构图或人物关系依据" };
   }
-  if (dims.length === 0) return { scope: "none", dims, limitation: "模型未给出可核对的具体证据" };
+  if (dims.length === 0) return { scope: "none", dims, limitation: "没有经得起差异核对的可迁移证据" };
   return { scope: "partial", dims, limitation: "只覆盖部分维度，不可当作整体构图参考" };
+}
+
+/** 老数据没有 positiveDims 时，只按 relation 给一个保守的作用域，不再读描述字段。 */
+function deriveDimsFallback(j) {
+  // 连一条相似点都没有，就不能凭档位凭空造出维度
+  if (!(Array.isArray(j.similarPoints) && j.similarPoints.length)) return [];
+  const rel = j.relation || j.verdict || null;
+  if (rel === "high") return ["composition", "subject"];
+  if (rel === "partial") return ["composition"];
+  if (rel === "specific") return ["colorLight"];
+  return [];
 }
 
 /** 把模型判定整理成产品字段。 */
@@ -128,6 +141,11 @@ export function toProductJudgment(j) {
     colorLightEvidence: j.colorLightEvidence || [j.borrowableColor, j.borrowableLight].filter(Boolean).join("；") || null,
     importantDifferences: j.majorDifferences || [],
     creativeTransfer: j.borrowableForCreation || null,
+    // 证据裁决留痕：档位是怎么来的、哪些维度被差异推翻
+    relationDerived: j.relationDerived || null,
+    positiveDimensions: j.positiveDims || null,
+    contradictedDimensions: j.contradictedDims || null,
+    evidenceNotes: j.evidenceNotes || [],
     confidenceLimitations: [
       ...(j.unknown?.length ? [`模型自述无法确定：${j.unknown.join("、")}`] : []),
       ...(j.downgradeNote ? [j.downgradeNote] : []),
@@ -226,7 +244,7 @@ export async function visionSearch(opts) {
     if (p) candidateProfiles.set(e.id, p);
   }
   const disc = queryProfile
-    ? semanticDiscover(queryProfile, candidateProfiles)
+    ? semanticDiscover(queryProfile, candidateProfiles, queryEntry.id)
     : { hits: [], skipped: "查询没有已核实的 V2 语义画像" };
 
   const semanticInfo = {
@@ -241,6 +259,8 @@ export async function visionSearch(opts) {
     hits: disc.hits || [],
     skipped: disc.skipped || null,
     skippedTierC: disc.skippedTierC || 0,
+    skippedTierB: disc.skippedTierB || 0,
+    promotionRule: "只有 A 级独立单图画像可跨查询提升；B 级仅限原始查询-候选对；C 级不参与",
     // 候选侧证据等级：只有 A 才算「这张图自己的属性」，B 只是关系描述
     tierSummary: (disc.hits || []).reduce((acc, h) => {
       const k = h.candidateEvidenceTier || "B";
@@ -268,7 +288,16 @@ export async function visionSearch(opts) {
         candidateAnalysisUnavailable: !!h.candidateAnalysisUnavailable,
         limitation: h.limitation || null,
       };
-      if (!topIds.has(h.id)) promoted.push(r);   // 召回内低位：凭语义证据进比较集
+      // 召回内低位：只有 A 级独立画像才允许提升（只改比较集，不改融合名次）
+      if (!topIds.has(h.id) && h.eligibleForPromotion) {
+        r.semanticDiscovery.promotion = {
+          tier: h.candidateEvidenceTier,
+          reason: "A 级独立画像与查询在多个维度共享强证据",
+          originalRank: recalled.findIndex((e) => e.id === h.id) + 1,
+          matchedDimensions: h.matchedDimensions,
+        };
+        promoted.push(r);
+      }
       continue;
     }
     const e = allPool.find((x) => x.id === h.id);
@@ -285,6 +314,13 @@ export async function visionSearch(opts) {
   }
   semanticInfo.broughtIn = semanticOnly.map((s) => s.id);
   semanticInfo.promotedFromRecall = promoted.map((s) => s.id);
+  semanticInfo.promotionLog = promoted.map((s) => ({
+    id: s.id,
+    tier: s.semanticDiscovery?.promotion?.tier || null,
+    reason: s.semanticDiscovery?.promotion?.reason || null,
+    originalRank: s.semanticDiscovery?.promotion?.originalRank ?? null,
+    matchedDimensions: s.semanticDiscovery?.promotion?.matchedDimensions || [],
+  }));
 
   if (!recalled.length) {
     return {
@@ -300,6 +336,7 @@ export async function visionSearch(opts) {
     : selectForComparison(recalled, judgeN, [...promoted, ...semanticOnly]);
 
   recallInfo.compared = candidates.map((c) => c.id);
+  for (const p of semanticInfo.promotionLog || []) p.finalSlot = recallInfo.compared.indexOf(p.id);
   recallInfo.selection = recallMode === "legacy"
     ? "top-n"
     : `fused-top-${judgeN}` + (candidates.some((c) => c.semanticDiscovery) ? "+语义发现" : "");

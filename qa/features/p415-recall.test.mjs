@@ -116,22 +116,37 @@ await check("补入上限 6，judgeCount 再大也不超", () => {
 console.log("\n=== 4. 作用域分级：只有光线不能说构图 ===");
 const j = (o) => ({ index: 0, verdict: "partial", verdictFromModel: "partial", downgraded: false, downgradeNote: null, similarPoints: [], majorDifferences: [], unknown: [], ...o });
 
-await check("只有色彩光线证据 → specific，并带限制说明", () => {
-  const s = vsFile.referenceScope(j({ colorLightEvidence: "低饱和冷调" }));
+await check("只有色彩光线维度成立 → specific，并带限制说明", () => {
+  const s = vsFile.referenceScope(j({ positiveDims: ["colorLight"] }));
   assert.equal(s.scope, "specific");
   assert.match(s.limitation, /不构成构图/);
 });
 
-await check("构图 + 主体证据 → overall", () => {
-  const s = vsFile.referenceScope(j({ compositionEvidence: "竖轴", subjectRelationEvidence: "双人并立" }));
+await check("构图 + 主体维度成立 → overall", () => {
+  const s = vsFile.referenceScope(j({ positiveDims: ["composition", "subject"] }));
   assert.equal(s.scope, "overall");
   assert.equal(s.limitation, null);
 });
 
-await check("只有构图、没有主体 → 不升级为 overall", () => {
-  const s = vsFile.referenceScope(j({ compositionEvidence: "竖轴" }));
+await check("构图 + 空间维度成立 → overall（山水这类无人物画面）", () => {
+  const s = vsFile.referenceScope(j({ positiveDims: ["composition", "space"] }));
+  assert.equal(s.scope, "overall");
+});
+
+await check("只有构图、没有主体/空间 → 不升级为 overall", () => {
+  const s = vsFile.referenceScope(j({ positiveDims: ["composition"] }));
   assert.equal(s.scope, "partial");
   assert.match(s.limitation, /部分维度/);
+});
+
+await check("描述字段再完整也不构成作用域（本轮修掉的错误假设）", () => {
+  const s = vsFile.referenceScope(j({
+    compositionEvidence: "竖轴",
+    subjectRelationEvidence: "双人并立",
+    colorLightEvidence: "低饱和冷调",
+    positiveDims: [],
+  }));
+  assert.equal(s.scope, "none", "描述字段被当成共享证据");
 });
 
 await check("没有任何证据 → none", () => {
@@ -139,7 +154,7 @@ await check("没有任何证据 → none", () => {
 });
 
 await check("产品字段不会把 specific 说成构图相关", () => {
-  const p = vsFile.toProductJudgment(j({ colorLightEvidence: "低饱和冷调", similarPoints: ["[mock] 偏冷"] }));
+  const p = vsFile.toProductJudgment(j({ colorLightEvidence: "低饱和冷调", positiveDims: ["colorLight"], similarPoints: ["偏冷"] }));
   assert.equal(p.referenceScope, "specific");
   assert.equal(p.compositionEvidence, null, "无构图证据时不得凭相似点文本补出构图证据");
 });

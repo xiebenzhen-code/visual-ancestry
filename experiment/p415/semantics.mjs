@@ -259,9 +259,12 @@ export function buildSemanticTable({ cacheDir, statePath, fixturesPath, analyses
     const payload = rec.payload;
     if (!payload?.ok || payload.mock === true) { stats.skippedMock++; continue; }
     stats.comparisonEntries++;
+    // 先算查询归因：B 级描述只在「原始查询-候选」对内有效，必须记下来源查询
+    const originQid = attribution[rec.callId]?.queryId || null;
     const meta = {
       kind: "comparison-judgment", model: rec.model || payload.model,
       promptVersion: rec.promptVersion, callId: rec.callId, at: rec.createdAt,
+      originQueryId: originQid,
     };
     const cands = rec.meta?.candidates || [];
     (payload.judgments || []).forEach((j, i) => {
@@ -275,7 +278,7 @@ export function buildSemanticTable({ cacheDir, statePath, fixturesPath, analyses
       }
     });
     // 查询归因：夹具里有 callId → 查询 id 的映射，才敢反推查询画像
-    const qid = attribution[rec.callId]?.queryId;
+    const qid = originQid;
     derivedQueries.set(rec.callId, { judgments: payload.judgments || [], meta, profile: null, queryId: qid || null });
     stats.derivedQueries++;
     if (qid) {
@@ -310,15 +313,21 @@ export function attachDerivedQuery(table, callId, queryEntryId) {
  * A=候选自身的独立单图分析；B=仅从关系描述得到（局限已标注）；
  * 跨查询复用 B 级证据时必须显式告知，不能当 A 用。
  */
-export function semanticDiscover(queryProfile, candidateProfiles) {
+export function semanticDiscover(queryProfile, candidateProfiles, queryId = null) {
   if (!queryProfile || !queryProfile.tokens) return { hits: [], skipped: "查询没有语义画像" };
   const hits = [];
   let skippedTierC = 0;
+  let skippedTierB = 0;
   for (const [id, cProf] of candidateProfiles) {
     if (id === queryProfile.entryId) continue;
     if (!cProf || !cProf.tokens) continue;
     // C 级是「从别的查询的差异文本反推出的属性」，不能当候选证据复用
     if (cProf.evidenceTier === "C") { skippedTierC++; continue; }
+    // B 级只在原始查询-候选对内成立；跨查询复用等于把关系描述当独立画像
+    if (cProf.evidenceTier === "B" && queryId && cProf.source?.originQueryId && cProf.source.originQueryId !== queryId) {
+      skippedTierB++;
+      continue;
+    }
     const dims = [];
     const evidence = [];
     const strongShared = [];
@@ -344,6 +353,9 @@ export function semanticDiscover(queryProfile, candidateProfiles) {
         evidence,
         candidateEvidenceTier: tier,
         candidateAnalysisUnavailable: tier !== "A",
+        originQueryId: cProf.source?.originQueryId || null,
+        // 只有 A 级才允许跨查询提升；B 级仅限原始查询-候选对
+        eligibleForPromotion: tier === "A",
         limitation: tier !== "A" ? (cProf.tierNote || "候选没有独立单图分析，仅凭关系描述匹配") : null,
       });
     }
@@ -355,7 +367,7 @@ export function semanticDiscover(queryProfile, candidateProfiles) {
     if (ta !== tb) return ta - tb;
     return b.score - a.score;
   });
-  return { hits, skipped: null, skippedTierC };
+  return { hits, skipped: null, skippedTierC, skippedTierB };
 }
 
 /** 候选是否有可信画像（没有就标 unanalyzed）。 */
