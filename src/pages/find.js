@@ -26,6 +26,12 @@ import { beginTask, recordReference } from "../utils/taskContext.js";
 import { renderImg, bindImgFallback, aspectRatioCss, PICK_SIZES } from "../utils/image.js";
 import { escapeHtml } from "../utils/html.js";
 import { curateHomepage } from "../services/homepageCurator.js";
+import {
+  createRemoteFeedState,
+  getRemoteFeed,
+  isFeedEligible,
+  dedupeFeed,
+} from "../services/artService.js";
 import { bindWorkPanel } from "../components/workPanel.js";
 import { matchNames, namePool } from "../utils/nameMatch.js";
 
@@ -174,13 +180,114 @@ function albumWallHtml(count) {
     </div>`;
 }
 
+function remotePlateHtml(artwork) {
+  const sourceName = (artwork.source && artwork.source.name) || artwork.museum || "";
+  const rights = (artwork.source && artwork.source.rightsStatus) || artwork.rightsStatus || "";
+  const rightsShort = /public/i.test(rights) ? "公有领域" : rights ? "馆方许可" : "";
+  return `
+    <a class="plate plate-remote" href="#artwork/${escapeHtml(artwork.key)}"
+       data-plate-key="${escapeHtml(artwork.key)}" data-plate-source="${escapeHtml(sourceName)}"
+       aria-label="${escapeHtml(artwork.titleZh || artwork.title)}">
+      <figure>
+        ${renderImg(artwork)}
+        <figcaption class="plate-info">
+          <strong>${escapeHtml(artwork.artistZh || artwork.artist || "")}</strong>
+          <span>${escapeHtml(artwork.titleZh || artwork.title)}</span>
+          <em>${escapeHtml(String(artwork.year || ""))}</em>
+          <span class="plate-source">${escapeHtml([sourceName, rightsShort].filter(Boolean).join(" · "))}</span>
+        </figcaption>
+      </figure>
+    </a>`;
+}
+
+/**
+ * 首页远端补位：本地墙先出现，这里异步把馆藏图接在后面。
+ * 目标：合计不超过 HOME_TOTAL，远端约 2/3。拿不到就停，页面保持可用。
+ * 不新建数据服务——复用 artService 的 remote feed 状态机与四馆适配器。
+ */
+async function hydrateRemotePlates(app, { target = 16, localKeys = new Set() } = {}) {
+  const host = app.querySelector("#album-remote");
+  if (!host) return;
+  const wall = app.querySelector("#album-wall-wrap .album-wall");
+  const mount = wall || host;
+  const seen = new Set(localKeys);
+  const state = createRemoteFeedState();
+
+  const insert = (works) => {
+    if (!works.length) return;
+    mount.insertAdjacentHTML("beforeend", works.map(remotePlateHtml).join(""));
+    bindImgFallback(mount);
+  };
+
+  const settle = async (ms) => {
+    const plates = [...mount.querySelectorAll(".plate-remote")];
+    if (!plates.length) return 0;
+    await Promise.race([
+      Promise.all(plates.map((p) => {
+        const img = p.querySelector("img");
+        return img && img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+      })),
+      new Promise((res) => setTimeout(res, ms)),
+    ]);
+    let removed = 0;
+    for (const p of plates) {
+      const img = p.querySelector("img");
+      // 只删「已经明确失败」的：complete 且 naturalWidth=0。
+      // 还在加载的大图必须留着——上一版把"慢"当成"坏"，远端数量因此忽高忽低。
+      const failed = !img || (img.complete && img.naturalWidth === 0) || p.querySelector(".img-slot.is-broken");
+      if (failed) {
+        seen.delete(p.dataset.plateKey);
+        p.remove();
+        removed += 1;
+      }
+    }
+    return removed;
+  };
+
+  const pull = async (want) => {
+    for (let i = 0; i < 3 && want > 0; i += 1) {
+      const batch = await getRemoteFeed(state, { batch: Math.max(want, 8) });
+      if (!batch || !batch.length) return [];
+      const eligible = dedupeFeed(batch.filter(isFeedEligible), seen);
+      const take = eligible.slice(0, want);
+      take.forEach((w) => seen.add(w.key));
+      if (take.length) return take;
+    }
+    return [];
+  };
+
+  try {
+    const first = await pull(target);
+    insert(first);
+    await settle(8000);
+    // 以 DOM 里真实存在的卡片为准：剔除失败的之后才知道还差几张
+    let placed = mount.querySelectorAll(".plate-remote").length;
+    for (let i = 0; i < 2 && placed < target; i += 1) {
+      const refill = await pull(target - placed);
+      if (!refill.length) break;
+      insert(refill);
+      await settle(6000);
+      placed = mount.querySelectorAll(".plate-remote").length;
+    }
+    host.dataset.state = placed > 0 ? "ready" : "error";
+    host.dataset.count = String(placed);
+  } catch {
+    host.dataset.state = "error";
+  }
+}
+
 export function renderFind(app, { asHome = false } = {}) {
   setRouteActive(asHome ? "index" : "find");
   // 首页交过来的查询与媒介选择。只影响「初始值」：输入框内容、哪个媒介按钮
   // 处于选中态、以及接线完成后是否立刻检索一次。检索路径仍然是 runSearch。
   const handoff = readFindHandoff();
   const picks = artworks.filter((artwork) => artwork.image && !artwork.imageUnavailable).slice(0, 8);
-  const wallHtml = albumWallHtml(20);
+  // 首屏先给本地：立刻能看图、能点进作品。远端在渲染后异步补位，
+  // 目标合计 24 件、远端约 2/3；拿不到就保持本地墙，不阻塞。
+  const HOME_LOCAL = 8;
+  const HOME_TOTAL = 24;
+  const HOME_REMOTE = HOME_TOTAL - HOME_LOCAL;
+  const wallHtml = albumWallHtml(asHome ? HOME_LOCAL : 20);
   // 与 CREATE 同一个参考墙网格：候选宽度契约统一放在 utils/image.js 的
   // PICK_SIZES，避免手机端按 96vw 去取 1920px 的 detail 档。
   app.innerHTML = `
@@ -248,6 +355,7 @@ export function renderFind(app, { asHome = false } = {}) {
             </div>
           </div>
           <div class="album-wall-wrap" id="album-wall-wrap">${wallHtml}</div>
+          ${asHome ? `<div class="album-remote" id="album-remote" data-state="loading" aria-live="polite"></div>` : ""}
           <div class="album-results" id="album-results" hidden>
             <p class="album-results-note quiet-note" id="album-results-note"></p>
             <button class="ghost-action" type="button" id="album-clear">回到图片墙</button>
@@ -546,6 +654,14 @@ let lastRemote = null;
 
   // 图片墙与结果里的作品点击 → 桌面侧栏 / 手机详情层（深链 href 保留不变）。
   bindWorkPanel(app, { root: pageRoot });
+
+  // 首页：本地墙已经可点可用，这里再异步把馆藏图补在后面（目标合计 24、远端约 2/3）。
+  if (asHome) {
+    const localKeys = new Set(
+      Array.from(wallWrap ? wallWrap.querySelectorAll("[data-plate-key]") : []).map((el) => el.dataset.plateKey)
+    );
+    hydrateRemotePlates(app, { target: HOME_REMOTE, localKeys });
+  }
 
   // 首页交过来的查询：接线（含媒介按钮）完成后立刻执行一次，用户不必再点一次。
   // 走的是同一个 runSearch，因此令牌、实例守卫、远程区段行为完全一致。

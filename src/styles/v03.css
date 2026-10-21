@@ -1,0 +1,222 @@
+/* v03.css — Phase 1：首页远端补位 + 作品页四条探索分支
+   只做新增，不改已有组件的既有行为。 */
+
+/* ---------------- 首页：远端补位 ---------------- */
+
+/* 远端图接在同一面墙里（见 find.js hydrateRemotePlates）。
+   #album-remote 只作为状态区，不再自己排版。 */
+.album-remote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-3, #8a8a8a);
+}
+
+.album-remote[data-state="loading"]::after {
+  content: "正在补入更多馆藏图像…";
+}
+
+.album-remote[data-state="error"]::after {
+  content: "远端馆藏暂时没有返回；上面的本地图片仍可用。";
+}
+
+.album-remote[data-state="ready"] {
+  display: none;
+}
+
+.album-wall .plate-remote {
+  animation: plateIn 240ms ease-out both;
+}
+
+.album-wall .plate-source {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  opacity: 0.82;
+}
+
+@keyframes plateIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-wall .plate-remote { animation: none; }
+}
+
+/* ---------------- 作品页：探索分支 ---------------- */
+
+.explore-section { margin-top: 40px; }
+
+.explore-lede {
+  max-width: 62ch;
+  margin: 6px 0 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-2, #4a4a4a);
+}
+
+.explore-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 20px;
+}
+
+.explore-media-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3, #8a8a8a);
+  margin-right: 4px;
+}
+
+.explore-media button {
+  padding: 5px 12px;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--ink-2, #4a4a4a);
+  cursor: pointer;
+}
+
+.explore-media button.is-on {
+  border-color: var(--ink, #1b1b1b);
+  color: var(--ink, #1b1b1b);
+  font-weight: 600;
+}
+
+.explore-branches {
+  display: grid;
+  gap: 26px;
+}
+
+.explore-branch {
+  border-top: 1px solid var(--line, #e2e0d9);
+  padding-top: 16px;
+}
+
+.explore-branch-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.explore-branch-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.explore-flag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #ddd);
+  color: var(--ink-3, #8a8a8a);
+}
+
+.explore-preserve {
+  margin: 6px 0 4px;
+  font-size: 12px;
+  color: var(--ink-2, #4a4a4a);
+}
+
+.explore-vision {
+  font-size: 11px;
+  color: var(--ink-3, #8a8a8a);
+  margin-bottom: 12px;
+}
+
+.explore-vision[data-tone="full"] { color: #1a8250; }
+.explore-vision[data-tone="partial"] { color: #9a6b14; }
+
+.explore-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.explore-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.explore-card .img-slot { width: 100%; }
+
+.explore-card strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.explore-card .explore-artist {
+  font-size: 11px;
+  color: var(--ink-3, #8a8a8a);
+}
+
+.explore-card .explore-change {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink-2, #4a4a4a);
+}
+
+.explore-evidence {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.explore-evidence li {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-3, #8a8a8a);
+}
+
+.explore-evidence .ev-kind {
+  display: inline-block;
+  min-width: 4.6em;
+  color: var(--ink-2, #4a4a4a);
+}
+
+.explore-badge {
+  align-self: flex-start;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #ddd);
+  color: var(--ink-3, #8a8a8a);
+}
+
+.explore-badge.is-verified {
+  border-color: #1a8250;
+  color: #1a8250;
+}
+
+.explore-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line, #ddd);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink-3, #8a8a8a);
+  line-height: 1.6;
+}
+
+.explore-media-note {
+  margin: 14px 0 0;
+  font-size: 11px;
+  color: var(--ink-3, #8a8a8a);
+}
+
+@media (max-width: 720px) {
+  .album-remote { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+  .explore-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .explore-branches { gap: 22px; }
+}

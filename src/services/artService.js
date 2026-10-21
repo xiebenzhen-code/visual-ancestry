@@ -29,6 +29,9 @@ const remotePool = new Map();
 const BROWSE_QUERIES = [
   "portrait", "landscape", "still life", "japan", "china", "flowers",
   "seascape", "interior", "night", "street", "cat", "horse",
+  // Phase 1：首页要凑到「远端约 2/3」，原有 12 条查询在过滤后供给不足，
+  // 补 4 条平面绘画相关检索词（不改排序，只扩供给）。
+  "oil painting", "watercolor", "drawing", "cityscape",
 ];
 
 function loadCache() {
@@ -251,6 +254,43 @@ export async function getMixedFeed(state) {
   const remote = await getRemoteFeed(state.remote, { batch: state.remoteBatch });
   items.push(...remote);
   return items;
+}
+
+// ---- 首页远端准入与去重（Phase 1）----
+// 只做两件事，不改任何既有函数的行为：
+//   1) 准入：能展示的真实图片 + 比例已知 + 有权利状态（或公有领域）+ 有馆方记录链接。
+//      缺一项就不进首页——首页是用户看到的第一批图，不能用"可能没问题"的条目。
+//   2) 去重：按 key 与「标题+作者」双键，挡住不同馆藏编号的同一件作品。
+// 三维器物/工艺品的馆藏照不适合当"画面参考"：构图与光线的可借鉴性低，
+// 而且会让首页看起来像博物馆藏品目录。用排除法而不是白名单——
+// 四馆的媒介词表差异很大，白名单会把绘画误杀。
+const NON_PICTORIAL = /ceramic|porcelain|silver|glass|furniture|bronze|vessel|jade|enamel|metalwork|textile|costume|jewelry|armor|sculpture|relief/i;
+
+export function isFeedEligible(work) {
+  if (!work || !work.image || !work.image.url || !work.image.ratio) return false;
+  const rights = work.source && work.source.rightsStatus ? String(work.source.rightsStatus) : "";
+  const hasRights = Boolean(work.publicDomain) || rights.trim().length > 0;
+  const hasRecord = Boolean(work.sourceUrl || (work.source && work.source.url));
+  if (!hasRights || !hasRecord) return false;
+  const medium = typeof work.medium === "string" ? work.medium : "";
+  if (medium && NON_PICTORIAL.test(medium)) return false;
+  return true;
+}
+
+export function dedupeFeed(works, seenKeys = new Set()) {
+  const keys = new Set(seenKeys);
+  const titles = new Set();
+  const out = [];
+  for (const w of works) {
+    if (!w) continue;
+    if (w.key && keys.has(w.key)) continue;
+    const t = `${String(w.title || "").toLowerCase().trim()}|${String(w.artist || "").toLowerCase().trim()}`;
+    if (titles.has(t)) continue;
+    if (w.key) keys.add(w.key);
+    titles.add(t);
+    out.push(w);
+  }
+  return out;
 }
 
 // Remote browse state machine for the feed's tail.

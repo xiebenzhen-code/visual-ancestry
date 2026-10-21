@@ -90,6 +90,8 @@ export function normalizeArtwork(facts) {
     culture,
     museum,
     image,
+    // 媒介原文（馆方字段，不做翻译）：首页准入需要它来判断是不是平面作品
+    medium: facts.medium || "",
     imageUnavailable: !image,
     rightsStatus: rights || "Rights retained by rights holder / institution",
     publicDomain: Boolean(publicDomain),

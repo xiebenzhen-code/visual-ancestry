@@ -9,6 +9,8 @@ import { setRouteActive, attachSaveHandlers } from "../app/events.js";
 import { renderImg, bindImgFallback, aspectRatioCss } from "../utils/image.js";
 import { escapeHtml } from "../utils/html.js";
 import { track } from "../utils/profile.js";
+import { buildBranches } from "../services/explore/styleBranches.js";
+import { MEDIA_MODES } from "../services/explore/media.js";
 
 function factsBlock(artwork) {
   const rows = [
@@ -89,6 +91,62 @@ function relationsSection(artwork) {
   `;
 }
 
+/* ---------------- 探索分支（Phase 1） ----------------
+   四条分支共用同一份生成器（services/explore/styleBranches.js）。
+   这里只负责画出来：保留了什么、换掉了什么、证据来自哪里、有没有经过 Vision。
+   档位（P4.15.4）不参与筛选，也不当作推荐理由。 */
+
+function branchCard(branch) {
+  const cards = branch.results
+    .map(
+      (r) => `
+      <a class="explore-card" href="${escapeHtml(r.href)}" data-explore-result="${escapeHtml(r.id)}">
+        <span class="img-slot" style="${aspectRatioCss(r)}">${renderImg(r)}</span>
+        <strong>${escapeHtml(r.title)}</strong>
+        <span class="explore-artist">${escapeHtml(r.artist || "")}${r.year ? ` · ${escapeHtml(String(r.year))}` : ""}</span>
+        <span class="explore-change">${escapeHtml(r.changes)}</span>
+        <ul class="explore-evidence">
+          ${r.evidence
+            .map((e) => `<li><span class="ev-kind">${escapeHtml(e.kind)}</span>${escapeHtml(e.text)}</li>`)
+            .join("")}
+        </ul>
+        <span class="explore-badge ${r.visionVerified ? "is-verified" : ""}">${
+          r.visionVerified ? "有独立画像（A 级）" : "未分析"
+        }</span>
+      </a>`
+    )
+    .join("");
+  return `
+    <article class="explore-branch" data-branch="${escapeHtml(branch.id)}">
+      <div class="explore-branch-head">
+        <h3>${escapeHtml(branch.label)}</h3>
+        <span class="explore-flag">改变：${escapeHtml(branch.changeDim)}</span>
+      </div>
+      <p class="explore-preserve">保留：${escapeHtml(branch.preserves)}</p>
+      <p class="explore-vision" data-tone="${escapeHtml(branch.vision.tone)}">Vision：${escapeHtml(branch.vision.note)}</p>
+      ${branch.empty ? `<p class="explore-empty">这一栏是空的。${escapeHtml(branch.emptyReason || "")}</p>` : `<div class="explore-results">${cards}</div>`}
+    </article>`;
+}
+
+function exploreSection(artwork) {
+  const branches = buildBranches(artwork);
+  return `
+    <section class="analysis-section explore-section" id="explore" data-media="all">
+      <h2 class="section-title">EXPLORE · 同风格，换一个维度</h2>
+      <p class="explore-lede">保留画派与整体气质，每次只改一个维度。每条结果都写明：保留了什么、换掉了什么、证据来自档案、像素实测还是独立画像。</p>
+      <div class="explore-media" role="group" aria-label="按媒介筛选">
+        <span class="explore-media-label">媒介</span>
+        ${MEDIA_MODES.map(
+          (m) => `<button type="button" class="${m.value === "all" ? "is-on" : ""}" data-explore-media="${m.value}">${m.label}</button>`
+        ).join("")}
+      </div>
+      <div class="explore-branches" id="explore-branches">
+        ${branches.map(branchCard).join("")}
+      </div>
+      <p class="explore-media-note" id="explore-media-note"></p>
+    </section>`;
+}
+
 function cinemaSection(artwork) {
   const refs = relationsFor(artwork);
   if (!refs.length) return "";
@@ -136,6 +194,7 @@ export function renderArtwork(app, key) {
       </header>
       <div class="detail-body">
         ${whyItWorksSection(artwork)}
+        ${isLocal ? exploreSection(artwork) : ""}
         ${relationsSection(artwork)}
         ${cinemaSection(artwork)}
         ${factsBlock(artwork)}
@@ -147,6 +206,28 @@ export function renderArtwork(app, key) {
   `;
   bindImgFallback(app);
   attachSaveHandlers(app);
+
+  // 媒介筛选：只重绘分支区，不重载页面，也不改路由。
+  const explore = app.querySelector("#explore");
+  if (explore) {
+    const branchesHost = explore.querySelector("#explore-branches");
+    const note = explore.querySelector("#explore-media-note");
+    explore.querySelectorAll("[data-explore-media]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mode = btn.dataset.exploreMedia;
+        explore.querySelectorAll("[data-explore-media]").forEach((b) => b.classList.toggle("is-on", b === btn));
+        explore.dataset.media = mode;
+        const next = buildBranches(artwork, { media: mode });
+        branchesHost.innerHTML = next.map(branchCard).join("");
+        const excluded = next[0] && next[0].mediaState ? next[0].mediaState.excluded : { monochromeFilms: 0 };
+        const emptyCount = next.filter((b) => b.empty).length;
+        note.textContent = [
+          excluded.monochromeFilms ? `已排除 ${excluded.monochromeFilms} 张黑白电影剧照（不作为 AIGC 视觉参考）。` : "",
+          emptyCount === 4 ? (next[0].emptyReason || "") : "",
+        ].filter(Boolean).join(" ");
+      });
+    });
+  }
 
   // FIND SIMILAR scrolls to the relations layer instead of leaving the page.
   app.querySelector('[data-detail-action="similar"]')?.addEventListener("click", (e) => {

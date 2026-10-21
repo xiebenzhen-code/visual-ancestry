@@ -29,6 +29,11 @@ const QUALITY_IDS = [
   "waterlilies",
 ];
 
+// Phase 1：首屏必须三类画面各有一件——装饰性/人物、城市/建筑、中国山水。
+// 否则"从首页点进某类作品"这条路要靠当天轮换的运气，产品路径就不成立。
+// 这三件只是首批锚点，不参与后面的轮换评分。
+const HOME_ANCHORS = ["american-gothic", "paris-rainy-day", "fan-kuan-travelers"];
+
 // h/w：> 1.15 明显竖图，< 0.85 明显横图，中间算方图。
 const RATIO_TALL = 1.15;
 const RATIO_WIDE = 0.85;
@@ -54,17 +59,24 @@ function bucketOf(artwork) {
 export function curateHomepage(count = 4) {
   const works = pool();
   if (works.length <= count) return works;
-  const day = Math.floor(Date.now() / 86400000);
-  const start = day % works.length;
-  const rotated = works.slice(start).concat(works.slice(0, start));
+
+  // 锚点优先占位（三类画面各一），其余按既有分桶轮换补齐。
+  const pinned = HOME_ANCHORS.map((id) => works.find((w) => w.id === id)).filter(usable);
+  const pinnedIds = new Set(pinned.map((w) => w.id));
+  const rest = works.filter((w) => !pinnedIds.has(w.id));
+  const remaining = Math.max(0, count - pinned.length);
+  if (!remaining) return pinned.slice(0, count);
+
+  const start = Math.floor(Date.now() / 86400000) % Math.max(1, rest.length);
+  const rotated = rest.slice(start).concat(rest.slice(0, start));
 
   const buckets = { tall: [], wide: [], square: [] };
   for (const artwork of rotated) buckets[bucketOf(artwork)].push(artwork);
 
   const order = ["tall", "wide", "square"];
-  const picked = [];
+  const picked = [...pinned];
   let step = 0;
-  while (picked.length < count && step < count * 3 + 9) {
+  while (picked.length < count && step < count * 3 + 12) {
     const list = buckets[order[step % order.length]];
     if (list.length) picked.push(list.shift());
     step += 1;
