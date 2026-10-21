@@ -259,3 +259,70 @@
 @media (max-width: 720px) {
   .explore-external .img-slot { padding-top: 72%; }
 }
+
+/* ---------------- Phase 2.1：远端作品与证据标签 ---------------- */
+
+.detail-origin {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-3, #8a8a8a);
+  letter-spacing: 0.04em;
+}
+
+.explore-external {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.explore-external-open {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.explore-claim {
+  align-self: flex-start;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid #d8d2c6;
+  color: #6b6255;
+}
+
+.explore-claim[data-tone="candidate"] {
+  border-color: #b08d3f;
+  color: #7a5c14;
+}
+
+.explore-claim[data-tone="same"] {
+  border-color: #8a9a8a;
+  color: #4c5c4c;
+}
+
+.explore-claim[data-tone="weak"] {
+  border-color: #c9b8b8;
+  color: #8a6a6a;
+}
+
+.explore-source {
+  font-size: 10.5px;
+}
+
+.explore-source a {
+  color: var(--ink-3, #8a8a8a);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 手机端：双列墙里卡片较窄，证据文字收一行 */
+@media (max-width: 720px) {
+  .explore-external .explore-evidence li {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  .explore-claim { font-size: 10px; }
+}

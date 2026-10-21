@@ -157,6 +157,51 @@ async function index() {
   console.log(`  索引完成：新增 ${pending.length}，累计 ${Object.keys(doc.byHash).length}`);
 }
 
+/**
+ * vectors — 为本地作品预生成查询向量。
+ * 为什么单独一步：探索页要用"当前作品"的向量做近邻，若在 HTTP 请求里现算，
+ * 就是同步 Python 阻塞请求线程。这里一次算好，请求只读缓存。
+ */
+async function vectors() {
+  const { pathToFileURL } = await import("node:url");
+  const { artworks } = await import(pathToFileURL(path.join(ROOT, "src/data/artworks.js")).href);
+  const { subjectClass, sceneClass } = await import(pathToFileURL(path.join(ROOT, "src/services/explore/styleBranches.js")).href);
+  const manifest = [];
+  for (const a of artworks) {
+    const rel = `public/assets/artworks/${a.id}/preview.webp`;
+    if (fs.existsSync(path.join(ROOT, rel))) {
+      manifest.push({
+        id: a.id, path: rel, title: a.titleZh || a.title, titleEn: a.title || "", traditions: a.traditions || [],
+        subject: subjectClass(a), scene: sceneClass(a),
+      });
+    }
+  }
+  console.log(`  本地作品 ${manifest.length} 件进入向量清单`);
+  const manifestFile = path.join(DATA_DIR, "local-vector-manifest.json");
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest.map(({ title, ...m }) => m), null, 1), "utf8");
+
+  const { execFileSync } = await import("node:child_process");
+  const embedOut = path.join(DATA_DIR, "local-embed.json");
+  const metricsOut = path.join(DATA_DIR, "local-metrics.json");
+  execFileSync("python", ["scripts/p414/embed.py", "--manifest", path.relative(ROOT, manifestFile), "--out", path.relative(ROOT, embedOut)], { cwd: ROOT, stdio: "inherit" });
+  execFileSync("python", ["scripts/discovery/measure.py", "--manifest", path.relative(ROOT, manifestFile), "--out", path.relative(ROOT, metricsOut)], { cwd: ROOT, stdio: "inherit" });
+
+  const vec = JSON.parse(fs.readFileSync(embedOut, "utf8"));
+  const met = JSON.parse(fs.readFileSync(metricsOut, "utf8"));
+  const meta = new Map(manifest.map((m) => [m.id, m]));
+  const out = { model: vec.model || null, dim: vec.dim || 512, at: new Date().toISOString(), vectors: {} };
+  for (const [id, v] of Object.entries(vec.vectors || {})) {
+    const m = meta.get(id) || {};
+    out.vectors[id] = {
+      vector: v, metrics: met.metrics?.[id] || null, title: m.title || id,
+      traditions: m.traditions || [], subject: m.subject || "other", scene: m.scene || "other",
+      titleEn: m.titleEn || "",
+    };
+  }
+  fs.writeFileSync(path.join(DATA_DIR, "local-vectors.json"), JSON.stringify(out), "utf8");
+  console.log(`  本地向量：${Object.keys(out.vectors).length} 件 → .rc1-audit/discovery/local-vectors.json`);
+}
+
 function verify() {
   const works = readWorks();
   const doc = readIndex();
@@ -175,9 +220,9 @@ function status() {
   console.log(JSON.stringify({ ...s, tmdb: tmdbStatus(), dataDir: path.relative(ROOT, DATA_DIR) }, null, 1));
 }
 
-const modes = { discover, index, verify, status };
+const modes = { discover, index, vectors, verify, status };
 if (!modes[mode]) {
-  console.error(`  未知模式：${mode}（discover / index / verify / status）`);
+  console.error(`  未知模式：${mode}（discover / index / vectors / verify / status）`);
   process.exit(2);
 }
 await modes[mode]();

@@ -7,7 +7,7 @@ import { accessConfig, accessMode, authorizeVisionRequest, issueToken, verifyAcc
 import { budgetConfig, budgetStatus, budgetIntegrity, reserveCall, createConcurrencyGate } from "../server/security/budget.mjs";
 import { errorBody, providerReasonToCode, logServerEvent } from "../server/security/errors.mjs";
 import { resolveStaticPath, resolveRealStaticPath } from "../server/security/staticPathGuard.mjs";
-import { discoveryStatus, ensureDiscovery, neighborsOf, classifyCandidates, vectorForImage, imageFile, wallWorks } from "./discovery/service.mjs";
+import { discoveryStatus, ensureDiscovery, exploreFor, workByHash, getJob, imageFile, wallWorks } from "./discovery/service.mjs";
 import { readFile } from "node:fs/promises";
 import { findLocalById } from "../src/services/artService.js";
 import { VISUAL_METRICS } from "../src/data/visual-metrics.js";
@@ -396,7 +396,59 @@ function sendError(res, code, meta = null) {
 }
 
 function listen(port, host = BIND_HOST) {
-  const server = createServer((req, res) => {
+  /* ---------------- 自动发现的触发保护 ---------------- */
+// 同源校验 + 每 IP 限速 + 可选 token。返回 {ok}；失败时已经写好响应。
+const triggerBudget = new Map();
+const DISCOVERY_RATE = { perMinute: 6, perHour: 40 };
+
+function clientIp(req) {
+  const xf = req.headers["x-forwarded-for"];
+  return (typeof xf === "string" && xf.split(",")[0].trim()) || req.socket.remoteAddress || "unknown";
+}
+
+function sameOrigin(req) {
+  const host = req.headers.host;
+  const origin = req.headers.origin || req.headers.referer;
+  if (!origin) return true; // 同源 fetch 通常不带 Origin；带 token 的脚本调用也走这里
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
+function discoveryGuard(req, res) {
+  const token = process.env.DISCOVERY_TRIGGER_TOKEN;
+  if (token) {
+    const got = req.headers["x-discovery-token"];
+    if (got !== token) {
+      sendJson(res, 401, { ok: false, error: "discovery-token-required" });
+      return { ok: false };
+    }
+  }
+  if (req.method === "POST" && !sameOrigin(req)) {
+    sendJson(res, 403, { ok: false, error: "cross-origin-blocked" });
+    return { ok: false };
+  }
+  if (req.method === "POST") {
+    const ip = clientIp(req);
+    const now = Date.now();
+    const rec = triggerBudget.get(ip) || { minuteStart: now, minute: 0, hourStart: now, hour: 0 };
+    if (now - rec.minuteStart > 60000) { rec.minuteStart = now; rec.minute = 0; }
+    if (now - rec.hourStart > 3600000) { rec.hourStart = now; rec.hour = 0; }
+    rec.minute += 1; rec.hour += 1;
+    triggerBudget.set(ip, rec);
+    if (rec.minute > DISCOVERY_RATE.perMinute || rec.hour > DISCOVERY_RATE.perHour) {
+      res.setHeader("Retry-After", "60");
+      sendJson(res, 429, { ok: false, error: "rate-limited" });
+      return { ok: false };
+    }
+    if (triggerBudget.size > 500) triggerBudget.clear();
+  }
+  return { ok: true };
+}
+
+const server = createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
 
     // Liveness/readiness for the platform. Reveals only that the process is up
@@ -417,6 +469,17 @@ function listen(port, host = BIND_HOST) {
     }
 
     // ---- 自动发现（服务端）：浏览器不直连外部 API，也不接触任何 Token ----
+    //
+    // 触发保护（公开部署也成立）：
+    //   · 只接受同源请求（Origin/Referer 主机必须等于 Host），拒绝被第三方页面当采集器用
+    //   · 每 IP 速率限制（1 分钟 6 次 / 1 小时 40 次）
+    //   · 可选 DISCOVERY_TRIGGER_TOKEN：配置后必须带 x-discovery-token
+    //   · 真正的抓取进后台队列，串行执行，队列有上限——请求只负责入队与读缓存
+    if (url.pathname.startsWith("/api/discovery/")) {
+      const guard = discoveryGuard(req, res);
+      if (!guard.ok) return;
+    }
+
     if (req.method === "GET" && url.pathname === "/api/discovery/status") {
       try {
         sendJson(res, 200, discoveryStatus());
@@ -437,6 +500,60 @@ function listen(port, host = BIND_HOST) {
       return;
     }
 
+    // 远端作品的详情数据：作品记录 + 实测像素 + 是否已有向量
+    if (req.method === "GET" && url.pathname.startsWith("/api/discovery/work/")) {
+      const hash = decodeURIComponent(url.pathname.split("/").pop() || "");
+      if (!/^[a-f0-9]{40}$/i.test(hash)) return sendJson(res, 400, { ok: false, error: "bad-hash" });
+      const found = workByHash(hash);
+      if (!found) return sendJson(res, 404, { ok: false, error: "work-not-found" });
+      sendJson(res, 200, {
+        ok: true,
+        work: {
+          id: found.work.id,
+          hash,
+          href: `#artwork/r.${hash}`,
+          provider: found.work.provider,
+          providerId: found.work.providerId,
+          title: found.work.title,
+          creator: found.work.creator,
+          year: found.work.year,
+          medium: found.work.medium,
+          imageKind: found.work.imageKind,
+          rights: found.work.rightsStatus || found.work.license,
+          sourceUrl: found.work.sourceUrl,
+          image: `/api/discovery/image/${hash}`,
+          foundBy: found.work.query || null,
+          validatedAt: found.work.validatedAt || null,
+        },
+        metrics: found.metrics,
+        indexed: Boolean(found.vector),
+      });
+      return;
+    }
+
+    // 已校验过的缩略图：只服务本地缓存文件，不回源抓取
+    if (req.method === "GET" && url.pathname.startsWith("/api/discovery/image/")) {
+      const hash = decodeURIComponent(url.pathname.split("/").pop() || "");
+      const file = /^[a-f0-9]{40}$/i.test(hash) ? imageFile(hash) : null;
+      if (!file) return sendJson(res, 404, { ok: false, error: "image-not-found" });
+      readFile(file).then((buf) => {
+        const ext = path.extname(file).toLowerCase();
+        const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : ext === ".gif" ? "image/gif" : "image/jpeg";
+        res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=86400" });
+        res.end(buf);
+      }).catch(() => sendJson(res, 404, { ok: false, error: "image-read-failed" }));
+      return;
+    }
+
+    // 作业状态：客户端轮询它，不直接触发抓取
+    if (req.method === "GET" && url.pathname.startsWith("/api/discovery/job/")) {
+      const id = decodeURIComponent(url.pathname.split("/").pop() || "");
+      const job = getJob(id);
+      if (!job) return sendJson(res, 404, { ok: false, error: "job-not-found" });
+      sendJson(res, 200, { ok: true, job });
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/discovery/harvest") {
       readJsonBody(req, res).then(async (read) => {
         if (!read.ok) return;
@@ -453,42 +570,19 @@ function listen(port, host = BIND_HOST) {
     if (req.method === "POST" && url.pathname === "/api/discovery/neighbors") {
       readJsonBody(req, res).then(async (read) => {
         if (!read.ok) return;
-        const body = read.body;
-        const id = String(body?.artworkId || "");
-        if (!id) return sendJson(res, 400, { ok: false, error: "artworkId-required" });
-        const art = findLocalById(id);
-        if (!art || !art.image) return sendJson(res, 404, { ok: false, error: "artwork-not-found" });
+        const body = read.body || {};
+        const artworkId = body.artworkId ? String(body.artworkId).slice(0, 120) : null;
+        const hash = body.hash ? String(body.hash).slice(0, 40) : null;
+        if (!artworkId && !hash) return sendJson(res, 400, { ok: false, error: "artworkId-or-hash-required" });
+        if (artworkId && !findLocalById(artworkId)) return sendJson(res, 404, { ok: false, error: "artwork-not-found" });
 
-        // 本地作品的向量：现算一次（不写索引，避免把查询图混进语料）
-        const abs = path.join(root, "public/assets/artworks", id, "preview.webp");
-        let vec = null;
-        try { vec = await vectorForImage(abs); } catch { vec = null; }
-        if (!vec?.vector) return sendJson(res, 200, { ok: false, error: "vector-unavailable", candidates: [] });
-
-        const cands = neighborsOf({ vector: vec.vector }, { limit: 40 });
-        const classified = await classifyCandidates({ work: art, metrics: visualMetricsOf(id) }, cands);
-        sendJson(res, 200, {
-          ok: true,
-          queryId: id,
-          indexed: discoveryStatus().indexed,
-          buckets: classified.buckets,
-          profile: classified.queryProfile,
-          total: cands.length,
-        });
-      }).catch((e) => sendJson(res, 500, { ok: false, error: "neighbors-failed", detail: String(e.message).slice(0, 120) }));
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname.startsWith("/api/discovery/image/")) {
-      const hash = decodeURIComponent(url.pathname.split("/").pop() || "");
-      const file = /^[a-f0-9]{40}$/i.test(hash) ? imageFile(hash) : null;
-      if (!file) return sendJson(res, 404, { ok: false, error: "image-not-found" });
-      readFile(file).then((buf) => {
-        const ext = path.extname(file).toLowerCase();
-        const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
-        res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=86400" });
-        res.end(buf);
-      }).catch(() => sendJson(res, 404, { ok: false, error: "image-read-failed" }));
+        const result = await exploreFor({ artworkId, hash });
+        if (!result.ok && result.error === "vector-pending") {
+          // 本地作品还没预生成向量：返回明确状态，不在这里跑 Python
+          return sendJson(res, 202, { ok: false, error: "vector-pending", hint: "请先运行 npm run discovery:vectors" });
+        }
+        sendJson(res, result.ok ? 200 : 404, result);
+      }).catch((e) => sendJson(res, 500, { ok: false, error: "neighbors-failed", detail: String(e.message).slice(0, 160) }));
       return;
     }
 

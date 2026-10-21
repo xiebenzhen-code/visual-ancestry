@@ -1,7 +1,13 @@
-// artwork.js — the artwork is a tool node, not an endpoint.
-// First screen: big image + Artist / Title · Year + three actions.
-// Next layer: WHY IT WORKS, VISUAL RELATIONS (with reasons), SEEN IN CINEMA.
-// Last: collapsed Artwork facts (museum, source, rights, region, evidence).
+// artwork.js — 作品是工具节点，不是终点。
+//
+// 本地作品与自动发现的远端作品共用这一页（不建第二套详情系统）。
+// 区别只有三处：图片来源、有没有独立画像、探索候选从哪来。
+//
+// 探索区的纪律：
+//   · 本地候选走 buildBranches（档案 + 像素），分支语义本来就是"保留画派，换一个维度"。
+//   · 远端候选来自向量近邻 + 像素亲和度，**没有 Vision 确认**，一律标"待验证"，
+//     并明确写出保留了什么证据、改变了什么；两段缺一就照实说缺哪一段。
+//   · 媒介筛选由同一份状态驱动，重绘分支不会丢失外部结果。
 
 import { findByKey, findLocalById } from "../services/artService.js";
 import { retrieveByArtworkChecked, relationsFor, provenanceLabel } from "../services/retrieval/retrievalService.js";
@@ -9,18 +15,62 @@ import { setRouteActive, attachSaveHandlers } from "../app/events.js";
 import { renderImg, bindImgFallback, aspectRatioCss } from "../utils/image.js";
 import { escapeHtml } from "../utils/html.js";
 import { track } from "../utils/profile.js";
-import { buildBranches } from "../services/explore/styleBranches.js";
+import { buildBranches, BRANCHES } from "../services/explore/styleBranches.js";
 import { MEDIA_MODES } from "../services/explore/media.js";
-import { fetchExternalNeighbors } from "../services/discoveryClient.js";
+import { matchesMedia } from "../services/explore/externalMedia.js";
+import {
+  fetchExternalNeighbors,
+  fetchExternalNeighborsByHash,
+  fetchDiscoveryWork,
+  fetchDiscoveryJob,
+} from "../services/discoveryClient.js";
+
+const REMOTE_PREFIX = "r.";
+const isRemoteKey = (key) => typeof key === "string" && key.startsWith(REMOTE_PREFIX);
+
+const LEVEL_LABEL = {
+  "style-candidate": "待验证的风格延展",
+  "same-language": "同一视觉语言（主体未变）",
+  "changed-only": "视觉语言证据不足",
+};
+
+const NEUTRAL_BRANCH = {
+  subject: "换主体（待验证）",
+  scene: "换场景（待验证）",
+  composition: "换构图（待验证）",
+  local: "局部视觉语言（待验证）",
+};
+
+const PROVIDER_LABEL = {
+  aic: "Art Institute of Chicago",
+  met: "The Metropolitan Museum of Art",
+  cleveland: "Cleveland Museum of Art",
+  rijks: "Rijksmuseum",
+  openverse: "Openverse",
+  commons: "Wikimedia Commons",
+  tmdb: "TMDB",
+  anilist: "AniList",
+};
+
+/* ---------------- 页面状态（一次渲染一份，切路由即失） ---------------- */
+
+let pageState = null;
+
+function newState(key) {
+  return { key, external: null, mode: "all", jobTimer: null, jobId: null };
+}
+
+/* ---------------- 通用区块 ---------------- */
 
 function factsBlock(artwork) {
   const rows = [
-    ["馆藏", artwork.museum],
+    ["馆藏 / 来源", artwork.museum],
     ["地区 / Culture", artwork.culture || artwork.origin],
     ["年代", artwork.year],
-    ["来源", artwork.source ? artwork.source.name : ""],
+    ["媒介", artwork.mediumLabel || artwork.medium],
     ["版权", artwork.rightsStatus],
     ["Evidence", artwork.evidenceLevel],
+    ["发现关键词", artwork.foundBy],
   ].filter(([, v]) => v);
   return `
     <details class="detail-facts">
@@ -30,7 +80,7 @@ function factsBlock(artwork) {
       </dl>
       ${
         artwork.sourceUrl
-          ? `<p class="quiet-note"><a href="${escapeHtml(artwork.sourceUrl)}" target="_blank" rel="noreferrer">在馆方查看原记录 →</a></p>`
+          ? `<p class="quiet-note"><a href="${escapeHtml(artwork.sourceUrl)}" target="_blank" rel="noreferrer">查看原始馆藏 →</a></p>`
           : ""
       }
     </details>
@@ -39,6 +89,15 @@ function factsBlock(artwork) {
 
 function whyItWorksSection(artwork) {
   if (!artwork.hasAnalysis) {
+    if (artwork.remote) {
+      return `
+        <section class="analysis-section">
+          <h2 class="section-title">WHY IT WORKS</h2>
+          <p class="analysis-unavailable">Visual analysis unavailable</p>
+          <p class="quiet-note">这件作品是系统自动发现的：有真实图片、实测像素与来源记录，但没有独立视觉画像。我们不替它编造构图或光线分析。</p>
+        </section>
+      `;
+    }
     return `
       <section class="analysis-section">
         <h2 class="section-title">WHY IT WORKS</h2>
@@ -64,9 +123,7 @@ function whyItWorksSection(artwork) {
 }
 
 function relationsSection(artwork) {
-  // P4.13-F — 与 FIND 选画共用同一条增强策略（档案签名）与同一套参数来源，
-  // 使「同一作品 + 同一候选范围 + 同一图像证据」在两个入口得到同一排序。
-  // 用 checked 区分「没有相关作品」与「这件作品不能作为检索起点」。
+  if (artwork.remote) return "";
   const outcome = retrieveByArtworkChecked(artwork, { limit: 4 });
   if (!outcome.ok || !outcome.results.length) return "";
   const hits = outcome.results;
@@ -92,10 +149,7 @@ function relationsSection(artwork) {
   `;
 }
 
-/* ---------------- 探索分支（Phase 1） ----------------
-   四条分支共用同一份生成器（services/explore/styleBranches.js）。
-   这里只负责画出来：保留了什么、换掉了什么、证据来自哪里、有没有经过 Vision。
-   档位（P4.15.4）不参与筛选，也不当作推荐理由。 */
+/* ---------------- 本地分支卡片 ---------------- */
 
 function branchCard(branch) {
   const cards = branch.results
@@ -124,39 +178,74 @@ function branchCard(branch) {
         <span class="explore-flag">改变：${escapeHtml(branch.changeDim)}</span>
       </div>
       <p class="explore-preserve">保留：${escapeHtml(branch.preserves)}</p>
-      <p class="explore-vision" data-tone="${escapeHtml(branch.vision.tone)}">Vision：${escapeHtml(branch.vision.note)}</p>
-      ${branch.empty ? `<p class="explore-empty">这一栏是空的。${escapeHtml(branch.emptyReason || "")}</p>` : `<div class="explore-results">${cards}</div>`}
+      <p class="explore-vision" data-tone="${escapeHtml(branch.vision ? branch.vision.tone : "none")}">Vision：${escapeHtml(
+        branch.vision ? branch.vision.note : ""
+      )}</p>
+      ${
+        branch.empty
+          ? `<p class="explore-empty">这一栏是空的。${escapeHtml(branch.emptyReason || "")}</p>`
+          : `<div class="explore-results">${cards}</div>`
+      }
     </article>`;
 }
 
-/* 外部发现：服务端按同一套规则把自动采集的图片归到四条分支里。
-   页面不直连外部 API，也不显示端点/模型/内部证据等级。 */
+/* ---------------- 外部候选卡片 ---------------- */
+
 function externalCard(item) {
+  const level = item.level || "changed-only";
+  const tone = level === "style-candidate" ? "candidate" : level === "same-language" ? "same" : "weak";
+  const retained = (item.retained || []).filter(Boolean);
+  const changed = (item.changed || []).filter(Boolean);
+  // 卡片外层不是链接：里面有两个目标（画之旅内部详情 / 原始馆藏），嵌套 <a> 会被浏览器拆开。
   return `
-    <a class="explore-card explore-external" href="${escapeHtml(item.sourceUrl || "#")}" target="_blank" rel="noreferrer"
-       data-ext-kind="${escapeHtml(item.imageKind || "unknown")}">
-      <span class="img-slot"><img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async" /></span>
-      <strong>${escapeHtml(item.title || "(无标题)")}</strong>
-      <span class="explore-artist">${escapeHtml(item.creator || "")}${item.year ? " · " + escapeHtml(String(item.year)) : ""}</span>
-      <span class="explore-change">${escapeHtml(item.branchReason || "外部候选")}</span>
-      <span class="explore-badge is-external">外部发现 · ${escapeHtml(item.provider)}</span>
-    </a>`;
+    <div class="explore-card explore-external"
+         data-explore-result="${escapeHtml(item.id)}"
+         data-ext-kind="${escapeHtml(item.imageKind || "unknown")}"
+         data-ext-sat="${item.metrics && typeof item.metrics.meanSat === "number" ? item.metrics.meanSat : ""}">
+      <a class="explore-external-open" href="${escapeHtml(item.href || "#")}">
+        <span class="img-slot"><img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async" /></span>
+        <strong>${escapeHtml(item.title || "(无标题)")}</strong>
+        <span class="explore-artist">${escapeHtml(item.creator || "")}${item.year ? " · " + escapeHtml(String(item.year)) : ""}</span>
+      </a>
+      <span class="explore-claim" data-tone="${tone}">${escapeHtml(LEVEL_LABEL[level] || "待验证")}</span>
+      <ul class="explore-evidence">
+        ${
+          retained.length
+            ? `<li><span class="ev-kind">保留</span>${escapeHtml(retained.join("；"))}</li>`
+            : `<li><span class="ev-kind">保留</span>像素证据不足，只有向量近邻（不作为风格证据）</li>`
+        }
+        ${
+          changed.length
+            ? `<li><span class="ev-kind">改变</span>${escapeHtml(changed.join("；"))}</li>`
+            : `<li><span class="ev-kind">改变</span>未检测到主体/场景/构图变化</li>`
+        }
+      </ul>
+      <span class="explore-badge is-external">自动发现 · ${escapeHtml(PROVIDER_LABEL[item.provider] || item.provider)}</span>
+      <span class="explore-source"><a href="${escapeHtml(item.sourceUrl || "#")}" target="_blank" rel="noreferrer" data-raw-source>原始馆藏 ↗</a></span>
+    </div>`;
 }
 
-async function hydrateExternal(app, artwork) {
-  const status = app.querySelector("#explore-external-status");
-  if (status) status.textContent = "正在从外部来源补充候选…";
-  const r = await fetchExternalNeighbors(artwork.id);
-  if (!r || !r.ok) {
-    if (status) status.textContent = r && r.error === "vector-unavailable"
-      ? "外部候选暂不可用（索引未就绪）；上面的候选仍然可用。"
-      : "外部来源暂时没有返回；上面的候选仍然可用。";
-    return;
+function visibleExternal(mode) {
+  const data = pageState && pageState.external;
+  if (!data || !data.branches) return { buckets: {}, hidden: 0, total: 0 };
+  const buckets = {};
+  let hidden = 0;
+  let total = 0;
+  for (const [key, arr] of Object.entries(data.branches)) {
+    const keep = arr.filter((item) => matchesMedia(item, mode));
+    hidden += arr.length - keep.length;
+    total += arr.length;
+    buckets[key] = keep;
   }
-  let added = 0;
-  for (const [key, arr] of Object.entries(r.buckets || {})) {
+  return { buckets, hidden, total };
+}
+
+function appendExternal(host, mode) {
+  const { buckets, hidden, total } = visibleExternal(mode);
+  let shown = 0;
+  for (const [key, arr] of Object.entries(buckets)) {
     if (!arr.length) continue;
-    const branch = app.querySelector(`[data-branch="${key}"]`);
+    const branch = host.querySelector(`[data-branch="${key}"]`);
     if (!branch) continue;
     let list = branch.querySelector(".explore-results");
     if (!list) {
@@ -166,21 +255,112 @@ async function hydrateExternal(app, artwork) {
       branch.appendChild(list);
     }
     list.insertAdjacentHTML("beforeend", arr.map(externalCard).join(""));
-    added += arr.length;
+    // 一旦这一栏混入外部候选，标题就不能再写"同风格"——那是本地档案+画像才有的说法
+    const head = branch.querySelector("h3");
+    if (head && !head.dataset.original) {
+      head.dataset.original = head.textContent;
+      head.textContent = NEUTRAL_BRANCH[key] || "待验证的视觉发现";
+    }
+    shown += arr.length;
   }
-  if (status) {
-    status.textContent = added
-      ? `已接入 ${added} 张外部自动发现图（当前索引 ${r.indexed} 张）`
-      : "外部索引里暂时没有更多候选。";
+  return { shown, hidden, total };
+}
+
+function renderBranches(host, artwork, mode) {
+  const local = artwork.remote
+    ? BRANCHES.map((def) => ({
+        ...def,
+        results: [],
+        empty: true,
+        emptyReason: "以这件外部作品为起点时，这一维度没有拿到候选（它没有档案描述，主体/场景只能从标题判断）。",
+        vision: { tone: "none", note: "外部作品没有独立画像，这里不给风格结论。" },
+      }))
+    : buildBranches(artwork, { media: mode });
+  host.innerHTML = local.map(branchCard).join("");
+  // 以外部作品为起点的页面：四条分支从一开始就不能叫"同风格"——没有任何一条经过 Vision 确认
+  if (artwork.remote) {
+    host.querySelectorAll(".explore-branch").forEach((el) => {
+      const head = el.querySelector("h3");
+      const key = el.dataset.branch;
+      if (head && NEUTRAL_BRANCH[key]) head.textContent = NEUTRAL_BRANCH[key];
+    });
+  }
+  const added = appendExternal(host, mode);
+  return { local, ...added };
+}
+
+/* ---------------- 外部候选抓取与补货 ---------------- */
+
+function setStatus(text) {
+  const el = document.querySelector("#explore-external-status");
+  if (el) el.textContent = text;
+}
+
+async function pollJob(hash, artwork) {
+  if (!pageState || !pageState.jobId) return;
+  const job = await fetchDiscoveryJob(pageState.jobId);
+  if (!pageState) return;
+  if (!job) return;
+  if (job.status === "queued" || job.status === "running") {
+    setStatus(`候选不足，正在后台补充（${job.status === "queued" ? "排队中" : "采集中"}）：${job.query}`);
+    pageState.jobTimer = setTimeout(() => pollJob(hash, artwork), 3000);
+    return;
+  }
+  if (job.status === "done") {
+    setStatus(`补充完成：新增 ${job.added || 0} 件，正在重新计算候选…`);
+    await hydrateExternal(artwork, hash);
+    return;
+  }
+  if (job.status === "failed") {
+    setStatus(`补充失败（${job.error || "来源不可用"}）；上面已有结果不受影响。`);
+    return;
+  }
+  setStatus("");
+}
+
+async function hydrateExternal(artwork, hash) {
+  if (!pageState) return;
+  const status = document.querySelector("#explore-external-status");
+  if (status) status.textContent = "正在读取自动发现索引…";
+  const data = hash ? await fetchExternalNeighborsByHash(hash) : await fetchExternalNeighbors(artwork.id);
+  if (!pageState) return;
+  if (!data || !data.ok) {
+    if (status) {
+      status.textContent = data && data.error === "vector-pending"
+        ? "这件作品还没有预生成向量，外部候选暂不可用。"
+        : "自动发现服务暂时没有返回；上面的候选仍然可用。";
+    }
+    return;
+  }
+  pageState.external = data;
+  const host = document.querySelector("#explore-branches");
+  if (host) {
+    const { shown, hidden, total } = renderBranches(host, artwork, pageState.mode);
+    setStatus(
+      [
+        total ? `自动发现候选 ${total} 条，当前媒介下显示 ${shown} 条` : "外部索引里暂时没有更多候选。",
+        hidden ? `已按媒介隐藏 ${hidden} 条` : "",
+        data.job && data.job.status === "queued" ? "候选偏少，已排入后台补充" : "",
+      ].filter(Boolean).join("。")
+    );
+  }
+  if (data.job && (data.job.status === "queued" || data.job.status === "running") && data.job.id !== "cached") {
+    pageState.jobId = data.job.id;
+    pollJob(hash, artwork);
   }
 }
 
+/* ---------------- 探索区 ---------------- */
+
 function exploreSection(artwork) {
-  const branches = buildBranches(artwork);
   return `
-    <section class="analysis-section explore-section" id="explore" data-media="all">
-      <h2 class="section-title">EXPLORE · 同风格，换一个维度</h2>
-      <p class="explore-lede">保留画派与整体气质，每次只改一个维度。每条结果都写明：保留了什么、换掉了什么、证据来自档案、像素实测还是独立画像。</p>
+    <section class="analysis-section explore-section" id="explore" data-media="all" data-remote="${artwork.remote ? "1" : "0"}">
+      <h2 class="section-title">EXPLORE · ${artwork.remote ? "更多视觉发现（待验证）" : "同风格，换一个维度"}</h2>
+      <p class="explore-lede">${
+        artwork.remote
+          ? "这件作品是自动发现的，没有独立画像。下面是像素实测与向量近邻给出的候选，全部标为待验证——不宣称已验证同风格。"
+          : "保留画派与整体气质，每次只改一个维度。每条结果都写明：保留了什么、换掉了什么、证据来自档案、像素实测还是独立画像。"
+      }</p>
       <div class="explore-media" role="group" aria-label="按媒介筛选">
         <span class="explore-media-label">媒介</span>
         ${MEDIA_MODES.map(
@@ -189,13 +369,24 @@ function exploreSection(artwork) {
       </div>
       <p class="explore-external-status" id="explore-external-status" aria-live="polite"></p>
       <div class="explore-branches" id="explore-branches">
-        ${branches.map(branchCard).join("")}
+        ${
+          artwork.remote
+            ? BRANCHES.map((def) => branchCard({
+                ...def,
+                results: [],
+                empty: true,
+                emptyReason: "等待自动发现候选…",
+                vision: { tone: "none", note: "外部作品没有独立画像，这里不给风格结论。" },
+              })).join("")
+            : buildBranches(artwork, { media: "all" }).map(branchCard).join("")
+        }
       </div>
       <p class="explore-media-note" id="explore-media-note"></p>
     </section>`;
 }
 
 function cinemaSection(artwork) {
+  if (artwork.remote) return "";
   const refs = relationsFor(artwork);
   if (!refs.length) return "";
   return `
@@ -216,82 +407,140 @@ function cinemaSection(artwork) {
   `;
 }
 
-export function renderArtwork(app, key) {
-  const artwork = findByKey(key) || findLocalById(key);
-  if (!artwork) {
-    app.innerHTML = `<div class="empty">未找到该作品。</div>`;
-    return;
-  }
-  track("viewedArtwork", artwork.id || artwork.key);
-  setRouteActive("");
+/* ---------------- 渲染 ---------------- */
 
-  const isLocal = Boolean(artwork.id);
-  app.innerHTML = `
-    <article class="detail-page">
+function detailTemplate(artwork) {
+  const isLocal = !artwork.remote;
+  return `
+    <article class="detail-page" data-remote="${artwork.remote ? "1" : "0"}">
       <figure class="detail-figure" style="${aspectRatioCss(artwork)}">
         ${renderImg(artwork, { priority: true })}
       </figure>
       <header class="detail-head">
-        <p class="d-artistline">${escapeHtml(artwork.artistZh || artwork.artist)}</p>
-        <h1>${escapeHtml(artwork.titleZh || artwork.title)} · ${escapeHtml(artwork.year)}</h1>
+        <p class="d-artistline">${escapeHtml(artwork.artistZh || artwork.artist || artwork.creator || "")}</p>
+        <h1>${escapeHtml(artwork.titleZh || artwork.title)}${artwork.year ? ` · ${escapeHtml(String(artwork.year))}` : ""}</h1>
+        ${artwork.remote ? `<p class="detail-origin">自动发现 · ${escapeHtml(PROVIDER_LABEL[artwork.provider] || artwork.provider || "")}</p>` : ""}
         <div class="detail-actionsrow">
           <a href="#find" data-detail-action="similar">FIND SIMILAR</a>
           ${isLocal ? `<a href="#create/${escapeHtml(artwork.id)}" data-detail-action="create">CREATE WITH THIS</a>` : ""}
           ${isLocal ? `<a class="alt" href="#shoot/${escapeHtml(artwork.key)}" data-detail-action="shoot">SHOOT LIKE THIS</a>` : ""}
+          ${
+            artwork.sourceUrl
+              ? `<a class="alt" href="${escapeHtml(artwork.sourceUrl)}" target="_blank" rel="noreferrer" data-raw-source>查看原始馆藏 ↗</a>`
+              : ""
+          }
         </div>
       </header>
       <div class="detail-body">
         ${whyItWorksSection(artwork)}
-        ${isLocal ? exploreSection(artwork) : ""}
+        ${exploreSection(artwork)}
         ${relationsSection(artwork)}
         ${cinemaSection(artwork)}
         ${factsBlock(artwork)}
-        <div class="context-actions record-actions">
-          <button class="ghost-action" type="button" data-save-artwork="${escapeHtml(artwork.id || artwork.key)}" aria-pressed="false">收藏到我的视觉档案</button>
-        </div>
+        ${
+          isLocal
+            ? `<div class="context-actions record-actions">
+                 <button class="ghost-action" type="button" data-save-artwork="${escapeHtml(artwork.id || artwork.key)}" aria-pressed="false">收藏到我的视觉档案</button>
+               </div>`
+            : ""
+        }
       </div>
     </article>
   `;
-  bindImgFallback(app);
-  attachSaveHandlers(app);
+}
 
-  // 媒介筛选：只重绘分支区，不重载页面，也不改路由。
+function wireDetail(app, artwork, hash) {
+  bindImgFallback(app);
+  if (!artwork.remote) attachSaveHandlers(app);
+
   const explore = app.querySelector("#explore");
   if (explore) {
-    hydrateExternal(app, artwork);
+    hydrateExternal(artwork, hash);
     const branchesHost = explore.querySelector("#explore-branches");
     const note = explore.querySelector("#explore-media-note");
     explore.querySelectorAll("[data-explore-media]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (!pageState) return;
         const mode = btn.dataset.exploreMedia;
+        pageState.mode = mode;
         explore.querySelectorAll("[data-explore-media]").forEach((b) => b.classList.toggle("is-on", b === btn));
         explore.dataset.media = mode;
-        const next = buildBranches(artwork, { media: mode });
-        branchesHost.innerHTML = next.map(branchCard).join("");
-        const excluded = next[0] && next[0].mediaState ? next[0].mediaState.excluded : { monochromeFilms: 0 };
-        const emptyCount = next.filter((b) => b.empty).length;
-        // 外部卡按 imageKind 过滤：动画档不显示绘画/照片，跨媒介只显示非绘画
-        app.querySelectorAll(".explore-external").forEach((el) => {
-          const kind = el.dataset.extKind || "unknown";
-          const isArtwork = kind === "artwork";
-          const hide =
-            (mode === "artwork" && !isArtwork) ||
-            (mode === "film" && kind !== "film-still" && kind !== "tv-episode-still") ||
-            (mode === "animation" && kind !== "tv-episode-still") ||
-            (mode === "cross" && isArtwork);
-          el.classList.toggle("is-hidden", hide);
-        });
+        const { local, shown, hidden } = renderBranches(branchesHost, artwork, mode);
+        const excluded = local[0] && local[0].mediaState ? local[0].mediaState.excluded : { monochromeFilms: 0 };
+        const emptyCount = local.filter((b) => b.empty).length;
+        const externalTotal = pageState.external ? Object.values(pageState.external.branches).flat().length : 0;
         note.textContent = [
           excluded.monochromeFilms ? `已排除 ${excluded.monochromeFilms} 张黑白电影剧照（不作为 AIGC 视觉参考）。` : "",
-          emptyCount === 4 ? (next[0].emptyReason || "") : "",
+          externalTotal ? `外部候选 ${externalTotal} 条，本媒介下 ${shown} 条${hidden ? `，隐藏 ${hidden} 条` : ""}。` : "",
+          emptyCount === 4 && !shown ? (local[0].emptyReason || "") : "",
         ].filter(Boolean).join(" ");
       });
     });
   }
 
-  // FIND SIMILAR scrolls to the relations layer instead of leaving the page.
   app.querySelector('[data-detail-action="similar"]')?.addEventListener("click", (e) => {
     e.preventDefault();
-    document.querySelector("#visual-relations")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelector("#explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
+}
+
+function remoteToArtwork(doc) {
+  const w = doc.work;
+  const m = doc.metrics || {};
+  const ratio = m.aspect ? 1 / m.aspect : 0.75;
+  return {
+    id: `r.${w.hash}`,
+    key: `r.${w.hash}`,
+    remote: true,
+    hash: w.hash,
+    title: w.title,
+    titleZh: w.title,
+    artist: w.creator,
+    creator: w.creator,
+    year: w.year,
+    provider: w.provider,
+    providerId: w.providerId,
+    museum: PROVIDER_LABEL[w.provider] || w.provider,
+    medium: w.medium,
+    mediumLabel: w.medium,
+    imageKind: w.imageKind,
+    rightsStatus: w.rights,
+    sourceUrl: w.sourceUrl,
+    foundBy: w.foundBy,
+    image: { url: w.image, ratio },
+    metrics: doc.metrics || null,
+    hasAnalysis: false,
+  };
+}
+
+async function renderRemote(app, hash) {
+  pageState = newState(`r.${hash}`);
+  app.innerHTML = `<div class="detail-page"><p class="quiet-note" id="remote-loading">正在读取这件自动发现的作品…</p></div>`;
+  const doc = await fetchDiscoveryWork(hash);
+  if (!doc || !doc.ok) {
+    app.innerHTML = `<div class="empty">没有找到这件作品（可能已从索引中移除）。<a href="#find">回到图片墙</a></div>`;
+    return;
+  }
+  const artwork = remoteToArtwork(doc);
+  track("viewedArtwork", artwork.id);
+  setRouteActive("");
+  app.innerHTML = detailTemplate(artwork);
+  wireDetail(app, artwork, hash);
+}
+
+export function renderArtwork(app, key) {
+  if (isRemoteKey(key)) {
+    renderRemote(app, key.slice(REMOTE_PREFIX.length));
+    return;
+  }
+  const artwork = findByKey(key) || findLocalById(key);
+  if (!artwork) {
+    app.innerHTML = `<div class="empty">未找到该作品。<a href="#find">回到图片墙</a></div>`;
+    return;
+  }
+  pageState = newState(artwork.key || artwork.id);
+  track("viewedArtwork", artwork.id || artwork.key);
+  setRouteActive("");
+  app.innerHTML = detailTemplate(artwork);
+  wireDetail(app, artwork, null);
 }

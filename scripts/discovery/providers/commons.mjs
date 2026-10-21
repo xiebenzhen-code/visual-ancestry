@@ -56,7 +56,7 @@ export const commonsProvider = {
         return normalize(
           {
             providerId: String(p.pageid),
-            title: plain(p.title).replace(/^File:/i, ""),
+            title: plain(p.title).replace(/^File:/i, "").replace(/\.(jpe?g|png|tiff?|webp|gif)$/i, ""),
             creator: plain(meta.Artist?.value) || null,
             year: plain(meta.DateTimeOriginal?.value).slice(0, 40) || null,
             medium: plain(meta.MediaType?.value) || null,
