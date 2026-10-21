@@ -105,6 +105,23 @@ await check("同一句里出现平面化 vs 写实空间 → 空间维度被推�
   assert.ok(f.space, "空间维度没有被推翻");
 });
 
+await check("人数相同的两人：关系冲突保留并置布局，但不许升到 high", () => {
+  const r = rt.adjudicate("partial", J({
+    similarPoints: ["双人位于画面中央，占据主要面积"],
+    majorDifferences: ["候选为双人拥抱、身体交叠，查询为双人并排站立、身体分离"],
+  }));
+  assert.ok(r.positiveDims.includes("subject"), "并置布局被错误清零");
+  assert.equal(r.relation, "partial");
+});
+
+await check("人数冲突（单人 vs 双人）才整维清零", () => {
+  const r = rt.adjudicate("partial", J({
+    similarPoints: ["双人位于画面中央，占据主要面积"],
+    majorDifferences: ["候选为单人侧面坐姿，查询为双人并排站立"],
+  }));
+  assert.ok(!r.positiveDims.includes("subject"), "人数不符仍保留主体维度");
+});
+
 await check("细部差别（骨架更对称）不推翻整维", () => {
   const f = rt.falsify(["竖幅立轴构图，主峰居中偏上"], ["候选是单一主峰垂直居中，骨架更对称"]);
   assert.equal(Object.keys(f).length, 0, `不该证伪：${JSON.stringify(f)}`);

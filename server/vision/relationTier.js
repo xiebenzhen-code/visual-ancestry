@@ -99,22 +99,27 @@ const LINE_PAIRS = [
 
 function lineContradictions(similarText, differences) {
   const out = {};
+  const put = (dim, kind, reason) => {
+    if (!out[dim] || (out[dim].kind === "relation" && kind === "full")) out[dim] = { kind, reason };
+  };
   for (const line of differences || []) {
     const c = countConflict(similarText, line);
     if (c) {
-      out.subject = out.subject || c;
-      out.composition = out.composition || "主体数量不符，构图对照失去依据";
+      put("subject", "full", c);
+      put("composition", "full", "主体数量不符，构图对照失去依据");
     }
     for (const [xs, ys, dim, label] of LINE_PAIRS) {
       const hitX = xs.some((x) => line.includes(x));
       const hitY = ys.some((y) => line.includes(y));
-      if (hitX && hitY) out[dim] = out[dim] || label;
+      if (!(hitX && hitY)) continue;
+      // 人数相同的两个人：并立 vs 拥抱、直视 vs 分散，推翻的是「关系」，不是「两人并置占画面」这个布局事实
+      const relationOnly = dim === "subject" && /人物关系|人物朝向/.test(label);
+      put(dim, relationOnly ? "relation" : "full", label);
     }
-    // 同一句里直接写「与查询…不同 / 结构不同 / 空间逻辑相反」的维度
     // 只有「整类否定」才算证伪；「不似/更对称」这类细部差别不动整维
     if (/完全不同|性质完全不同|空间逻辑相反|骨架.{0,4}(不同|不符)|与查询.{0,8}不同/.test(line)) {
       const dims = dimsOf(line);
-      if (dims.length === 1) out[dims[0]] = out[dims[0]] || `差异直接否定：${line.slice(0, 24)}`;
+      if (dims.length === 1) put(dims[0], "full", `差异直接否定：${line.slice(0, 24)}`);
     }
   }
   return out;
@@ -143,8 +148,16 @@ export function deriveRelation(j) {
   for (const p of similar) for (const d of dimsOf(p)) positive.add(d);
 
   const contradicted = falsify(similar, diffs);
+  let subjectRelationConflict = false;
   for (const d of Object.keys(contradicted)) {
-    if (positive.delete(d)) notes.push(`${d} 被差异推翻：${contradicted[d]}`);
+    const c = contradicted[d];
+    // 只推翻「关系/朝向」的，保留这一维的布局事实，但封锁 high
+    if (d === "subject" && c.kind === "relation") {
+      subjectRelationConflict = true;
+      notes.push(`主体关系被差异推翻（保留并置布局）：${c.reason}`);
+      continue;
+    }
+    if (positive.delete(d)) notes.push(`${d} 被差异推翻：${c.reason || c}`);
   }
 
   const substantive = ["composition", "subject", "space"].filter((d) => positive.has(d));
@@ -155,7 +168,7 @@ export function deriveRelation(j) {
     relation = hasColor || positive.size > 0 ? TIERS.SPECIFIC : TIERS.UNRELATED;
     if (relation === TIERS.SPECIFIC) notes.push("只剩色彩/光线/局部形式可借鉴");
     else notes.push("没有可核对的可迁移证据");
-  } else if (substantive.includes("composition") && (substantive.includes("subject") || substantive.includes("space"))) {
+  } else if (substantive.includes("composition") && (substantive.includes("subject") || substantive.includes("space")) && !subjectRelationConflict) {
     relation = TIERS.HIGH;
     notes.push("构图与主体/空间同时成立");
   } else {
