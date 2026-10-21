@@ -27,3 +27,4 @@ work/
 # P4.14-E — 个人参考图库（只在本机，绝不入仓 / 入产物）
 .rc1-user-library/
 .git-msg.md
+.m.txt
