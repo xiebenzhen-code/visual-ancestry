@@ -1,0 +1,1652 @@
+[
+ {
+  "sheet": "painting_to_film__paris-rainy-day.png",
+  "path": "painting→film",
+  "queryId": "paris-rainy-day",
+  "queryLabel": "paris-rainy-day",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "commons:115557618",
+    "title": "CNAM5.mp4.00 16 45 02.Still001",
+    "marks": [
+     "M1",
+     "H1",
+     "M6",
+     "H6"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "commons:108998350",
+    "title": "Rescued in Mid Air (1906) screenshot 1",
+    "marks": [
+     "S1",
+     "S6"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "commons:146301149",
+    "title": "French nobleman grant's tomb",
+    "marks": [
+     "C1",
+     "S2",
+     "M5",
+     "H5",
+     "C6",
+     "S7",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "commons:188082177",
+    "title": "Metropolis (1927) - Death",
+    "marks": [
+     "M2",
+     "H2",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "commons:108998351",
+    "title": "Rescued in Mid Air (1906) screenshot 3",
+    "marks": [
+     "C2",
+     "S5",
+     "C7",
+     "S10"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "blender:tears-of-steel-t230",
+    "title": "Tears of Steel — 230s",
+    "marks": [
+     "M3",
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "blender:tears-of-steel-t275",
+    "title": "Tears of Steel — 275s",
+    "marks": [
+     "S3",
+     "S8"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:108998352",
+    "title": "Rescued in Mid Air (1906) screenshot 2",
+    "marks": [
+     "C3",
+     "C8"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "commons:161189747",
+    "title": "Dr.satish thukral",
+    "marks": [
+     "M4",
+     "H4",
+     "M9",
+     "H9"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "blender:tears-of-steel-t185",
+    "title": "Tears of Steel — 185s",
+    "marks": [
+     "S4",
+     "S9"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "commons:188082179",
+    "title": "Metropolis (1927) - Brigitte Helm and the Seven Headed Beast",
+    "marks": [
+     "C4",
+     "C9"
+    ]
+   },
+   {
+    "label": "L",
+    "id": "commons:38871713",
+    "title": "Collapse of the Funnel",
+    "marks": [
+     "C5",
+     "C10"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "painting_to_film__wave.png",
+  "path": "painting→film",
+  "queryId": "wave",
+  "queryLabel": "wave",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "blender:tears-of-steel-t140",
+    "title": "Tears of Steel — 140s",
+    "marks": [
+     "M1",
+     "H1",
+     "M6",
+     "H6"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "commons:108998351",
+    "title": "Rescued in Mid Air (1906) screenshot 3",
+    "marks": [
+     "S1",
+     "C3",
+     "S6",
+     "C8"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "commons:38871713",
+    "title": "Collapse of the Funnel",
+    "marks": [
+     "C1",
+     "C6"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "commons:108998350",
+    "title": "Rescued in Mid Air (1906) screenshot 1",
+    "marks": [
+     "M2",
+     "H2",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "commons:108998352",
+    "title": "Rescued in Mid Air (1906) screenshot 2",
+    "marks": [
+     "S2",
+     "S7"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "blender:tears-of-steel-t500",
+    "title": "Tears of Steel — 500s",
+    "marks": [
+     "C2",
+     "C7"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "blender:tears-of-steel-t185",
+    "title": "Tears of Steel — 185s",
+    "marks": [
+     "M3",
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:165072495",
+    "title": "Grafika Subtelne Przejścia",
+    "marks": [
+     "S3",
+     "M5",
+     "H5",
+     "S8",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "commons:188082179",
+    "title": "Metropolis (1927) - Brigitte Helm and the Seven Headed Beast",
+    "marks": [
+     "M4",
+     "H4",
+     "S5",
+     "C5",
+     "M9",
+     "H9",
+     "S10",
+     "C10"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "commons:188082177",
+    "title": "Metropolis (1927) - Death",
+    "marks": [
+     "S4",
+     "S9"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "film-toll-of-the-sea",
+    "title": "",
+    "marks": [
+     "C4",
+     "C9"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "painting_to_film__american-gothic.png",
+  "path": "painting→film",
+  "queryId": "american-gothic",
+  "queryLabel": "american-gothic",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "commons:188082177",
+    "title": "Metropolis (1927) - Death",
+    "marks": [
+     "M1",
+     "H1",
+     "S2",
+     "M6",
+     "H6",
+     "S7"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "blender:tears-of-steel-t185",
+    "title": "Tears of Steel — 185s",
+    "marks": [
+     "S1",
+     "S6"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "blender:tears-of-steel-t230",
+    "title": "Tears of Steel — 230s",
+    "marks": [
+     "C1",
+     "M4",
+     "S4",
+     "H4",
+     "C6",
+     "M9",
+     "S9",
+     "H9"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "commons:115557618",
+    "title": "CNAM5.mp4.00 16 45 02.Still001",
+    "marks": [
+     "M2",
+     "H2",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "commons:108998351",
+    "title": "Rescued in Mid Air (1906) screenshot 3",
+    "marks": [
+     "C2",
+     "M5",
+     "H5",
+     "C7",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "commons:161189747",
+    "title": "Dr.satish thukral",
+    "marks": [
+     "M3",
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "blender:tears-of-steel-t320",
+    "title": "Tears of Steel — 320s",
+    "marks": [
+     "S3",
+     "S8"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:188082179",
+    "title": "Metropolis (1927) - Brigitte Helm and the Seven Headed Beast",
+    "marks": [
+     "C3",
+     "C8"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "blender:tears-of-steel-t410",
+    "title": "Tears of Steel — 410s",
+    "marks": [
+     "C4",
+     "S5",
+     "C9",
+     "S10"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "blender:tears-of-steel-t500",
+    "title": "Tears of Steel — 500s",
+    "marks": [
+     "C5",
+     "C10"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "film_to_painting__blender:tears-of-steel-t95.png",
+  "path": "film→painting",
+  "queryId": "blender:tears-of-steel-t95",
+  "queryLabel": "Tears of Steel — 95s",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "commons:15384774",
+    "title": "Paul Bril - Mountain Scene - WGA3197.jpg",
+    "marks": [
+     "M1",
+     "H1",
+     "M6",
+     "C6",
+     "H6"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "met:814997",
+    "title": "Eight Bells",
+    "marks": [
+     "S1",
+     "C4",
+     "S7"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "met:24927",
+    "title": "Pair of Flintlock Pistols of Empress Catherine the Great (1729–1796)",
+    "marks": [
+     "C1"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "rijks:200578256",
+    "title": "View of Roviano, Houses in Rome in the Foreground",
+    "marks": [
+     "M2"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "wang-ximeng-thousand-li",
+    "title": "",
+    "marks": [
+     "S2"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "met:15755",
+    "title": "Mountain Landscape (from Sketchbook)",
+    "marks": [
+     "C2"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "commons:164367651",
+    "title": "George Frederic Watts (1817-1904) - Mountain Landscape - 1939.32.2 - The Tullie.jpg",
+    "marks": [
+     "H2",
+     "M4",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "rijks:20023971",
+    "title": "Ganzen in landschap",
+    "marks": [
+     "M3"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "commons:10713800",
+    "title": "Building Painting 6252.JPG",
+    "marks": [
+     "S3"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "met:33710",
+    "title": "Brigandine",
+    "marks": [
+     "C3"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "commons:158431413",
+    "title": "Mountain Landscape Doré.jpg",
+    "marks": [
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "L",
+    "id": "xia-gui-streams",
+    "title": "",
+    "marks": [
+     "S4"
+    ]
+   },
+   {
+    "label": "M",
+    "id": "commons:148069299",
+    "title": "A rainy night on the city centre - geograph.org.uk - 6292370.jpg",
+    "marks": [
+     "H4",
+     "M9",
+     "H9",
+     "C10"
+    ]
+   },
+   {
+    "label": "N",
+    "id": "cleveland:130457",
+    "title": "Under the Trees (from \"The Public Gardens\")",
+    "marks": [
+     "M5"
+    ]
+   },
+   {
+    "label": "O",
+    "id": "met:814996",
+    "title": "The Life Line",
+    "marks": [
+     "S5"
+    ]
+   },
+   {
+    "label": "P",
+    "id": "starry",
+    "title": "",
+    "marks": [
+     "C5"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "film_to_painting__blender:tears-of-steel-t140.png",
+  "path": "film→painting",
+  "queryId": "blender:tears-of-steel-t140",
+  "queryLabel": "Tears of Steel — 140s",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "monk-by-sea",
+    "title": "",
+    "marks": [
+     "M1"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "met:814997",
+    "title": "Eight Bells",
+    "marks": [
+     "S1",
+     "C1",
+     "C8"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "met:262760",
+    "title": "Broadway on a Rainy Day",
+    "marks": [
+     "H1",
+     "M2",
+     "M6",
+     "H6"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "met:11086",
+    "title": "View from My Work Room Window in Hammond Street, New York City",
+    "marks": [
+     "S2"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "met:33710",
+    "title": "Brigandine",
+    "marks": [
+     "C2"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "cleveland:142642",
+    "title": "Spring Landscape",
+    "marks": [
+     "H2",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "scream",
+    "title": "",
+    "marks": [
+     "M3",
+     "C5"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:10713800",
+    "title": "Building Painting 6252.JPG",
+    "marks": [
+     "S3"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "met:24927",
+    "title": "Pair of Flintlock Pistols of Empress Catherine the Great (1729–1796)",
+    "marks": [
+     "C3",
+     "S4"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "met:11327",
+    "title": "Mountain Landscape, Lombardy",
+    "marks": [
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "commons:148069299",
+    "title": "A rainy night on the city centre - geograph.org.uk - 6292370.jpg",
+    "marks": [
+     "M4",
+     "H5",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "L",
+    "id": "wanderer",
+    "title": "",
+    "marks": [
+     "C4"
+    ]
+   },
+   {
+    "label": "M",
+    "id": "cleveland:171078",
+    "title": "Bacchus and Ariadne",
+    "marks": [
+     "H4",
+     "M9",
+     "H9"
+    ]
+   },
+   {
+    "label": "N",
+    "id": "commons:79000710",
+    "title": "\"Wind Mountain\" Columbia R - NARA - 102278851 (page 1).png",
+    "marks": [
+     "M5"
+    ]
+   },
+   {
+    "label": "O",
+    "id": "wang-ximeng-thousand-li",
+    "title": "",
+    "marks": [
+     "S5"
+    ]
+   },
+   {
+    "label": "P",
+    "id": "met:262762",
+    "title": "[Broadway in the Rain, likely taken from 308 or 310 Broadway, New York City]",
+    "marks": [
+     "S6"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "film_to_painting__commons:38871713.png",
+  "path": "film→painting",
+  "queryId": "commons:38871713",
+  "queryLabel": "Collapse of the Funnel",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "rijks:20015860",
+    "title": "Bentheim Castle",
+    "marks": [
+     "M1",
+     "H4",
+     "M9",
+     "H9"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "met:10141",
+    "title": "View of South Street, from Maiden Lane, New York City",
+    "marks": [
+     "S1"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "wave",
+    "title": "",
+    "marks": [
+     "C1"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "commons:137108974",
+    "title": "Piet Mondrian-Mühle bei Domburg-04083 (detail).jpg",
+    "marks": [
+     "H1",
+     "M2",
+     "M6",
+     "H6"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "commons:79000710",
+    "title": "\"Wind Mountain\" Columbia R - NARA - 102278851 (page 1).png",
+    "marks": [
+     "S2",
+     "H5",
+     "S7",
+     "C9",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "scream",
+    "title": "",
+    "marks": [
+     "C2"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "met:24927",
+    "title": "Pair of Flintlock Pistols of Empress Catherine the Great (1729–1796)",
+    "marks": [
+     "H2",
+     "M4",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "cleveland:93014",
+    "title": "View of Schroon Mountain, Essex County, New York, After a Storm",
+    "marks": [
+     "M3",
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "third-of-may",
+    "title": "",
+    "marks": [
+     "S3"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "monk-by-sea",
+    "title": "",
+    "marks": [
+     "C3"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "met:11086",
+    "title": "View from My Work Room Window in Hammond Street, New York City",
+    "marks": [
+     "S4"
+    ]
+   },
+   {
+    "label": "L",
+    "id": "commons:65659840",
+    "title": "\"Paris Street, Rainy Day\" by Gustave Caillebotte - Joy of Museums - Art Institute of Chicago.jpg",
+    "marks": [
+     "C4"
+    ]
+   },
+   {
+    "label": "M",
+    "id": "met:33710",
+    "title": "Brigandine",
+    "marks": [
+     "M5"
+    ]
+   },
+   {
+    "label": "N",
+    "id": "hiroshige-shower",
+    "title": "",
+    "marks": [
+     "S5"
+    ]
+   },
+   {
+    "label": "O",
+    "id": "starry",
+    "title": "",
+    "marks": [
+     "C5"
+    ]
+   },
+   {
+    "label": "P",
+    "id": "commons:6074264",
+    "title": "Paris Street; Rainy Day.jpg",
+    "marks": [
+     "S6",
+     "C6"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "painting_to_animation__paris-rainy-day.png",
+  "path": "painting→animation",
+  "queryId": "paris-rainy-day",
+  "queryLabel": "paris-rainy-day",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "commons:113138986",
+    "title": "ASelfMadeMongrelNT1945",
+    "marks": [
+     "M1",
+     "H1",
+     "S3",
+     "M6",
+     "H6",
+     "S8"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "commons:2739374",
+    "title": "Billiondollarlimited2",
+    "marks": [
+     "S1",
+     "S6"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "blender:big-buck-bunny-t95",
+    "title": "Big Buck Bunny — 95s",
+    "marks": [
+     "C1",
+     "C6"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "commons:17817574",
+    "title": "Baby Huey en una escena de 'Pest Pupil'",
+    "marks": [
+     "M2",
+     "H2",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "commons:23452217",
+    "title": "BarmaleyMonkey1",
+    "marks": [
+     "S2",
+     "C2",
+     "S7",
+     "C7"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "commons:114132234",
+    "title": "ALambinaJamNT1945",
+    "marks": [
+     "M3",
+     "H3",
+     "S4",
+     "M8",
+     "H8",
+     "S9"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "commons:10503439",
+    "title": "Ataleoftwokitties restored",
+    "marks": [
+     "C3",
+     "M4",
+     "H4",
+     "S5",
+     "C8",
+     "M9",
+     "H9",
+     "S10"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:55024669",
+    "title": "Blender Foundation - Caminandes - Episode 2 - Gran Dillama - The Earth and the Sun turn dark while Koro accidentally electrocuted by an electric fence",
+    "marks": [
+     "C4",
+     "C9"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "blender:big-buck-bunny-t165",
+    "title": "Big Buck Bunny — 165s",
+    "marks": [
+     "M5",
+     "H5",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "commons:7366382",
+    "title": "05.RamSitaGods",
+    "marks": [
+     "C5",
+     "C10"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "painting_to_animation__wave.png",
+  "path": "painting→animation",
+  "queryId": "wave",
+  "queryLabel": "wave",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "commons:7019784",
+    "title": "BhavanaSitaContaminated",
+    "marks": [
+     "M1",
+     "H1",
+     "M6",
+     "H6"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "commons:55024669",
+    "title": "Blender Foundation - Caminandes - Episode 2 - Gran Dillama - The Earth and the Sun turn dark while Koro accidentally electrocuted by an electric fence",
+    "marks": [
+     "S1",
+     "C1",
+     "S6",
+     "C6"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "blender:big-buck-bunny-t340",
+    "title": "Big Buck Bunny — 340s",
+    "marks": [
+     "M2",
+     "H2",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "commons:7366382",
+    "title": "05.RamSitaGods",
+    "marks": [
+     "S2",
+     "C3",
+     "S7",
+     "C8"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "blender:big-buck-bunny-t95",
+    "title": "Big Buck Bunny — 95s",
+    "marks": [
+     "C2",
+     "C7"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "blender:big-buck-bunny-t270",
+    "title": "Big Buck Bunny — 270s",
+    "marks": [
+     "M3",
+     "H3",
+     "C5",
+     "M8",
+     "H8",
+     "C10"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "commons:72770462",
+    "title": "Angel O Death by Nina Paley",
+    "marks": [
+     "S3",
+     "C4",
+     "S8",
+     "C9"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:23452217",
+    "title": "BarmaleyMonkey1",
+    "marks": [
+     "M4",
+     "H4",
+     "M9",
+     "H9"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "commons:10503439",
+    "title": "Ataleoftwokitties restored",
+    "marks": [
+     "S4",
+     "S9"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "blender:big-buck-bunny-t30",
+    "title": "Big Buck Bunny — 30s",
+    "marks": [
+     "M5",
+     "H5",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "commons:114132234",
+    "title": "ALambinaJamNT1945",
+    "marks": [
+     "S5",
+     "S10"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "painting_to_animation__american-gothic.png",
+  "path": "painting→animation",
+  "queryId": "american-gothic",
+  "queryLabel": "american-gothic",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "commons:113138986",
+    "title": "ASelfMadeMongrelNT1945",
+    "marks": [
+     "M1",
+     "H1",
+     "S2",
+     "M6",
+     "H6",
+     "S7"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "commons:10503439",
+    "title": "Ataleoftwokitties restored",
+    "marks": [
+     "S1",
+     "C2",
+     "M4",
+     "H4",
+     "S6",
+     "C7",
+     "M9",
+     "H9"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "blender:big-buck-bunny-t95",
+    "title": "Big Buck Bunny — 95s",
+    "marks": [
+     "C1",
+     "C6"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "commons:114132234",
+    "title": "ALambinaJamNT1945",
+    "marks": [
+     "M2",
+     "H2",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "commons:17817574",
+    "title": "Baby Huey en una escena de 'Pest Pupil'",
+    "marks": [
+     "M3",
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "commons:72770462",
+    "title": "Angel O Death by Nina Paley",
+    "marks": [
+     "S3",
+     "S8"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "blender:big-buck-bunny-t235",
+    "title": "Big Buck Bunny — 235s",
+    "marks": [
+     "C3",
+     "M5",
+     "H5",
+     "C8",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:7366382",
+    "title": "05.RamSitaGods",
+    "marks": [
+     "S4",
+     "S9"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "blender:big-buck-bunny-t130",
+    "title": "Big Buck Bunny — 130s",
+    "marks": [
+     "C4",
+     "C9"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "blender:big-buck-bunny-t200",
+    "title": "Big Buck Bunny — 200s",
+    "marks": [
+     "S5",
+     "S10"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "blender:big-buck-bunny-t270",
+    "title": "Big Buck Bunny — 270s",
+    "marks": [
+     "C5",
+     "C10"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "animation_to_painting__blender:big-buck-bunny-t30.png",
+  "path": "animation→painting",
+  "queryId": "blender:big-buck-bunny-t30",
+  "queryLabel": "Big Buck Bunny — 30s",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "jatte",
+    "title": "",
+    "marks": [
+     "M1"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "cleveland:699644",
+    "title": "A Mountain Stream",
+    "marks": [
+     "S1",
+     "S6",
+     "C6"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "met:204264",
+    "title": "Halberd",
+    "marks": [
+     "C1"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "cleveland:142642",
+    "title": "Spring Landscape",
+    "marks": [
+     "H1",
+     "M3",
+     "M6",
+     "H6"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "met:437937",
+    "title": "Gamepiece with a Dead Heron",
+    "marks": [
+     "M2"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "cleveland:150693",
+    "title": "Pine Tree",
+    "marks": [
+     "S2"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "wang-ximeng-thousand-li",
+    "title": "",
+    "marks": [
+     "C2",
+     "S3"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:79000710",
+    "title": "\"Wind Mountain\" Columbia R - NARA - 102278851 (page 1).png",
+    "marks": [
+     "H2",
+     "M7",
+     "H7",
+     "S8"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "starry",
+    "title": "",
+    "marks": [
+     "C3"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "commons:142892217",
+    "title": "Decorative marriage pots.jpg",
+    "marks": [
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "socrates",
+    "title": "",
+    "marks": [
+     "M4"
+    ]
+   },
+   {
+    "label": "L",
+    "id": "cleveland:144732",
+    "title": "Storm in the Mountains",
+    "marks": [
+     "S4"
+    ]
+   },
+   {
+    "label": "M",
+    "id": "xia-gui-streams",
+    "title": "",
+    "marks": [
+     "C4"
+    ]
+   },
+   {
+    "label": "N",
+    "id": "met:262760",
+    "title": "Broadway on a Rainy Day",
+    "marks": [
+     "H4",
+     "M9",
+     "H9"
+    ]
+   },
+   {
+    "label": "O",
+    "id": "court-of-gayumars",
+    "title": "",
+    "marks": [
+     "M5"
+    ]
+   },
+   {
+    "label": "P",
+    "id": "cleveland:110383",
+    "title": "Mountain Top",
+    "marks": [
+     "S5"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "animation_to_painting__blender:big-buck-bunny-t60.png",
+  "path": "animation→painting",
+  "queryId": "blender:big-buck-bunny-t60",
+  "queryLabel": "Big Buck Bunny — 60s",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "cleveland:93234",
+    "title": "On the Beach, No. 3",
+    "marks": [
+     "M1",
+     "H5",
+     "M10",
+     "H10"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "wang-ximeng-thousand-li",
+    "title": "",
+    "marks": [
+     "S1"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "met:204264",
+    "title": "Halberd",
+    "marks": [
+     "C1",
+     "C9"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "cleveland:149961",
+    "title": "Wild Geese Descending on a Sandbar, from Eight Views of Xiao-Xiang",
+    "marks": [
+     "H1",
+     "M6",
+     "H6",
+     "S10",
+     "C10"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "commons:79680902",
+    "title": "Unknown (Flemish) - Mountain Landscape - 38.82 - Detroit Institute of Arts.jpg",
+    "marks": [
+     "M2"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "garden-earthly",
+    "title": "",
+    "marks": [
+     "S2"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "scream",
+    "title": "",
+    "marks": [
+     "C2"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:34318325",
+    "title": "Ines August 2014-2a.jpg",
+    "marks": [
+     "H2",
+     "C6",
+     "M7",
+     "H7"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "cleveland:142641",
+    "title": "The Mountain of Five Cataracts",
+    "marks": [
+     "M3"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "rijks:200111833",
+    "title": "Ceiling painting with Diana and her companions",
+    "marks": [
+     "S3"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "met:15755",
+    "title": "Mountain Landscape (from Sketchbook)",
+    "marks": [
+     "C3",
+     "C7"
+    ]
+   },
+   {
+    "label": "L",
+    "id": "cleveland:161325",
+    "title": "Fibula with Solar Design",
+    "marks": [
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "M",
+    "id": "met:315683",
+    "title": "Male Figure",
+    "marks": [
+     "M4"
+    ]
+   },
+   {
+    "label": "N",
+    "id": "met:11086",
+    "title": "View from My Work Room Window in Hammond Street, New York City",
+    "marks": [
+     "S4"
+    ]
+   },
+   {
+    "label": "O",
+    "id": "starry",
+    "title": "",
+    "marks": [
+     "C4"
+    ]
+   },
+   {
+    "label": "P",
+    "id": "rijks:200578256",
+    "title": "View of Roviano, Houses in Rome in the Foreground",
+    "marks": [
+     "H4",
+     "M9",
+     "H9"
+    ]
+   }
+  ]
+ },
+ {
+  "sheet": "animation_to_painting__commons:2739374.png",
+  "path": "animation→painting",
+  "queryId": "commons:2739374",
+  "queryLabel": "Billiondollarlimited2",
+  "candidates": [
+   {
+    "label": "A",
+    "id": "commons:597284",
+    "title": "Willard Leroy Metcalf Street Scene Tangiers.jpg",
+    "marks": [
+     "M1"
+    ]
+   },
+   {
+    "label": "B",
+    "id": "met:11086",
+    "title": "View from My Work Room Window in Hammond Street, New York City",
+    "marks": [
+     "S1"
+    ]
+   },
+   {
+    "label": "C",
+    "id": "scream",
+    "title": "",
+    "marks": [
+     "C1"
+    ]
+   },
+   {
+    "label": "D",
+    "id": "rijks:200109267",
+    "title": "Italiaans landschap met geitenmelkster",
+    "marks": [
+     "H1",
+     "M2",
+     "M6",
+     "H6"
+    ]
+   },
+   {
+    "label": "E",
+    "id": "met:814997",
+    "title": "Eight Bells",
+    "marks": [
+     "S2",
+     "S6",
+     "C6"
+    ]
+   },
+   {
+    "label": "F",
+    "id": "met:17361",
+    "title": "Blind Broomseller, (14th Street, New York City)",
+    "marks": [
+     "C2"
+    ]
+   },
+   {
+    "label": "G",
+    "id": "cleveland:142298",
+    "title": "Antiochus and Stratonice",
+    "marks": [
+     "H2",
+     "M7",
+     "H7",
+     "S8"
+    ]
+   },
+   {
+    "label": "H",
+    "id": "commons:79000710",
+    "title": "\"Wind Mountain\" Columbia R - NARA - 102278851 (page 1).png",
+    "marks": [
+     "M3"
+    ]
+   },
+   {
+    "label": "I",
+    "id": "hiroshige-shower",
+    "title": "",
+    "marks": [
+     "S3"
+    ]
+   },
+   {
+    "label": "J",
+    "id": "met:36669",
+    "title": "Perspective Print (Uki-e) of the Theaters in Sakaichō and Fukiyachō on Opening Night",
+    "marks": [
+     "C3"
+    ]
+   },
+   {
+    "label": "K",
+    "id": "cleveland:172815",
+    "title": "Mount Starr King, Yosemite",
+    "marks": [
+     "H3",
+     "M8",
+     "H8"
+    ]
+   },
+   {
+    "label": "L",
+    "id": "commons:158431413",
+    "title": "Mountain Landscape Doré.jpg",
+    "marks": [
+     "M4",
+     "H4",
+     "M9",
+     "H9"
+    ]
+   },
+   {
+    "label": "M",
+    "id": "commons:65659840",
+    "title": "\"Paris Street, Rainy Day\" by Gustave Caillebotte - Joy of Museums - Art Institute of Chicago.jpg",
+    "marks": [
+     "S4"
+    ]
+   },
+   {
+    "label": "N",
+    "id": "met:814994",
+    "title": "Mending the Tears",
+    "marks": [
+     "C4",
+     "C8"
+    ]
+   },
+   {
+    "label": "O",
+    "id": "met:315684",
+    "title": "Female Figure",
+    "marks": [
+     "M5"
+    ]
+   },
+   {
+    "label": "P",
+    "id": "commons:6074264",
+    "title": "Paris Street; Rainy Day.jpg",
+    "marks": [
+     "S5"
+    ]
+   }
+  ]
+ }
+]

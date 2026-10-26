@@ -1,0 +1,166 @@
+{
+ "at": "2026-10-26T17:33:40.361Z",
+ "topk": 5,
+ "methods": {
+  "mobileclip": {
+   "successAt5": 0.333,
+   "hits": 4,
+   "total": 12,
+   "perPath": {
+    "painting→film": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    },
+    "film→painting": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    },
+    "painting→animation": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    },
+    "animation→painting": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    }
+   },
+   "top5Distribution": {
+    "有效": 7,
+    "弱": 36,
+    "错误": 17
+   }
+  },
+  "siglip-base": {
+   "successAt5": 0.167,
+   "hits": 2,
+   "total": 12,
+   "perPath": {
+    "painting→film": {
+     "success": 2,
+     "queries": 3,
+     "rate": 0.667
+    },
+    "film→painting": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    },
+    "painting→animation": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    },
+    "animation→painting": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    }
+   },
+   "top5Distribution": {
+    "有效": 2,
+    "弱": 43,
+    "错误": 15
+   }
+  },
+  "clip-large": {
+   "successAt5": 0.333,
+   "hits": 4,
+   "total": 12,
+   "perPath": {
+    "painting→film": {
+     "success": 2,
+     "queries": 3,
+     "rate": 0.667
+    },
+    "film→painting": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    },
+    "painting→animation": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    },
+    "animation→painting": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    }
+   },
+   "top5Distribution": {
+    "有效": 4,
+    "弱": 37,
+    "错误": 19
+   }
+  },
+  "hybrid": {
+   "successAt5": 0.333,
+   "hits": 4,
+   "total": 12,
+   "perPath": {
+    "painting→film": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    },
+    "film→painting": {
+     "success": 2,
+     "queries": 3,
+     "rate": 0.667
+    },
+    "painting→animation": {
+     "success": 1,
+     "queries": 3,
+     "rate": 0.333
+    },
+    "animation→painting": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    }
+   },
+   "top5Distribution": {
+    "有效": 6,
+    "弱": 37,
+    "错误": 17
+   }
+  },
+  "hybrid-siglip": {
+   "successAt5": 0.167,
+   "hits": 2,
+   "total": 12,
+   "perPath": {
+    "painting→film": {
+     "success": 2,
+     "queries": 3,
+     "rate": 0.667
+    },
+    "film→painting": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    },
+    "painting→animation": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    },
+    "animation→painting": {
+     "success": 0,
+     "queries": 3,
+     "rate": 0
+    }
+   },
+   "top5Distribution": {
+    "有效": 2,
+    "弱": 45,
+    "错误": 13
+   }
+  }
+ }
+}
